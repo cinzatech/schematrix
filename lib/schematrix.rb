@@ -16,9 +16,10 @@ module Schematrix
     generators:,
     input_file:,
     module_name:,
-    output_dir:
+    output_dir:,
+    strict_mode:
   )
-    schema = Visitor.new.compile(json)
+    schema = Visitor.new(strict_mode:).compile(json)
 
     instances = []
     if generators.include?('plain_ruby')

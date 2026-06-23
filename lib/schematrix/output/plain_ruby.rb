@@ -61,7 +61,7 @@ module Schematrix
       end
 
       def constructor_assignments(properties)
-        properties.map do |name, _value|
+        properties.map do |name, _schema|
           "@#{name} = #{name}"
         end.join("\n")
       end

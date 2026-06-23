@@ -13,9 +13,10 @@ module Schematrix
   TYPE_OBJECT = 'object'
   TYPE_STRING = 'string'
 
-  # Vsitor for a JSON Schema, visits the whole schema document tree
+  # Visitor for a JSON Schema, visits the whole schema document tree
   class Visitor
-    def initialize
+    def initialize(strict_mode: false)
+      @strict_mode = strict_mode
       @path = []
       @objects = {}
     end
@@ -44,7 +45,7 @@ module Schematrix
         object = Schematrix::ObjectSchema.new
         @objects[@path.join('/')] = object
 
-        properties.each do |name, body|
+        properties&.each do |name, body|
           @path.push(name)
           schema = visit_schema(body, required: required_properties.include?(name))
           @path.pop

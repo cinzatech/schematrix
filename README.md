@@ -169,9 +169,9 @@ flowchart LR
 The core components are:
 
 - **`Schematrix::Visitor`** — walks the JSON Schema document tree depth-first, resolving `required` fields and dispatching on `type`.
-- **`Schematrix::Object`** — represents an `object` node with its named properties.
+- **`Schematrix::ArraySchema`** — represents an `array` node with its `items` type.
+- **`Schematrix::ObjectSchema`** — represents an `object` node with its named properties.
 - **`Schematrix::Schema`** — represents a scalar leaf node (`string`, `integer`, `boolean`, etc.).
-- **`Schematrix::Array`** — represents an `array` node with its `items` type.
 - **`Schematrix::Output::*`** — the code generators; handle source code production, formatting, and file I/O.
 - **`Schematrix::CLI`** — the command-line interface, built on [`tty-option`](https://github.com/piotrmurach/tty-option).
 

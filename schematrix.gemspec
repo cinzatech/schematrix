@@ -1,6 +1,8 @@
+require_relative 'lib/schematrix'
+
 Gem::Specification.new do |s|
   s.name        = 'schematrix'
-  s.version     = '0.1.0'
+  s.version     = Schematrix::VERSION
   s.summary     = 'Generate Ruby from JSON Schema'
   s.description = 'Generate Ruby code and RBS signatures from JSON Schema definition'
   s.authors     = ['Cinza']

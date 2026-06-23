@@ -1,4 +1,4 @@
-#!/bin/env ruby
+#!/usr/bin/env ruby
 
 require_relative '../lib/schematrix'
 require_relative '../lib/schematrix/cli'

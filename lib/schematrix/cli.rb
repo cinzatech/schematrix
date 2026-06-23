@@ -46,6 +46,13 @@ module Schematrix
       default 'generated'
     end
 
+    flag :strict do
+      optional
+      short '-s'
+      long '--strict'
+      desc 'Unknown types in the JSON Schema will trigger an error if strict mode is enabled'
+    end
+
     flag :verbose do
       optional
       arity zero_or_more
@@ -62,7 +69,8 @@ module Schematrix
 
     def run
       Schematrix.logger = TTY::Logger.new do |config|
-        config.level = %i[error warn info debug][params[:verbose].count(&:itself)] || :error
+        log_level = [params[:verbose].count(&:itself), 3].min
+        config.level = %i[error warn info debug][log_level]
       end
 
       if params[:help]
@@ -75,7 +83,8 @@ module Schematrix
 
         input_files = Array(params[:input])
         module_name = params[:module]
-        output_dir = params[:output] || 'generated'
+        output_dir = params[:output]
+        strict_mode = params[:strict_mode]
         generators = Set.new(params[:generators])
         unknown = generators - Set['plain_ruby']
         Schematrix.logger&.warn "Unknown generators: #{unknown.to_a.join(', ')}" unless unknown.empty?
@@ -88,7 +97,8 @@ module Schematrix
             generators:,
             input_file:,
             module_name:,
-            output_dir:
+            output_dir:,
+            strict_mode:
           )
         end
       end
