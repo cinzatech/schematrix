@@ -55,7 +55,10 @@ module Schematrix
       end
 
       def constructor_arguments(properties)
-        properties.map do |name, _schema|
+        properties.map do |name, schema|
+          next "#{name}: #{schema.default.inspect}" unless schema.default.nil?
+          next "#{name}: #{schema.default.inspect}" unless schema.required
+
           "#{name}:"
         end.join(', ')
       end

@@ -1,8 +1,8 @@
 require 'set'
 
-require_relative 'array_schema'
-require_relative 'object_schema'
-require_relative 'schema'
+require_relative 'schemas/array_schema'
+require_relative 'schemas/object_schema'
+require_relative 'schemas/schema'
 
 module Schematrix
   TYPE_ARRAY = 'array'
@@ -35,14 +35,15 @@ module Schematrix
       type = node['type']
       enum = node['enum']
       items = node['items']
+      default = node['default']
 
       case type
       when TYPE_ARRAY
-        Schematrix::ArraySchema.new(type:, items:, required:, enum:)
+        Schemas::ArraySchema.new(type:, items:, required:, enum:, default:)
       when TYPE_BOOLEAN, TYPE_INTEGER, TYPE_NULL, TYPE_NUMBER, TYPE_STRING
-        Schematrix::Schema.new(type:, required:, enum:)
+        Schemas::Schema.new(type:, required:, enum:, default:)
       when TYPE_OBJECT
-        object = Schematrix::ObjectSchema.new
+        object = Schemas::ObjectSchema.new(type:, required:, enum:, default:)
         @objects[@path.join('/')] = object
 
         properties&.each do |name, body|
