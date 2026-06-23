@@ -85,7 +85,7 @@ Usage: schematrix gen [OPTIONS] INPUT [INPUT...]
 Generate code matching a JSON Schema
 
 Options:
-  -g, --generators list  Output geretarots to use, i.e.: plain_ruby, rbs
+  -g, --generators list  Output generators to use, i.e.: plain_ruby, rbs
   -h, --help             Print usage
   -m, --module string    Module where the output code will be placed
   -o, --output string    Directory where the output will be written (default

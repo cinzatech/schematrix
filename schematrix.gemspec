@@ -5,8 +5,8 @@ Gem::Specification.new do |s|
   s.description = 'Generate Ruby code and RBS signatures from JSON Schema definition'
   s.authors     = ['Cinza']
   s.email       = 'cinza@lostrego.org'
-  s.files       = ['lib/schematrix.rb']
-  s.homepage    =
+  s.files = Dir['lib/**/*.rb', 'exe/**/*', 'README.md', 'LICENSE']
+  s.homepage =
     'https://github.com/cinzatech/schematrix'
   s.license = 'AGPL-3.0-or-later'
   s.required_ruby_version = '>= 3.1'
@@ -16,5 +16,6 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
 
   s.add_dependency 'syntax_tree', '~> 6.3'
+  s.add_dependency 'tty-logger', '~> 0.6.0'
   s.add_dependency 'tty-option', '~> 0.3.0'
 end

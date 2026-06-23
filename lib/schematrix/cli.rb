@@ -28,7 +28,7 @@ module Schematrix
       short '-g'
       long '--generators list'
       convert :list
-      desc 'Output geretarots to use, i.e.: plain_ruby, rbs'
+      desc 'Output generators to use, i.e.: plain_ruby, rbs'
     end
 
     option :module do
@@ -67,7 +67,6 @@ module Schematrix
 
       if params[:help]
         print help
-        exit 1
       elsif params.errors.any?
         puts params.errors.summary
         exit 1
@@ -76,8 +75,10 @@ module Schematrix
 
         input_files = Array(params[:input])
         module_name = params[:module]
-        output_dir = params[:output_dir] || 'generated'
+        output_dir = params[:output] || 'generated'
         generators = Set.new(params[:generators])
+        unknown = generators - Set['plain_ruby']
+        Schematrix.logger&.warn "Unknown generators: #{unknown.to_a.join(', ')}" unless unknown.empty?
 
         input_files.each do |input_file|
           content = File.read(input_file)

@@ -1,5 +1,5 @@
 module Schematrix
-  Array = Data.define(
+  ArraySchema = Data.define(
     :type,
     :items,
     :required,

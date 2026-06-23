@@ -3,10 +3,10 @@ require 'tty-logger'
 require_relative 'schematrix/visitor'
 require_relative 'schematrix/output/plain_ruby'
 
-VERSION = '0.1.0'
-
 # Generates Ruby code and RBS signatures from JSON Schema definition
 module Schematrix
+  VERSION = '0.1.0'
+
   class << self
     attr_accessor :logger
   end
@@ -29,10 +29,10 @@ module Schematrix
       )
     end
 
-    schema.each do |path, code|
+    schema.each do |path, node|
       logger&.info "Writing #{input_file}#/#{path}"
       instances.each do |generator|
-        generator.write(path, code)
+        generator.write(path, node)
       end
     end
   end

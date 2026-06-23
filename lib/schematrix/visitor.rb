@@ -1,5 +1,7 @@
-require_relative 'array'
-require_relative 'object'
+require 'set'
+
+require_relative 'array_schema'
+require_relative 'object_schema'
 require_relative 'schema'
 
 module Schematrix
@@ -31,22 +33,22 @@ module Schematrix
       properties = node['properties']
       type = node['type']
       enum = node['enum']
-      items = node['enum']
+      items = node['items']
 
       case type
       when TYPE_ARRAY
-        Schematrix::Array.new(type:, items:, required:, enum:)
+        Schematrix::ArraySchema.new(type:, items:, required:, enum:)
       when TYPE_BOOLEAN, TYPE_INTEGER, TYPE_NULL, TYPE_NUMBER, TYPE_STRING
         Schematrix::Schema.new(type:, required:, enum:)
       when TYPE_OBJECT
-        object = Schematrix::Object.new
+        object = Schematrix::ObjectSchema.new
         @objects[@path.join('/')] = object
 
-        properties.each do |name, schema|
+        properties.each do |name, body|
           @path.push(name)
-          schema = visit_schema(schema, required: required_properties.include?(name))
+          schema = visit_schema(body, required: required_properties.include?(name))
           @path.pop
-          object.add_property(name, schema)
+          object.add_property(name, schema) unless schema.nil?
         end
 
         object

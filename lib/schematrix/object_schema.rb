@@ -1,6 +1,6 @@
 module Schematrix
   # Object-type schema
-  class Object
+  class ObjectSchema
     def initialize
       @properties = {}
     end
