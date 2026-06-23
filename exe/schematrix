@@ -1,0 +1,9 @@
+#!/bin/env ruby
+
+require_relative '../lib/schematrix'
+require_relative '../lib/schematrix/cli'
+
+cli = Schematrix::CLI.new
+
+cli.parse
+cli.run

@@ -1,0 +1,31 @@
+---
+plugins:
+  - rubocop-performance  # Performance optimization analysis
+
+AllCops:
+  TargetRubyVersion: 3.1
+  StringLiteralsFrozenByDefault: true
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Max: 40
+
+Metrics/PerceivedComplexity:
+  Max: 40
+
+Metrics/AbcSize:
+  Max: 100
+
+Metrics/BlockLength:
+  Max: 100
+
+Metrics/MethodLength:
+  Max: 200
+
+Metrics/ModuleLength:
+  Max: 800
+
+Metrics/ClassLength:
+  Max: 800
