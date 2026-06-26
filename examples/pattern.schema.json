@@ -2,6 +2,7 @@
   "$id": "https://example.com/regex-pattern.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Regular Expression Pattern",
+  "description": "Object with an uppercase letter-digit code pattern",
   "type": "object",
   "properties": {
     "code": {

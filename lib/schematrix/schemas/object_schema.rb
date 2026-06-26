@@ -4,8 +4,8 @@ module Schematrix
   module Schemas
     # Schema class for objects
     class ObjectSchema < AbstractSchema
-      def initialize(type:, required:, enum:, default:)
-        super(type:, required:, enum:, default:)
+      def initialize(**kwargs)
+        super(**kwargs)
         @properties = {}
       end
 

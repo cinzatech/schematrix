@@ -29,6 +29,7 @@ module Schematrix
 
         code = <<~RUBY
           module #{@module_name}
+            #{class_documentation_comment(object)}
             class #{class_name}
               def initialize(
                 #{constructor_arguments(properties)}
@@ -54,10 +55,18 @@ module Schematrix
         pascal_case([@schema_title, path].join('/'))
       end
 
+      def class_documentation_comment(schema)
+        description = schema.description
+
+        return '' if description.nil?
+
+        "# #{description}"
+      end
+
       def constructor_arguments(properties)
         properties.map do |name, schema|
           next "#{name}: #{schema.default.inspect}" unless schema.default.nil?
-          next "#{name}: #{schema.default.inspect}" unless schema.required
+          next "#{name}: #{nil.inspect}" unless schema.required
 
           "#{name}:"
         end.join(', ')

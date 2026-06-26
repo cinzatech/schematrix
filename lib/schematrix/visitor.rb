@@ -36,6 +36,7 @@ module Schematrix
       enum = node['enum']
       items = node['items']
       default = node['default']
+      description = node['description']
 
       case type
       when TYPE_ARRAY
@@ -43,7 +44,7 @@ module Schematrix
       when TYPE_BOOLEAN, TYPE_INTEGER, TYPE_NULL, TYPE_NUMBER, TYPE_STRING
         Schemas::Schema.new(type:, required:, enum:, default:)
       when TYPE_OBJECT
-        object = Schemas::ObjectSchema.new(type:, required:, enum:, default:)
+        object = Schemas::ObjectSchema.new(type:, required:, enum:, default:, description:)
         @objects[@path.join('/')] = object
 
         properties&.each do |name, body|
@@ -55,6 +56,8 @@ module Schematrix
 
         object
       else
+        return Schemas::Schema.new(type:, required:, enum:, default:) unless enum.nil?
+
         raise "Unknown type #{type}" if @strict_mode
       end
     end

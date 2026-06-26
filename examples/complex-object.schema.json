@@ -2,6 +2,7 @@
   "$id": "https://example.com/complex-object.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Complex Object",
+  "description": "Person with name, age, address, and hobbies",
   "type": "object",
   "properties": {
     "name": {
@@ -28,7 +29,12 @@
           "pattern": "\\d{5}"
         }
       },
-      "required": ["street", "city", "state", "postalCode"]
+      "required": [
+        "street",
+        "city",
+        "state",
+        "postalCode"
+      ]
     },
     "hobbies": {
       "type": "array",
@@ -37,5 +43,8 @@
       }
     }
   },
-  "required": ["name", "age"]
+  "required": [
+    "name",
+    "age"
+  ]
 }
