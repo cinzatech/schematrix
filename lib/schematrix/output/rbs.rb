@@ -1,14 +1,11 @@
-require 'fileutils'
 require 'syntax_tree/rbs'
 
-require_relative 'ruby_helpers'
+require_relative 'base_generator'
 
 module Schematrix
   module Output
     # Outputs RBS type signatures matching a JSON Schema object
-    class Rbs
-      include RubyHelpers
-
+    class Rbs < BaseGenerator
       # Maps JSON Schema scalar types to their RBS equivalents
       RBS_SCALAR_TYPES = {
         TYPE_STRING => 'String',
@@ -18,51 +15,29 @@ module Schematrix
         TYPE_NULL => 'nil'
       }.freeze
 
-      def initialize(output_dir, module_name, schema_title, format: true)
-        @output_dir   = output_dir
-        @module_name  = module_name
-        @schema_title = schema_title
-        @format       = format
+      private
+
+      def template_name
+        'rbs.erb'
       end
 
-      def write(path, object)
-        code = transform(path, object)
-
-        filename  = "#{underscore(class_name_from_path(path))}.rbs"
-        file_path = File.join(@output_dir, filename)
-        FileUtils.mkdir_p(File.dirname(file_path))
-
-        File.write(file_path, code)
+      def file_extension
+        '.rbs'
       end
 
-      def transform(path, object)
-        class_name = class_name_from_path(path)
-
-        code = <<~RBS
-          module #{@module_name}
-            #{documentation_comment(object)}
-            class #{class_name}
-              #{attr_accessors(path, object)}
-
-              def initialize: (#{initialize_params(path, object.properties)}) -> void
-            end
-          end
-        RBS
-
+      def format_code(code)
         return SyntaxTree::RBS.format(code) if @format
 
         code
       end
 
-      private
-
-      def attr_accessors(path, schema)
-        schema.properties.map do |name, schema|
-          "attr_accessor #{underscore(name)}: #{rbs_type(path, name, schema)}"
+      def rbs_attr_accessors(path, schema)
+        schema.properties.map do |name, prop_schema|
+          "attr_accessor #{underscore(name)}: #{rbs_type(path, name, prop_schema)}"
         end.join("\n")
       end
 
-      def initialize_params(path, properties)
+      def rbs_initialize_params(path, properties)
         properties.map do |name, schema|
           snake = underscore(name)
           type  = rbs_type(path, name, schema)
@@ -122,14 +97,6 @@ module Schematrix
       def nested_class_ref(path, name)
         nested_path = [path, name].reject(&:empty?).join('/')
         class_name_from_path(nested_path)
-      end
-
-      def documentation_comment(schema)
-        description = schema.description
-
-        return '' if description.nil?
-
-        "# #{description}"
       end
     end
   end

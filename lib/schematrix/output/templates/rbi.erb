@@ -1,0 +1,15 @@
+# typed: strict
+
+module <%= @module_name %>
+  <%= documentation_comment(@object) %>
+  class <%= @class_name %>
+    sig { params(
+      <%= constructor_signature_params(@properties) %>
+    ).void }
+    def initialize(
+      <%= constructor_arguments(@properties) %>
+    ); end
+
+    <%= sorbet_attr_accessors(@properties) %>
+  end
+end

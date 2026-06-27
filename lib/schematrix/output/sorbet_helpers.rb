@@ -1,6 +1,6 @@
 module Schematrix
   module Output
-    # Maps JSON Schema scalar types to their RBS equivalents
+    # Maps JSON Schema scalar types to their Sorbet equivalents
     SORBET_SCALAR_TYPES = {
       TYPE_STRING => 'String',
       TYPE_INTEGER => 'Integer',
@@ -23,6 +23,25 @@ module Schematrix
         return base if schema.required
 
         "T.nilable(#{base})"
+      end
+
+      def constructor_signature_params(properties)
+        properties.map do |name, property|
+          "#{name}: #{sorbet_type(property)}"
+        end.join(', ')
+      end
+
+      def sorbet_attr_accessors(properties)
+        properties.map { |name, property| sorbet_attr_accessor(name, property) }.join("\n\n")
+      end
+
+      def sorbet_attr_accessor(name, property)
+        <<~RUBY
+          sig { returns(
+            #{sorbet_type(property)}
+          ) }
+          attr_accessor :#{name}
+        RUBY
       end
     end
   end

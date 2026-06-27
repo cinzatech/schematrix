@@ -1,0 +1,8 @@
+module <%= @module_name %>
+  <%= documentation_comment(@object) %>
+  class <%= @class_name %>
+    <%= rbs_attr_accessors(@path, @object) %>
+
+    def initialize: (<%= rbs_initialize_params(@path, @object.properties) %>) -> void
+  end
+end
