@@ -16,6 +16,17 @@ module Schematrix
       def file_extension
         '.rbi'
       end
+
+      def sorbet_attr_accessor(name, property)
+        type = sorbet_type(property)
+        <<~RUBY
+          sig { returns(#{type}) }
+          def #{name}; end
+
+          sig { params(#{name}: #{type}).void }
+          def #{name}=(#{name}); end
+        RUBY
+      end
     end
   end
 end

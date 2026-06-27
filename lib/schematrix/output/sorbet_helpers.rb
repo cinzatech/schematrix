@@ -37,12 +37,7 @@ module Schematrix
       end
 
       def sorbet_attr_accessor(name, property)
-        <<~RUBY
-          sig { returns(
-            #{sorbet_type(property)}
-          ) }
-          attr_accessor :#{name}
-        RUBY
+        raise NotImplementedError, "#{self.class} must implement #sorbet_attr_accessor"
       end
     end
   end

@@ -16,6 +16,15 @@ module Schematrix
       def template_name
         'sorbet_ruby.erb'
       end
+
+      def sorbet_attr_accessor(name, property)
+        <<~RUBY
+          sig { returns(
+            #{sorbet_type(property)}
+          ) }
+          attr_accessor :#{name}
+        RUBY
+      end
     end
   end
 end
