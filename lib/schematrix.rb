@@ -10,6 +10,13 @@ require_relative 'schematrix/output/rbi'
 module Schematrix
   VERSION = '0.1.0'
 
+  GENERATORS = {
+    'plain_ruby' => Output::PlainRuby,
+    'rbs' => Output::Rbs,
+    'sorbet_ruby' => Output::SorbetRuby,
+    'rbi' => Output::Rbi
+  }.freeze
+
   class << self
     attr_accessor :logger
   end
@@ -19,36 +26,14 @@ module Schematrix
     generators:,
     input_file:,
     module_name:,
-    output_dir:,
+    output_dirs:,
     strict_mode:
   )
     schema = Visitor.new(strict_mode:).compile(json)
     title = json['title']
 
-    instances = []
-    if generators.include?('plain_ruby')
-      instances.push Output::PlainRuby.new(
-        output_dir,
-        module_name,
-        title
-      )
-    end
-    if generators.include?('rbs')
-      instances.push Output::Rbs.new(
-        output_dir,
-        module_name,
-        title
-      )
-    end
-    if generators.include?('sorbet_ruby')
-      instances.push Output::SorbetRuby.new(
-        output_dir,
-        module_name,
-        title
-      )
-    end
-    if generators.include?('rbi')
-      instances.push Output::Rbi.new(
+    instances = output_dirs.zip(generators).map do |(output_dir, name)|
+      GENERATORS[name].new(
         output_dir,
         module_name,
         title

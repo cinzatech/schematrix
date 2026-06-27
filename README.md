@@ -75,6 +75,8 @@ module MyApp
 end
 ```
 
+> Note: YAML is supported as well for schema definitions
+
 ---
 
 ## CLI Reference
@@ -105,13 +107,19 @@ schematrix gen -g plain_ruby -m MyApp -o app/generated schema.json
 Process multiple schemas at once:
 
 ```sh
-schematrix gen -g plain_ruby -m Contracts user.schema.json order.schema.json
+schematrix gen -g rbs -m Contracts user.schema.json order.schema.json
 ```
 
 Or even:
 
 ```sh
 schematrix gen -g plain_ruby -m Contracts *.schema.json
+```
+
+You might specify different output directories for different generators like so:
+
+```sh
+schematrix gen -g plain_ruby -o generated -g rbi -o rbi *.schema.json
 ```
 
 ---

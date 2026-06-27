@@ -31,19 +31,19 @@ module Schematrix
       desc 'Output generators to use, i.e.: plain_ruby, rbs'
     end
 
+    option :output do
+      optional
+      arity zero_or_more
+      short '-o'
+      long '--output string'
+      desc 'Directory where the output will be written'
+    end
+
     option :module do
       required
       short '-m'
       long '--module string'
       desc 'Module where the output code will be placed'
-    end
-
-    option :output do
-      optional
-      short '-o'
-      long '--output string'
-      desc 'Directory where the output will be written'
-      default 'generated'
     end
 
     flag :strict do
@@ -76,18 +76,26 @@ module Schematrix
       if params[:help]
         print help
       elsif params.errors.any?
-        puts params.errors.summary
+        Schematrix.logger&.fatal params.errors.summary
         exit 1
       else
         Schematrix.logger&.debug "CLI arguments: \n", params.to_h.pretty_inspect
 
         input_files = Array(params[:input])
         module_name = params[:module]
-        output_dir = params[:output]
         strict_mode = params[:strict_mode]
         generators = Set.new(params[:generators])
         unknown = generators - Set['plain_ruby', 'rbs', 'sorbet_ruby', 'rbi']
         Schematrix.logger&.warn "Unknown generators: #{unknown.to_a.join(', ')}" unless unknown.empty?
+
+        output = Array(params[:output])
+        unless [0, 1, generators.size].include?(output.size)
+          Schematrix.logger&.fatal "The specified amount of output directories doesn't match the amount of generators"
+          exit 1
+        end
+        output << 'generated' if output.empty?
+        # If only one output dir specified, we use it for every generator
+        output_dirs = output.size == 1 ? Array.new(generators.size, output.first) : output
 
         input_files.each do |input_file|
           content = File.read(input_file)
@@ -97,7 +105,7 @@ module Schematrix
             generators:,
             input_file:,
             module_name:,
-            output_dir:,
+            output_dirs:,
             strict_mode:
           )
         end
