@@ -86,7 +86,7 @@ module Schematrix
         output_dir = params[:output]
         strict_mode = params[:strict_mode]
         generators = Set.new(params[:generators])
-        unknown = generators - Set['plain_ruby']
+        unknown = generators - Set['plain_ruby', 'rbs', 'sorbet_ruby', 'rbi']
         Schematrix.logger&.warn "Unknown generators: #{unknown.to_a.join(', ')}" unless unknown.empty?
 
         input_files.each do |input_file|

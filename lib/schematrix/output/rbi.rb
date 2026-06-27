@@ -6,8 +6,8 @@ require_relative 'sorbet_helpers'
 
 module Schematrix
   module Output
-    # Outputs a schema as a mutable Ruby class with inline Sorbet signatures
-    class SorbetRuby
+    # Outputs a schema as an RBI sorbet signature file
+    class Rbi
       include RubyHelpers
       include SorbetHelpers
 
@@ -21,7 +21,7 @@ module Schematrix
       def write(path, object)
         code = transform(path, object)
 
-        filename = "#{underscore(class_name_from_path(path))}.rb"
+        filename = "#{underscore(class_name_from_path(path))}.rbi"
         file_path = File.join(@output_dir, filename)
         FileUtils.mkdir_p(File.dirname(file_path))
 
@@ -43,9 +43,7 @@ module Schematrix
               ).void }
               def initialize(
                 #{constructor_arguments(properties)}
-              )
-                #{constructor_assignments(properties)}
-              end
+              ); end
 
               #{attr_accessors(properties)}
             end

@@ -9,3 +9,5 @@ group :development do
 end
 
 gem "tty-logger", "~> 0.6.0"
+
+gem "syntax_tree-rbs", "~> 1.0"

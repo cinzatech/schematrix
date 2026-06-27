@@ -13,13 +13,18 @@
     },
     "vegetables": {
       "type": "array",
-      "items": { "$ref": "#/$defs/veggie" }
+      "items": {
+        "$ref": "#/$defs/veggie"
+      }
     }
   },
   "$defs": {
     "veggie": {
       "type": "object",
-      "required": [ "veggieName", "veggieLike" ],
+      "required": [
+        "veggieName",
+        "veggieLike"
+      ],
       "properties": {
         "veggieName": {
           "type": "string",

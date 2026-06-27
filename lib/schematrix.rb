@@ -2,6 +2,9 @@ require 'tty-logger'
 
 require_relative 'schematrix/visitor'
 require_relative 'schematrix/output/plain_ruby'
+require_relative 'schematrix/output/rbs'
+require_relative 'schematrix/output/sorbet_ruby'
+require_relative 'schematrix/output/rbi'
 
 # Generates Ruby code and RBS signatures from JSON Schema definition
 module Schematrix
@@ -20,13 +23,35 @@ module Schematrix
     strict_mode:
   )
     schema = Visitor.new(strict_mode:).compile(json)
+    title = json['title']
 
     instances = []
     if generators.include?('plain_ruby')
       instances.push Output::PlainRuby.new(
         output_dir,
         module_name,
-        json['title']
+        title
+      )
+    end
+    if generators.include?('rbs')
+      instances.push Output::Rbs.new(
+        output_dir,
+        module_name,
+        title
+      )
+    end
+    if generators.include?('sorbet_ruby')
+      instances.push Output::SorbetRuby.new(
+        output_dir,
+        module_name,
+        title
+      )
+    end
+    if generators.include?('rbi')
+      instances.push Output::Rbi.new(
+        output_dir,
+        module_name,
+        title
       )
     end
 
