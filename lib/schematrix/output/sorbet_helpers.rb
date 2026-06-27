@@ -2,6 +2,7 @@ module Schematrix
   module Output
     # Maps JSON Schema scalar types to their Sorbet equivalents
     SORBET_SCALAR_TYPES = {
+      nil => 'T.anything',
       TYPE_STRING => 'String',
       TYPE_INTEGER => 'Integer',
       TYPE_NUMBER => 'Float',
@@ -20,7 +21,7 @@ module Schematrix
                  raise "Unknown type #{type}"
                end
 
-        return base if schema.required
+        return base if schema.required || base == 'T.anything'
 
         "T.nilable(#{base})"
       end
