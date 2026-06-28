@@ -1,0 +1,7 @@
+module M
+  class WriteOnly
+    attr_writer value: String?
+
+    def initialize: (?value: String?) -> void
+  end
+end

@@ -1,0 +1,16 @@
+{
+  "title": "AnyOfScalars",
+  "type": "object",
+  "properties": {
+    "value": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    }
+  }
+}

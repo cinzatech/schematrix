@@ -1,0 +1,33 @@
+{
+  "title": "Conditional",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string"
+    },
+    "value": {
+      "type": "string"
+    }
+  },
+  "if": {
+    "properties": {
+      "kind": {
+        "const": "premium"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "tier": {
+        "type": "integer"
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "reason": {
+        "type": "string"
+      }
+    }
+  }
+}

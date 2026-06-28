@@ -1,0 +1,7 @@
+module M
+  class ContentEnc
+    attr_accessor data: String?
+
+    def initialize: (?data: String?) -> void
+  end
+end

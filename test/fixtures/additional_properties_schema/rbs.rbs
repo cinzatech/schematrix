@@ -1,0 +1,7 @@
+module M
+  class MapLike
+    attr_accessor tags: Hash[String, String]?
+
+    def initialize: (?tags: Hash[String, String]?) -> void
+  end
+end

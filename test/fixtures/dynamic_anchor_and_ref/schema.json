@@ -1,0 +1,16 @@
+{
+  "title": "Recursive",
+  "type": "object",
+  "$dynamicAnchor": "node",
+  "properties": {
+    "value": {
+      "type": "string"
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "$dynamicRef": "#node"
+      }
+    }
+  }
+}

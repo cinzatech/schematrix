@@ -1,0 +1,7 @@
+module M
+  class TrueSchema
+    attr_accessor value: untyped?
+
+    def initialize: (?value: untyped?) -> void
+  end
+end

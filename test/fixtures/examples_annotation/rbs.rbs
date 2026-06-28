@@ -1,0 +1,7 @@
+module M
+  class ExamplesAnnotation
+    attr_accessor name: String?
+
+    def initialize: (?name: String?) -> void
+  end
+end

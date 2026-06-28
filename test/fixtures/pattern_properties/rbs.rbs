@@ -1,0 +1,7 @@
+module M
+  class PatternProps
+    attr_accessor config: Hash[String, String]?
+
+    def initialize: (?config: Hash[String, String]?) -> void
+  end
+end

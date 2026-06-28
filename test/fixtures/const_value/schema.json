@@ -1,0 +1,9 @@
+{
+  "title": "ConstValue",
+  "type": "object",
+  "properties": {
+    "status": {
+      "const": "active"
+    }
+  }
+}

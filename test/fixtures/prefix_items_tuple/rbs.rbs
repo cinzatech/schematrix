@@ -1,0 +1,7 @@
+module M
+  class Tuple
+    attr_accessor point: Array[Float]?
+
+    def initialize: (?point: Array[Float]?) -> void
+  end
+end

@@ -1,0 +1,7 @@
+module M
+  class CommentIgnored
+    attr_accessor value: String?
+
+    def initialize: (?value: String?) -> void
+  end
+end

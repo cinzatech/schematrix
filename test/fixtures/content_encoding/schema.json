@@ -1,0 +1,11 @@
+{
+  "title": "ContentEnc",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "contentMediaType": "image/png"
+    }
+  }
+}

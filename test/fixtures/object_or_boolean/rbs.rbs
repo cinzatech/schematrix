@@ -1,0 +1,7 @@
+module M
+  class ObjOrBool
+    attr_accessor meta: untyped?
+
+    def initialize: (?meta: untyped?) -> void
+  end
+end

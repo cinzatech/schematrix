@@ -1,0 +1,10 @@
+{
+  "title": "Deprecated",
+  "type": "object",
+  "properties": {
+    "value": {
+      "type": "string",
+      "deprecated": true
+    }
+  }
+}

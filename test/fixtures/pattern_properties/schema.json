@@ -1,0 +1,14 @@
+{
+  "title": "PatternProps",
+  "type": "object",
+  "properties": {
+    "config": {
+      "type": "object",
+      "patternProperties": {
+        "^x-": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+module M
+  class FormatAnnotation
+    attr_accessor email: String?
+
+    def initialize: (?email: String?) -> void
+  end
+end

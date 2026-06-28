@@ -1,0 +1,7 @@
+module M
+  class ReadOnly
+    attr_reader value: String?
+
+    def initialize: (?value: String?) -> void
+  end
+end

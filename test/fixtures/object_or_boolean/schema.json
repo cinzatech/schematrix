@@ -1,0 +1,12 @@
+{
+  "title": "ObjOrBool",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "type": [
+        "object",
+        "boolean"
+      ]
+    }
+  }
+}

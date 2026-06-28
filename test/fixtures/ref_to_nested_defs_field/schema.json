@@ -1,0 +1,17 @@
+{
+  "title": "RefArray",
+  "type": "object",
+  "properties": {
+    "items": {
+      "$ref": "#/$defs/stringArray"
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+module M
+  class DepSchemas
+    attr_accessor name: String?
+    attr_accessor credit_card: String?
+    attr_accessor billing_address: String?
+
+    def initialize: (?name: String?, ?credit_card: String?, ?billing_address: String?) -> void
+  end
+end

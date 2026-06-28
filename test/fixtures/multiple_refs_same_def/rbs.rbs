@@ -1,0 +1,8 @@
+module M
+  class MultiRef
+    attr_accessor home: MultiRef::Address?
+    attr_accessor work: MultiRef::Address?
+
+    def initialize: (?home: MultiRef::Address?, ?work: MultiRef::Address?) -> void
+  end
+end

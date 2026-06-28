@@ -1,0 +1,8 @@
+module M
+  class Deprecated
+    # @deprecated
+    attr_accessor value: String?
+
+    def initialize: (?value: String?) -> void
+  end
+end

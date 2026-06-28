@@ -1,0 +1,22 @@
+{
+  "title": "MultiRef",
+  "type": "object",
+  "properties": {
+    "home": {
+      "$ref": "#/$defs/Address"
+    },
+    "work": {
+      "$ref": "#/$defs/Address"
+    }
+  },
+  "$defs": {
+    "Address": {
+      "type": "object",
+      "properties": {
+        "city": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

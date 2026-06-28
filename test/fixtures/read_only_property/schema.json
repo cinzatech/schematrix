@@ -1,0 +1,10 @@
+{
+  "title": "ReadOnly",
+  "type": "object",
+  "properties": {
+    "value": {
+      "type": "string",
+      "readOnly": true
+    }
+  }
+}

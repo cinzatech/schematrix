@@ -1,0 +1,10 @@
+module M
+  class Conditional
+    attr_accessor kind: String?
+    attr_accessor value: String?
+    attr_accessor tier: Integer?
+    attr_accessor reason: String?
+
+    def initialize: (?kind: String?, ?value: String?, ?tier: Integer?, ?reason: String?) -> void
+  end
+end

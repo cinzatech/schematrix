@@ -1,0 +1,7 @@
+module M
+  class AnyOfScalars
+    attr_accessor value: (String | Integer)?
+
+    def initialize: (?value: (String | Integer)?) -> void
+  end
+end

@@ -1,0 +1,17 @@
+{
+  "title": "TupleRest",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "string"
+        }
+      ],
+      "items": {
+        "type": "integer"
+      }
+    }
+  }
+}

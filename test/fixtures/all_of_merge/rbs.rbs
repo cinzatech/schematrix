@@ -1,0 +1,8 @@
+module M
+  class AllOfMerge
+    attr_accessor name: String
+    attr_accessor age: Integer?
+
+    def initialize: (name: String, ?age: Integer?) -> void
+  end
+end

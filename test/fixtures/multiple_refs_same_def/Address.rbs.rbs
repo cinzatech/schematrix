@@ -1,0 +1,7 @@
+module M
+  class MultiRef::Address
+    attr_accessor city: String?
+
+    def initialize: (?city: String?) -> void
+  end
+end

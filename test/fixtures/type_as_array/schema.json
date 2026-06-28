@@ -1,0 +1,12 @@
+{
+  "title": "TypeUnion",
+  "type": "object",
+  "properties": {
+    "value": {
+      "type": [
+        "string",
+        "integer"
+      ]
+    }
+  }
+}

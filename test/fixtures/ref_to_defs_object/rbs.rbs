@@ -1,0 +1,7 @@
+module M
+  class RefObj
+    attr_accessor address: RefObj::Address?
+
+    def initialize: (?address: RefObj::Address?) -> void
+  end
+end

@@ -1,0 +1,7 @@
+module M
+  class RefSibling
+    attr_accessor anchor: String?
+
+    def initialize: (?anchor: String?) -> void
+  end
+end

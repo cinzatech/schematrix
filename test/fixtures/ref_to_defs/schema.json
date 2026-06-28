@@ -1,0 +1,14 @@
+{
+  "title": "RefScalar",
+  "type": "object",
+  "properties": {
+    "name": {
+      "$ref": "#/$defs/nameType"
+    }
+  },
+  "$defs": {
+    "nameType": {
+      "type": "string"
+    }
+  }
+}

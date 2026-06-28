@@ -1,0 +1,21 @@
+{
+  "title": "DepSchemas",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "credit_card": {
+      "type": "string"
+    }
+  },
+  "dependentSchemas": {
+    "credit_card": {
+      "properties": {
+        "billing_address": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

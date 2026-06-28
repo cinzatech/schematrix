@@ -1,0 +1,26 @@
+{
+  "title": "AnyOfRef",
+  "type": "object",
+  "properties": {
+    "value": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Named"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "Named": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

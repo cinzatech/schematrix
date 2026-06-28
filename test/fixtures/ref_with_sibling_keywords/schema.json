@@ -1,0 +1,16 @@
+{
+  "title": "RefSibling",
+  "type": "object",
+  "properties": {
+    "anchor": {
+      "$ref": "#/$defs/anchorString",
+      "default": "myAnchor"
+    }
+  },
+  "$defs": {
+    "anchorString": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][-A-Za-z0-9._]*$"
+    }
+  }
+}

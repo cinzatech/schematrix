@@ -1,0 +1,12 @@
+{
+  "title": "NullableType",
+  "type": "object",
+  "properties": {
+    "value": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

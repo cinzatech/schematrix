@@ -1,0 +1,12 @@
+{
+  "title": "MapLike",
+  "type": "object",
+  "properties": {
+    "tags": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}

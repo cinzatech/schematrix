@@ -1,0 +1,19 @@
+{
+  "title": "RefObj",
+  "type": "object",
+  "properties": {
+    "address": {
+      "$ref": "#/$defs/Address"
+    }
+  },
+  "$defs": {
+    "Address": {
+      "type": "object",
+      "properties": {
+        "city": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

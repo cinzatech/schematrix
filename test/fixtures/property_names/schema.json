@@ -1,0 +1,15 @@
+{
+  "title": "PropNames",
+  "type": "object",
+  "properties": {
+    "vocab": {
+      "type": "object",
+      "propertyNames": {
+        "format": "uri"
+      },
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    }
+  }
+}

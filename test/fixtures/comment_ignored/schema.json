@@ -1,0 +1,10 @@
+{
+  "title": "CommentIgnored",
+  "type": "object",
+  "properties": {
+    "value": {
+      "type": "string",
+      "$comment": "This is an internal note"
+    }
+  }
+}
