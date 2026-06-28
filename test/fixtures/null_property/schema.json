@@ -1,0 +1,9 @@
+{
+  "title": "NullProp",
+  "type": "object",
+  "properties": {
+    "value": {
+      "type": "null"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+module M
+  class StringConstrained
+    attr_accessor code: String?
+
+    def initialize: (?code: String?) -> void
+  end
+end

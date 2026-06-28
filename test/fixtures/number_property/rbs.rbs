@@ -1,0 +1,7 @@
+module M
+  class NumberProp
+    attr_accessor value: Float?
+
+    def initialize: (?value: Float?) -> void
+  end
+end

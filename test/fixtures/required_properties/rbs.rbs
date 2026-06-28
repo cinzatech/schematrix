@@ -1,0 +1,9 @@
+module M
+  class Required
+    attr_accessor name: String
+    attr_accessor email: String
+    attr_accessor age: Integer?
+
+    def initialize: (name: String, email: String, ?age: Integer?) -> void
+  end
+end

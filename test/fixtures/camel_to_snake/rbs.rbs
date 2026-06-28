@@ -1,0 +1,8 @@
+module M
+  class CamelCase
+    attr_accessor first_name: String?
+    attr_accessor last_name: String?
+
+    def initialize: (?first_name: String?, ?last_name: String?) -> void
+  end
+end

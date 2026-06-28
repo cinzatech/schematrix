@@ -1,0 +1,7 @@
+module M
+  class NumConstrained
+    attr_accessor score: Float?
+
+    def initialize: (?score: Float?) -> void
+  end
+end

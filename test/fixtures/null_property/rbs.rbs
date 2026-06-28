@@ -1,0 +1,7 @@
+module M
+  class NullProp
+    attr_accessor value: nil?
+
+    def initialize: (?value: nil?) -> void
+  end
+end

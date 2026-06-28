@@ -1,0 +1,12 @@
+{
+  "title": "IntArray",
+  "type": "object",
+  "properties": {
+    "scores": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    }
+  }
+}

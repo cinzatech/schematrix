@@ -1,0 +1,10 @@
+module M
+  class CamelCase
+    def initialize(first_name: nil, last_name: nil)
+      @first_name = first_name
+      @last_name = last_name
+    end
+
+    attr_accessor :first_name, :last_name
+  end
+end

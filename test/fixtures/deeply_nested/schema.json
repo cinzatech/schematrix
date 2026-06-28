@@ -1,0 +1,19 @@
+{
+  "title": "Deep",
+  "type": "object",
+  "properties": {
+    "l1": {
+      "type": "object",
+      "properties": {
+        "l2": {
+          "type": "object",
+          "properties": {
+            "val": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

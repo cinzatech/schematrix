@@ -1,0 +1,7 @@
+module M
+  class TypedEnum
+    attr_accessor status: String?
+
+    def initialize: (?status: String?) -> void
+  end
+end

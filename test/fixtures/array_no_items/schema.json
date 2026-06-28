@@ -1,0 +1,9 @@
+{
+  "title": "UntypedArray",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array"
+    }
+  }
+}

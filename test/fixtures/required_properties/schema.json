@@ -1,0 +1,19 @@
+{
+  "title": "Required",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "age": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "name",
+    "email"
+  ]
+}

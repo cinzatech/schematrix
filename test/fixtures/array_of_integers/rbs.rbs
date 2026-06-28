@@ -1,0 +1,7 @@
+module M
+  class IntArray
+    attr_accessor scores: Array[Integer]?
+
+    def initialize: (?scores: Array[Integer]?) -> void
+  end
+end

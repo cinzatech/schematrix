@@ -1,0 +1,7 @@
+module M
+  class ObjArray
+    attr_accessor entries: Array[untyped]?
+
+    def initialize: (?entries: Array[untyped]?) -> void
+  end
+end

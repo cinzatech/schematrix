@@ -1,0 +1,7 @@
+module M
+  class Deep::L1::L2
+    attr_accessor val: String?
+
+    def initialize: (?val: String?) -> void
+  end
+end

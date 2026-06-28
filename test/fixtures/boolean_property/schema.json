@@ -1,0 +1,9 @@
+{
+  "title": "BooleanProp",
+  "type": "object",
+  "properties": {
+    "value": {
+      "type": "boolean"
+    }
+  }
+}

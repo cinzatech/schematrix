@@ -1,0 +1,7 @@
+module M
+  class Parent
+    attr_accessor child: Parent::Child?
+
+    def initialize: (?child: Parent::Child?) -> void
+  end
+end

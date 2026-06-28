@@ -1,0 +1,13 @@
+{
+  "title": "UntypedEnum",
+  "type": "object",
+  "properties": {
+    "data": {
+      "enum": [
+        42,
+        true,
+        "hello"
+      ]
+    }
+  }
+}

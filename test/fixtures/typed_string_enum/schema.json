@@ -1,0 +1,13 @@
+{
+  "title": "TypedEnum",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ]
+    }
+  }
+}

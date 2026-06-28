@@ -1,0 +1,13 @@
+{
+  "title": "NumConstrained",
+  "type": "object",
+  "properties": {
+    "score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "exclusiveMinimum": 0,
+      "multipleOf": 0.5
+    }
+  }
+}

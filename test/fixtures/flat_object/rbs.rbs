@@ -1,0 +1,9 @@
+module M
+  class FlatObject
+    attr_accessor name: String?
+    attr_accessor age: Integer?
+    attr_accessor active: bool?
+
+    def initialize: (?name: String?, ?age: Integer?, ?active: bool?) -> void
+  end
+end

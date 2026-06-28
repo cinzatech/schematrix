@@ -1,0 +1,7 @@
+module M
+  class IntegerProp
+    attr_accessor value: Integer?
+
+    def initialize: (?value: Integer?) -> void
+  end
+end

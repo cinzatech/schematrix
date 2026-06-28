@@ -1,0 +1,7 @@
+module M
+  class BooleanProp
+    attr_accessor value: bool?
+
+    def initialize: (?value: bool?) -> void
+  end
+end

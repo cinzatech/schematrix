@@ -1,0 +1,8 @@
+module M
+  # A described object
+  class Described
+    attr_accessor name: String?
+
+    def initialize: (?name: String?) -> void
+  end
+end

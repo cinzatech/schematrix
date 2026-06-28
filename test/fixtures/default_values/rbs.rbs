@@ -1,0 +1,8 @@
+module M
+  class Defaults
+    attr_accessor color: String?
+    attr_accessor count: Integer?
+
+    def initialize: (?color: String?, ?count: Integer?) -> void
+  end
+end

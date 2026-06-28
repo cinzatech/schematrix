@@ -1,0 +1,10 @@
+{
+  "title": "Described",
+  "type": "object",
+  "description": "A described object",
+  "properties": {
+    "name": {
+      "type": "string"
+    }
+  }
+}

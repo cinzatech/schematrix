@@ -1,0 +1,14 @@
+{
+  "title": "Defaults",
+  "type": "object",
+  "properties": {
+    "color": {
+      "type": "string",
+      "default": "blue"
+    },
+    "count": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

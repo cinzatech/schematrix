@@ -1,0 +1,7 @@
+module M
+  class UntypedArray
+    attr_accessor data: Array[untyped]?
+
+    def initialize: (?data: Array[untyped]?) -> void
+  end
+end

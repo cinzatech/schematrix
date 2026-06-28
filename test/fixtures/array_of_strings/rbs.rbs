@@ -1,0 +1,7 @@
+module M
+  class StringArray
+    attr_accessor tags: Array[String]?
+
+    def initialize: (?tags: Array[String]?) -> void
+  end
+end

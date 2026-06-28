@@ -1,0 +1,9 @@
+{
+  "title": "StringProp",
+  "type": "object",
+  "properties": {
+    "value": {
+      "type": "string"
+    }
+  }
+}

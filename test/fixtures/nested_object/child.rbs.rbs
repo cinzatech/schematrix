@@ -1,0 +1,7 @@
+module M
+  class Parent::Child
+    attr_accessor value: String?
+
+    def initialize: (?value: String?) -> void
+  end
+end
