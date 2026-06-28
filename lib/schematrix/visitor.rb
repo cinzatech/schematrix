@@ -29,7 +29,7 @@ module Schematrix
 
     private
 
-    def visit_schema(node, required:)
+    def visit_schema(node, required: true)
       required_properties = Set.new(node['required'])
       properties = node['properties']
       type = node['type']
@@ -44,7 +44,16 @@ module Schematrix
       when TYPE_BOOLEAN, TYPE_INTEGER, TYPE_NULL, TYPE_NUMBER, TYPE_STRING
         Schemas::Schema.new(type:, required:, enum:, default:)
       when TYPE_OBJECT
-        object = Schemas::ObjectSchema.new(type:, required:, enum:, default:, description:)
+        additional_properties = visit_additional_properties(node)
+
+        object = Schemas::ObjectSchema.new(
+          additional_properties:,
+          default:,
+          description:,
+          enum:,
+          required:,
+          type:
+        )
         @objects[@path.join('/')] = object
 
         properties&.each do |name, body|
@@ -60,6 +69,17 @@ module Schematrix
 
         raise "Unknown type #{type}" if @strict_mode
       end
+    end
+
+    def visit_additional_properties(node)
+      additional_properties = node['additionalProperties']
+      return nil if additional_properties.nil?
+
+      @path.push('additionalProperties')
+      schema = visit_schema(additional_properties) unless additional_properties.nil?
+      @path.pop
+
+      schema
     end
   end
 end

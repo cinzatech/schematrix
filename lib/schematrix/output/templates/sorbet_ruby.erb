@@ -10,8 +10,23 @@ module <%= @module_name %>
       <%= constructor_arguments(@properties) %>
     )
       <%= constructor_assignments(@properties) %>
+      <% unless @additional_properties.nil? %>
+      @_extra = T.let({}, T::Hash[Symbol, <%= sorbet_type(@additional_properties) %>])
+      <% end %>
     end
 
     <%= sorbet_attr_accessors(@properties) %>
+    <% unless @additional_properties.nil? %>
+
+    sig { params(key: Symbol).returns(<%= sorbet_type(@additional_properties) %>) }
+    def [](key)
+      @_extra[key]
+    end
+
+    sig { params(key: Symbol, value: <%= %>).returns(<%= sorbet_type(@additional_properties) %>) }
+    def []=(key, value)
+      @_extra[key] = value
+    end
+    <% end %>
   end
 end

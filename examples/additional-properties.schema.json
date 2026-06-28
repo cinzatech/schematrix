@@ -1,0 +1,17 @@
+{
+  "title": "Additional",
+  "type": "object",
+  "properties": {
+    "tags": {
+      "type": "object",
+      "properties": {
+        "test": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}

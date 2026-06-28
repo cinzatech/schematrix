@@ -5,8 +5,21 @@ module <%= @module_name %>
       <%= constructor_arguments(@properties) %>
     )
       <%= constructor_assignments(@properties) %>
+      <% unless @additional_properties.nil? %>
+      @_extra = {}
+      <% end %>
     end
 
     attr_accessor <%= plain_attr_accessor_list(@properties) %>
+    <% unless @additional_properties.nil? %>
+
+    def [](key)
+      @_extra[key]
+    end
+
+    def []=(key, value)
+      @_extra[key] = value
+    end
+    <% end %>
   end
 end

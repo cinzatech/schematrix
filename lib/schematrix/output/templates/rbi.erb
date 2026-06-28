@@ -11,5 +11,13 @@ module <%= @module_name %>
     ); end
 
     <%= sorbet_attr_accessors(@properties) %>
+    <% unless @additional_properties.nil? %>
+
+    sig { params(key: Symbol).returns(<%= sorbet_type(@additional_properties) %>) }
+    def [](key); end
+
+    sig { params(key: Symbol, value: <%= %>).returns(<%= sorbet_type(@additional_properties) %>) }
+    def []=(key, value); end
+    <% end %>
   end
 end

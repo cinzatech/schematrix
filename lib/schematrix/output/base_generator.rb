@@ -41,7 +41,10 @@ module Schematrix
         @path = path
         @object = object
         @class_name = class_name_from_path(path)
-        @properties = object.properties.transform_keys { |key| underscore(key) }
+        @properties = object.properties.transform_keys do |key|
+          underscore(key)
+        end
+        @additional_properties = object.additional_properties
       end
 
       def render_template
