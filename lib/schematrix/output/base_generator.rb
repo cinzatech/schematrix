@@ -56,6 +56,7 @@ module Schematrix
           underscore(key)
         end
         @additional_properties = object.additional_properties
+        @documentation_comment = documentation_comment(object)
       end
 
       def render_template

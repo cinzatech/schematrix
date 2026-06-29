@@ -1,9 +1,9 @@
 module <%= @module_name %>
-  <%= documentation_comment(@object) %>
+  <%= @documentation_comment %>
   class <%= @class_name %>
     <%= rbs_attr_accessors(@path, @object) %>
 
-    def initialize: (<%= rbs_initialize_params(@path, @object.properties) %>) -> void
+    def initialize: (<%= rbs_initialize_params(@path, @properties) %>) -> void
     <% unless @additional_properties.nil? %>
 
     def []: (Symbol) -> <%= additional_properties_type(@path, @additional_properties) %>

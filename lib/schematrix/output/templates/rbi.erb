@@ -1,7 +1,7 @@
 # typed: strict
 
 module <%= @module_name %>
-  <%= documentation_comment(@object) %>
+  <%= @documentation_comment %>
   class <%= @class_name %>
     sig { params(
       <%= constructor_signature_params(@path, @properties) %>

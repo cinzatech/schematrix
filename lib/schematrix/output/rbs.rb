@@ -39,9 +39,8 @@ module Schematrix
 
       def rbs_initialize_params(path, properties)
         properties.map do |name, schema|
-          snake = underscore(name)
-          type  = rbs_type(path, name, schema)
-          strictly_required?(schema) ? "#{snake}: #{type}" : "?#{snake}: #{type}"
+          type = rbs_type(path, name, schema)
+          strictly_required?(schema) ? "#{name}: #{type}" : "?#{name}: #{type}"
         end.join(', ')
       end
 
