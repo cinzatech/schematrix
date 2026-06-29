@@ -61,6 +61,10 @@ module Schematrix
         strictly_required?(schema) ? base : "#{base}?"
       end
 
+      def additional_properties_type(path, schema)
+        rbs_type(path, 'additional_properties', schema)
+      end
+
       # A property is strictly required when it is marked required in the schema
       # AND has no default value. Properties with defaults are optional in the
       # constructor (the PlainRuby generator fills them in), so the RBS
@@ -89,14 +93,6 @@ module Schematrix
 
         item_type = RBS_SCALAR_TYPES.fetch(items['type'], 'untyped')
         "Array[#{item_type}]"
-      end
-
-      # For a nested object property the class is generated in a separate file,
-      # so we reference it by its derived class name (relative to the enclosing
-      # module, which is valid RBS).
-      def nested_class_ref(path, name)
-        nested_path = [path, name].reject(&:empty?).join('/')
-        class_name_from_path(nested_path)
       end
     end
   end

@@ -17,8 +17,8 @@ module Schematrix
         '.rbi'
       end
 
-      def sorbet_attr_accessor(name, property)
-        type = sorbet_type(property)
+      def sorbet_attr_accessor(path, name, property)
+        type = sorbet_type(path, name, property)
         <<~RUBY
           sig { returns(#{type}) }
           def #{name}; end

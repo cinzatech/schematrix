@@ -1,0 +1,9 @@
+module M
+  class MapLike::Tags
+    def initialize: -> void
+
+    def []: (Symbol) -> String
+
+    def []=: (Symbol, String) -> String
+  end
+end

@@ -4,18 +4,22 @@ class TestAdvancedObjects < Minitest::Test
   include SchematrixTestHelper
   def test_additional_properties_schema_plain_ruby
     assert_fixture('additional_properties_schema', 'plain_ruby')
+    assert_fixture('additional_properties_schema', 'plain_ruby', path: 'tags')
   end
 
   def test_additional_properties_schema_rbs
     assert_fixture('additional_properties_schema', 'rbs')
+    assert_fixture('additional_properties_schema', 'rbs', path: 'tags')
   end
 
   def test_additional_properties_schema_sorbet_ruby
     assert_fixture('additional_properties_schema', 'sorbet_ruby')
+    assert_fixture('additional_properties_schema', 'sorbet_ruby', path: 'tags')
   end
 
   def test_additional_properties_schema_rbi
     assert_fixture('additional_properties_schema', 'rbi')
+    assert_fixture('additional_properties_schema', 'rbi', path: 'tags')
   end
 
   def test_pattern_properties_plain_ruby

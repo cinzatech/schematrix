@@ -66,29 +66,6 @@ module Schematrix
 
         code
       end
-
-      def documentation_comment(schema)
-        description = schema.description
-
-        return '' if description.nil?
-
-        "# #{description}"
-      end
-
-      def constructor_arguments(properties)
-        properties.map do |name, schema|
-          next "#{name}: #{schema.default.inspect}" unless schema.default.nil?
-          next "#{name}: #{nil.inspect}" unless schema.required
-
-          "#{name}:"
-        end.join(', ')
-      end
-
-      def constructor_assignments(properties)
-        properties.map do |name, _schema|
-          "@#{name} = #{name}"
-        end.join("\n")
-      end
     end
   end
 end

@@ -10,7 +10,18 @@
         }
       },
       "additionalProperties": {
-        "type": "string"
+        "type": "object",
+        "properties": {
+          "foo": {
+            "type": "boolean"
+          },
+          "bar": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "foo"
+        ]
       }
     }
   }

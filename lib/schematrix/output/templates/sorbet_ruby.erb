@@ -4,26 +4,26 @@ module <%= @module_name %>
   <%= documentation_comment(@object) %>
   class <%= @class_name %>
     sig { params(
-      <%= constructor_signature_params(@properties) %>
+      <%= constructor_signature_params(@path, @properties) %>
     ).void }
     def initialize(
       <%= constructor_arguments(@properties) %>
     )
       <%= constructor_assignments(@properties) %>
       <% unless @additional_properties.nil? %>
-      @_extra = T.let({}, T::Hash[Symbol, <%= sorbet_type(@additional_properties) %>])
+      @_extra = T.let({}, T::Hash[Symbol, <%= additional_properties_type(@path, @additional_properties) %>])
       <% end %>
     end
 
-    <%= sorbet_attr_accessors(@properties) %>
+    <%= sorbet_attr_accessors(@path, @properties) %>
     <% unless @additional_properties.nil? %>
 
-    sig { params(key: Symbol).returns(<%= sorbet_type(@additional_properties) %>) }
+    sig { params(key: Symbol).returns(<%= additional_properties_type(@path, @additional_properties) %>) }
     def [](key)
       @_extra[key]
     end
 
-    sig { params(key: Symbol, value: <%= %>).returns(<%= sorbet_type(@additional_properties) %>) }
+    sig { params(key: Symbol, value: <%= %>).returns(<%= additional_properties_type(@path, @additional_properties) %>) }
     def []=(key, value)
       @_extra[key] = value
     end

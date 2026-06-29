@@ -12,9 +12,9 @@ module Schematrix
 
     # Common functions for producing Sorbet output
     module SorbetHelpers
-      def sorbet_type(schema)
+      def sorbet_type(path, name, schema)
         base = case schema
-               when Schemas::ObjectSchema then 'T.anything'
+               when Schemas::ObjectSchema then nested_class_ref(path, name)
                when Schemas::ArraySchema  then 'T.anything'
                when Schemas::Schema       then SORBET_SCALAR_TYPES[schema.type]
                else
@@ -26,17 +26,21 @@ module Schematrix
         "T.nilable(#{base})"
       end
 
-      def constructor_signature_params(properties)
+      def additional_properties_type(path, schema)
+        sorbet_type(path, 'additional_properties', schema)
+      end
+
+      def constructor_signature_params(path, properties)
         properties.map do |name, property|
-          "#{name}: #{sorbet_type(property)}"
+          "#{name}: #{sorbet_type(path, name, property)}"
         end.join(', ')
       end
 
-      def sorbet_attr_accessors(properties)
-        properties.map { |name, property| sorbet_attr_accessor(name, property) }.join("\n\n")
+      def sorbet_attr_accessors(path, properties)
+        properties.map { |name, property| sorbet_attr_accessor(path, name, property) }.join("\n\n")
       end
 
-      def sorbet_attr_accessor(name, property)
+      def sorbet_attr_accessor(path, name, property)
         raise NotImplementedError, "#{self.class} must implement #sorbet_attr_accessor"
       end
     end

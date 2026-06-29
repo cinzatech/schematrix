@@ -17,10 +17,10 @@ module Schematrix
         'sorbet_ruby.erb'
       end
 
-      def sorbet_attr_accessor(name, property)
+      def sorbet_attr_accessor(path, name, property)
         <<~RUBY
           sig { returns(
-            #{sorbet_type(property)}
+            #{sorbet_type(path, name, property)}
           ) }
           attr_accessor :#{name}
         RUBY
