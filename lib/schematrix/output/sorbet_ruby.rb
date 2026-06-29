@@ -7,14 +7,14 @@ module Schematrix
     class SorbetRuby < BaseGenerator
       include SorbetHelpers
 
+      def self.template_name
+        'sorbet_ruby.erb'
+      end
+
       private
 
       def file_extension
         '.rb'
-      end
-
-      def template_name
-        'sorbet_ruby.erb'
       end
 
       def sorbet_attr_accessor(path, name, property)

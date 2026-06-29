@@ -4,14 +4,14 @@ module Schematrix
   module Output
     # Outputs a schema as a plain, mutable Ruby class
     class PlainRuby < BaseGenerator
+      def self.template_name
+        'plain_ruby.erb'
+      end
+
       private
 
       def file_extension
         '.rb'
-      end
-
-      def template_name
-        'plain_ruby.erb'
       end
 
       def plain_attr_accessor_list(properties)

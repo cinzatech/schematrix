@@ -7,11 +7,11 @@ module Schematrix
     class Rbi < BaseGenerator
       include SorbetHelpers
 
-      private
-
-      def template_name
+      def self.template_name
         'rbi.erb'
       end
+
+      private
 
       def file_extension
         '.rbi'

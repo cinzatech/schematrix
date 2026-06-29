@@ -15,11 +15,11 @@ module Schematrix
         TYPE_NULL => 'nil'
       }.freeze
 
-      private
-
-      def template_name
+      def self.template_name
         'rbs.erb'
       end
+
+      private
 
       def file_extension
         '.rbs'

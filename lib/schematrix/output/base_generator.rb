@@ -35,6 +35,17 @@ module Schematrix
         format_code(code)
       end
 
+      def self.template
+        @template ||= begin
+          template_file = File.join(File.dirname(__FILE__), 'templates', template_name)
+          ERB.new(File.read(template_file), trim_mode: '-')
+        end
+      end
+
+      def self.template_name
+        raise NotImplementedError, "#{self.class} must implement #template_name"
+      end
+
       private
 
       def setup_template_vars(path, object)
@@ -48,13 +59,7 @@ module Schematrix
       end
 
       def render_template
-        template_file = File.join(File.dirname(__FILE__), 'templates', template_name)
-        template = ERB.new(File.read(template_file), trim_mode: '-')
-        template.result(binding)
-      end
-
-      def template_name
-        raise NotImplementedError, "#{self.class} must implement #template_name"
+        self.class.template.result(binding)
       end
 
       def file_extension
