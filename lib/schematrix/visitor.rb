@@ -34,17 +34,17 @@ module Schematrix
       properties = node['properties']
       type = node['type']
       enum = node['enum']
-      items = node['items']
       default = node['default']
       description = node['description']
 
       case type
       when TYPE_ARRAY
+        items = visit_subtree('items', node)
         Schemas::ArraySchema.new(type:, items:, required:, enum:, default:)
       when TYPE_BOOLEAN, TYPE_INTEGER, TYPE_NULL, TYPE_NUMBER, TYPE_STRING
         Schemas::Schema.new(type:, required:, enum:, default:)
       when TYPE_OBJECT
-        additional_properties = visit_additional_properties(node)
+        additional_properties = visit_subtree('additionalProperties', node)
 
         object = Schemas::ObjectSchema.new(
           additional_properties:,
@@ -71,12 +71,15 @@ module Schematrix
       end
     end
 
-    def visit_additional_properties(node)
-      additional_properties = node['additionalProperties']
-      return nil if additional_properties.nil?
+    # Visit subtrees other than properties, like items or additionalProperties,
+    # that contain nested schema definition. It will store object definitions on
+    # a nested path by the name of the branch being visited.
+    def visit_subtree(branch_name, node)
+      branch = node[branch_name]
+      return nil if branch.nil?
 
-      @path.push('additionalProperties')
-      schema = visit_schema(additional_properties) unless additional_properties.nil?
+      @path.push(branch_name)
+      schema = visit_schema(branch)
       @path.pop
 
       schema

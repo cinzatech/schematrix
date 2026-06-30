@@ -5,8 +5,11 @@ module Schematrix
     module Templates
       # RBS template class
       class Rbs < Base
+        RBS_TYPE_UNTYPED = 'untyped'
+
         # Maps JSON Schema scalar types to their RBS equivalents
         RBS_SCALAR_TYPES = {
+          nil => RBS_TYPE_UNTYPED,
           TYPE_STRING => 'String',
           TYPE_INTEGER => 'Integer',
           TYPE_NUMBER => 'Float',
@@ -37,9 +40,9 @@ module Schematrix
         def rbs_type(path, name, schema)
           base = case schema
                  when Schemas::ObjectSchema then class_name_from_path(path, name)
-                 when Schemas::ArraySchema  then array_rbs_type(schema.items)
+                 when Schemas::ArraySchema  then "Array[#{rbs_type(@path, 'items', schema.items)}]"
                  when Schemas::Schema       then scalar_rbs_type(schema)
-                 else 'untyped'
+                 else RBS_TYPE_UNTYPED
                  end
 
           strictly_required?(schema) ? base : "#{base}?"
@@ -61,22 +64,7 @@ module Schematrix
         end
 
         def scalar_rbs_type(schema)
-          return 'untyped' if schema.type.nil?
-
-          RBS_SCALAR_TYPES.fetch(schema.type, 'untyped')
-        end
-
-        # items is the raw JSON hash from the schema (the visitor does not
-        # recursively visit array items). Object items ($ref or inline object)
-        # fall back to untyped because their class is generated separately and
-        # there is no reliable way to derive the reference from here.
-        def array_rbs_type(items)
-          return 'Array[untyped]' unless items.is_a?(Hash)
-          return 'Array[untyped]' if items.key?('$ref')
-          return 'Array[untyped]' if items['type'] == TYPE_OBJECT
-
-          item_type = RBS_SCALAR_TYPES.fetch(items['type'], 'untyped')
-          "Array[#{item_type}]"
+          RBS_SCALAR_TYPES.fetch(schema.type, RBS_TYPE_UNTYPED)
         end
       end
     end

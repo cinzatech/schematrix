@@ -3,9 +3,11 @@ module Schematrix
     module Templates
       # Common functions for producing Sorbet output
       module SorbetHelpers
+        SORBET_TYPE_ANYTHING = 'T.anything'
+
         # Maps JSON Schema scalar types to their Sorbet equivalents
         SORBET_SCALAR_TYPES = {
-          nil => 'T.anything',
+          nil => SORBET_TYPE_ANYTHING,
           TYPE_STRING => 'String',
           TYPE_INTEGER => 'Integer',
           TYPE_NUMBER => 'Float',
@@ -16,15 +18,20 @@ module Schematrix
         def sorbet_type(path, name, schema)
           base = case schema
                  when Schemas::ObjectSchema then class_name_from_path(path, name)
-                 when Schemas::ArraySchema  then 'T.anything'
-                 when Schemas::Schema       then SORBET_SCALAR_TYPES[schema.type]
+                 when Schemas::ArraySchema  then "T::Array[#{sorbet_type(@path, 'items', schema.items)}]"
+                 when Schemas::Schema       then scalar_sorbet_type(schema)
+                 when nil                   then SORBET_TYPE_ANYTHING
                  else
-                   raise "Unknown type #{type}"
+                   raise "Unknown schema type #{schema.class}"
                  end
 
-          return base if schema.required || base == 'T.anything'
+          return base if schema&.required || base == SORBET_TYPE_ANYTHING
 
           "T.nilable(#{base})"
+        end
+
+        def scalar_sorbet_type(schema)
+          SORBET_SCALAR_TYPES.fetch(schema.type, SORBET_TYPE_ANYTHING)
         end
 
         def sorbet_additional_properties_type
