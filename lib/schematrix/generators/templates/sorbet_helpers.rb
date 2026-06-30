@@ -16,22 +16,38 @@ module Schematrix
         }.freeze
 
         def sorbet_type(path, name, schema)
-          base = case schema
-                 when Schemas::ObjectSchema then class_name_from_path(path, name)
-                 when Schemas::ArraySchema  then "T::Array[#{sorbet_type(@path, 'items', schema.items)}]"
-                 when Schemas::Schema       then scalar_sorbet_type(schema)
-                 when nil                   then SORBET_TYPE_ANYTHING
-                 else
-                   raise "Unknown schema type #{schema.class}"
-                 end
+          base = schema.type.flat_map do |type|
+            case type
+            when 'object' then [class_name_from_path(path, name)]
+            when 'array'  then ["T::Array[#{sorbet_type(@path, 'items', schema.items)}]"]
+            when 'null'   then []
+            else [SORBET_SCALAR_TYPES.fetch(type, SORBET_TYPE_ANYTHING)]
+            end
+          end
 
-          return base if schema&.required || base == SORBET_TYPE_ANYTHING
+          combined = combine_types(base)
+          return combined if combined == SORBET_TYPE_ANYTHING
+          return combined if strictly_required?(schema)
 
-          "T.nilable(#{base})"
+          "T.nilable(#{combined})"
         end
 
-        def scalar_sorbet_type(schema)
-          SORBET_SCALAR_TYPES.fetch(schema.type, SORBET_TYPE_ANYTHING)
+        def combine_types(types)
+          return SORBET_TYPE_ANYTHING if types.empty?
+          return SORBET_TYPE_ANYTHING if types.include?(SORBET_TYPE_ANYTHING)
+
+          return types.first if types.size == 1
+
+          "T.any(#{types.join(', ')})"
+        end
+
+        def strictly_required?(schema)
+          return false if schema.nil?
+          return false if schema.type.include?('null')
+          return false unless schema.required
+          return false unless schema.default.nil?
+
+          true
         end
 
         def sorbet_additional_properties_type

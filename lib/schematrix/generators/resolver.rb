@@ -3,17 +3,11 @@ module Schematrix
     # Common functions for Ruby class name and file handling
     module Resolver
       # Passing a series of path parts to this method will return the qualified
-      # class name corresponding to that path. The @schema_title is always
-      # appended at the beginning.
-      # Example: 'title' + 'foo/bar', 'baz' => Title::Foo::Bar::Baz
-      # Empty paths are removed.
+      # class name corresponding to that path.
+      # Example: 'foo/bar', 'baz' => Title::Foo::Bar::Baz
+      # Empty parts are removed.
       def class_name_from_path(*path)
-        nested_path =
-          [@schema_title]
-          .concat(path)
-          .compact
-          .reject(&:empty?)
-          .join('/')
+        nested_path = path.compact.reject(&:empty?).join('/')
 
         pascal_case(nested_path)
       end

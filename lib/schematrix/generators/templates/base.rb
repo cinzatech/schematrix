@@ -7,7 +7,6 @@ module Schematrix
 
         def initialize(
           module_name:,
-          schema_title:,
           path:,
           class_name:,
           properties:,
@@ -15,7 +14,6 @@ module Schematrix
           documentation_comment:
         )
           @module_name = module_name
-          @schema_title = schema_title
           @path = path
           @class_name = class_name
           @properties = properties

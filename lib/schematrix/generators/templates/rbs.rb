@@ -38,14 +38,31 @@ module Schematrix
         # attr_accessor accurately reflects that the value may be nil after
         # construction.
         def rbs_type(path, name, schema)
-          base = case schema
-                 when Schemas::ObjectSchema then class_name_from_path(path, name)
-                 when Schemas::ArraySchema  then "Array[#{rbs_type(@path, 'items', schema.items)}]"
-                 when Schemas::Schema       then scalar_rbs_type(schema)
-                 else RBS_TYPE_UNTYPED
-                 end
+          return RBS_TYPE_UNTYPED if schema.nil?
+
+          base = schema.type.flat_map do |type|
+            case type
+            when 'object' then [class_name_from_path(path, name)]
+            when 'array'  then ["Array[#{rbs_type(@path, 'items', schema.items)}]"]
+            when 'null'   then []
+            when nil      then RBS_TYPE_UNTYPED
+            else [RBS_SCALAR_TYPES.fetch(type, RBS_TYPE_UNTYPED)]
+            end
+          end
+
+          combined = combine_types(base)
+          return combined if combined == RBS_TYPE_UNTYPED
 
           strictly_required?(schema) ? base : "#{base}?"
+        end
+
+        def combine_types(types)
+          return RBS_TYPE_UNTYPED if types.empty?
+          return RBS_TYPE_UNTYPED if types.include?(RBS_TYPE_UNTYPED)
+
+          return types.first if types.size == 1
+
+          types.join(' | ')
         end
 
         def rbs_additional_properties_type
@@ -61,10 +78,6 @@ module Schematrix
           return false if schema.respond_to?(:default) && !schema.default.nil?
 
           true
-        end
-
-        def scalar_rbs_type(schema)
-          RBS_SCALAR_TYPES.fetch(schema.type, RBS_TYPE_UNTYPED)
         end
       end
     end

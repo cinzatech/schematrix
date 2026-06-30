@@ -25,7 +25,7 @@
       "type": "ruby_lsp",
       "name": "Run example",
       "request": "launch",
-      "program": "exe/schematrix -g plain_ruby -m Example examples/*.schema.json"
+      "program": "exe/schematrix -g sorbet_ruby -m Example examples/*.schema.json"
     }
   ]
 }

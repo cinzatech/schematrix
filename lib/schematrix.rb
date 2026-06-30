@@ -23,17 +23,15 @@ module Schematrix
     generators:,
     input_file:,
     module_name:,
-    output_dirs:,
-    strict_mode:
+    output_dirs:
   )
-    schema = Visitor.new(strict_mode:).compile(json)
     title = json['title']
+    schema = Visitor.new.compile(title, json)
 
     instances = output_dirs.zip(generators).map do |(output_dir, name)|
       GENERATORS[name].new(
         output_dir,
-        module_name,
-        title
+        module_name
       )
     end
 

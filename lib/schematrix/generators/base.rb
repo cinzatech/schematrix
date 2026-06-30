@@ -17,10 +17,9 @@ module Schematrix
     class Base
       include Resolver
 
-      def initialize(output_dir, module_name, schema_title, format: true)
+      def initialize(output_dir, module_name, format: true)
         @output_dir = output_dir
         @module_name = module_name
-        @schema_title = schema_title
         @format = format
       end
 
@@ -63,7 +62,6 @@ module Schematrix
       def template(path, object)
         self.class.template_class.new(
           module_name: @module_name,
-          schema_title: @schema_title,
           path:,
           class_name: class_name_from_path(path),
           properties: object.properties.transform_keys do |key|
