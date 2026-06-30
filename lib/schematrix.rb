@@ -1,10 +1,7 @@
 require 'tty-logger'
 
 require_relative 'schematrix/visitor'
-require_relative 'schematrix/generators/plain_ruby'
-require_relative 'schematrix/generators/rbs'
-require_relative 'schematrix/generators/sorbet_ruby'
-require_relative 'schematrix/generators/rbi'
+require_relative 'schematrix/generators/base'
 
 # Generates Ruby code and RBS signatures from JSON Schema definition
 module Schematrix
