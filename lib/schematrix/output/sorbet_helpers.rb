@@ -26,18 +26,18 @@ module Schematrix
         "T.nilable(#{base})"
       end
 
-      def additional_properties_type(path, schema)
-        sorbet_type(path, 'additional_properties', schema)
+      def additional_properties_type
+        sorbet_type(@path, 'additional_properties', @additional_properties)
       end
 
-      def constructor_signature_params(path, properties)
-        properties.map do |name, property|
-          "#{name}: #{sorbet_type(path, name, property)}"
+      def constructor_signature_params
+        @properties.map do |name, property|
+          "#{name}: #{sorbet_type(@path, name, property)}"
         end.join(', ')
       end
 
-      def sorbet_attr_accessors(path, properties)
-        properties.map { |name, property| sorbet_attr_accessor(path, name, property) }.join("\n\n")
+      def sorbet_attr_accessors
+        @properties.map { |name, property| sorbet_attr_accessor(@path, name, property) }.join("\n\n")
       end
 
       def sorbet_attr_accessor(path, name, property)

@@ -31,15 +31,15 @@ module Schematrix
         code
       end
 
-      def rbs_attr_accessors(path, schema)
-        schema.properties.map do |name, prop_schema|
-          "attr_accessor #{underscore(name)}: #{rbs_type(path, name, prop_schema)}"
+      def rbs_attr_accessors
+        @properties.map do |name, prop_schema|
+          "attr_accessor #{name}: #{rbs_type(@path, name, prop_schema)}"
         end.join("\n")
       end
 
-      def rbs_initialize_params(path, properties)
-        properties.map do |name, schema|
-          type = rbs_type(path, name, schema)
+      def rbs_initialize_params
+        @properties.map do |name, schema|
+          type = rbs_type(@path, name, schema)
           strictly_required?(schema) ? "#{name}: #{type}" : "?#{name}: #{type}"
         end.join(', ')
       end
@@ -60,8 +60,8 @@ module Schematrix
         strictly_required?(schema) ? base : "#{base}?"
       end
 
-      def additional_properties_type(path, schema)
-        rbs_type(path, 'additional_properties', schema)
+      def additional_properties_type
+        rbs_type(@path, 'additional_properties', @object)
       end
 
       # A property is strictly required when it is marked required in the schema

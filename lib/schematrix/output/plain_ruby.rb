@@ -14,8 +14,8 @@ module Schematrix
         '.rb'
       end
 
-      def plain_attr_accessor_list(properties)
-        properties.keys.map(&:to_sym).map(&:inspect).join(', ')
+      def plain_attr_accessor_list
+        @properties.keys.map(&:to_sym).map(&:inspect).join(', ')
       end
     end
   end

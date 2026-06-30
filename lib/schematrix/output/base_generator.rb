@@ -31,7 +31,7 @@ module Schematrix
 
       def transform(path, object)
         setup_template_vars(path, object)
-        code = render_template
+        code = self.class.template.result(binding)
         format_code(code)
       end
 
@@ -57,10 +57,6 @@ module Schematrix
         end
         @additional_properties = object.additional_properties
         @documentation_comment = documentation_comment(object)
-      end
-
-      def render_template
-        self.class.template.result(binding)
       end
 
       def file_extension
