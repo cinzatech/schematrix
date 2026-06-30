@@ -3,7 +3,7 @@ require 'syntax_tree/rbs'
 require_relative 'base_generator'
 
 module Schematrix
-  module Output
+  module Generators
     # Outputs RBS type signatures matching a JSON Schema object
     class Rbs < BaseGenerator
       # Maps JSON Schema scalar types to their RBS equivalents
@@ -19,11 +19,11 @@ module Schematrix
         'rbs.erb'
       end
 
-      private
-
-      def file_extension
+      def self.file_extension
         '.rbs'
       end
+
+      private
 
       def format_code(code)
         return SyntaxTree::RBS.format(code) if @format
@@ -60,7 +60,7 @@ module Schematrix
         strictly_required?(schema) ? base : "#{base}?"
       end
 
-      def additional_properties_type
+      def rbs_additional_properties_type
         rbs_type(@path, 'additional_properties', @object)
       end
 

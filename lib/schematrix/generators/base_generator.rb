@@ -5,7 +5,7 @@ require 'syntax_tree'
 require_relative 'ruby_helpers'
 
 module Schematrix
-  module Output
+  module Generators
     # Base class for all output generators. Subclasses provide an ERB template
     # and, optionally, override helper methods to produce different output
     # formats.
@@ -22,7 +22,7 @@ module Schematrix
       def write(path, object)
         code = transform(path, object)
 
-        filename = "#{underscore(class_name_from_path(path))}#{file_extension}"
+        filename = "#{underscore(class_name_from_path(path))}#{self.class.file_extension}"
         file_path = File.join(@output_dir, filename)
         FileUtils.mkdir_p(File.dirname(file_path))
 
@@ -46,6 +46,10 @@ module Schematrix
         raise NotImplementedError, "#{self.class} must implement #template_name"
       end
 
+      def self.file_extension
+        raise NotImplementedError, "#{self.class} must implement #file_extension"
+      end
+
       private
 
       def setup_template_vars(path, object)
@@ -57,10 +61,6 @@ module Schematrix
         end
         @additional_properties = object.additional_properties
         @documentation_comment = documentation_comment(object)
-      end
-
-      def file_extension
-        raise NotImplementedError, "#{self.class} must implement #file_extension"
       end
 
       def format_code(code)

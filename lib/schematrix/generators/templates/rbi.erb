@@ -4,7 +4,7 @@ module <%= @module_name %>
   <%= @documentation_comment %>
   class <%= @class_name %>
     sig { params(
-      <%= constructor_signature_params %>
+      <%= sorbet_constructor_signature_params %>
     ).void }
     def initialize(
       <%= constructor_arguments %>
@@ -13,10 +13,10 @@ module <%= @module_name %>
     <%= sorbet_attr_accessors %>
     <% unless @additional_properties.nil? %>
 
-    sig { params(key: Symbol).returns(<%= additional_properties_type %>) }
+    sig { params(key: Symbol).returns(<%= sorbet_additional_properties_type %>) }
     def [](key); end
 
-    sig { params(key: Symbol, value: <%= %>).returns(<%= additional_properties_type %>) }
+    sig { params(key: Symbol, value: <%= %>).returns(<%= sorbet_additional_properties_type %>) }
     def []=(key, value); end
     <% end %>
   end

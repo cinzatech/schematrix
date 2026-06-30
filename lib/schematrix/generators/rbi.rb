@@ -2,7 +2,7 @@ require_relative 'base_generator'
 require_relative 'sorbet_helpers'
 
 module Schematrix
-  module Output
+  module Generators
     # Outputs a schema as an RBI sorbet signature file
     class Rbi < BaseGenerator
       include SorbetHelpers
@@ -11,11 +11,11 @@ module Schematrix
         'rbi.erb'
       end
 
-      private
-
-      def file_extension
+      def self.file_extension
         '.rbi'
       end
+
+      private
 
       def sorbet_attr_accessor(path, name, property)
         type = sorbet_type(path, name, property)

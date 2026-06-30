@@ -1,5 +1,5 @@
 module Schematrix
-  module Output
+  module Generators
     # Common functions for Ruby class name and file handling
     module RubyHelpers
       def class_name_from_path(path)

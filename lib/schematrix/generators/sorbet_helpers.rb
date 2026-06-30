@@ -1,5 +1,5 @@
 module Schematrix
-  module Output
+  module Generators
     # Maps JSON Schema scalar types to their Sorbet equivalents
     SORBET_SCALAR_TYPES = {
       nil => 'T.anything',
@@ -26,11 +26,11 @@ module Schematrix
         "T.nilable(#{base})"
       end
 
-      def additional_properties_type
+      def sorbet_additional_properties_type
         sorbet_type(@path, 'additional_properties', @additional_properties)
       end
 
-      def constructor_signature_params
+      def sorbet_constructor_signature_params
         @properties.map do |name, property|
           "#{name}: #{sorbet_type(@path, name, property)}"
         end.join(', ')

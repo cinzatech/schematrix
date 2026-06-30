@@ -6,9 +6,9 @@ module <%= @module_name %>
     def initialize: (<%= rbs_initialize_params %>) -> void
     <% unless @additional_properties.nil? %>
 
-    def []: (Symbol) -> <%= additional_properties_type %>
+    def []: (Symbol) -> <%= rbs_additional_properties_type %>
 
-    def []=: (Symbol, <%= additional_properties_type %>) -> <%= additional_properties_type %>
+    def []=: (Symbol, <%= rbs_additional_properties_type %>) -> <%= rbs_additional_properties_type %>
     <% end %>
   end
 end

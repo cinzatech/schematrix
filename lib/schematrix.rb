@@ -1,20 +1,20 @@
 require 'tty-logger'
 
 require_relative 'schematrix/visitor'
-require_relative 'schematrix/output/plain_ruby'
-require_relative 'schematrix/output/rbs'
-require_relative 'schematrix/output/sorbet_ruby'
-require_relative 'schematrix/output/rbi'
+require_relative 'schematrix/generators/plain_ruby'
+require_relative 'schematrix/generators/rbs'
+require_relative 'schematrix/generators/sorbet_ruby'
+require_relative 'schematrix/generators/rbi'
 
 # Generates Ruby code and RBS signatures from JSON Schema definition
 module Schematrix
   VERSION = '0.1.0'
 
   GENERATORS = {
-    'plain_ruby' => Output::PlainRuby,
-    'rbs' => Output::Rbs,
-    'sorbet_ruby' => Output::SorbetRuby,
-    'rbi' => Output::Rbi
+    'plain_ruby' => Generators::PlainRuby,
+    'rbs' => Generators::Rbs,
+    'sorbet_ruby' => Generators::SorbetRuby,
+    'rbi' => Generators::Rbi
   }.freeze
 
   class << self

@@ -2,7 +2,7 @@ require_relative 'base_generator'
 require_relative 'sorbet_helpers'
 
 module Schematrix
-  module Output
+  module Generators
     # Outputs a schema as a mutable Ruby class with inline Sorbet signatures
     class SorbetRuby < BaseGenerator
       include SorbetHelpers
@@ -11,11 +11,11 @@ module Schematrix
         'sorbet_ruby.erb'
       end
 
-      private
-
-      def file_extension
+      def self.file_extension
         '.rb'
       end
+
+      private
 
       def sorbet_attr_accessor(path, name, property)
         <<~RUBY
