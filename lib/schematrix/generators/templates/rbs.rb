@@ -52,8 +52,9 @@ module Schematrix
 
           combined = combine_types(base)
           return combined if combined == RBS_TYPE_UNTYPED
+          return combined if strictly_required?(schema)
 
-          strictly_required?(schema) ? base : "#{base}?"
+          "#{combined}?"
         end
 
         def combine_types(types)

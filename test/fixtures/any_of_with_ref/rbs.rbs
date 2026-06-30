@@ -1,7 +1,7 @@
 module M
   class AnyOfRef
-    attr_accessor value: untyped?
+    attr_accessor value: untyped
 
-    def initialize: (?value: untyped?) -> void
+    def initialize: (?value: untyped) -> void
   end
 end

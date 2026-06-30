@@ -1,7 +1,7 @@
 module M
   class UntypedEnum
-    attr_accessor data: untyped?
+    attr_accessor data: untyped
 
-    def initialize: (?data: untyped?) -> void
+    def initialize: (?data: untyped) -> void
   end
 end
