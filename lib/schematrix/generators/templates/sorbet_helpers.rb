@@ -35,7 +35,11 @@ module Schematrix
         end
 
         def sorbet_additional_properties_type
-          sorbet_type(@path, 'additional_properties', @additional_properties)
+          @sorbet_additional_properties_type ||= sorbet_type(
+            @path,
+            'additional_properties',
+            @additional_properties
+          )
         end
 
         def sorbet_constructor_signature_params
