@@ -17,13 +17,15 @@ module SchematrixTestHelper
 
   def assert_fixture(fixture_name, generator_name, path: '')
     schema = JSON.parse(File.read(File.join(FIXTURES_DIR, fixture_name, 'schema.json')))
-    objects = Schematrix::Visitor.new.compile(schema)
-    node = objects[path]
+    root = schema['title']
+    objects = Schematrix::Visitor.new.compile(root, schema)
+    full_path = [root, path].reject(&:empty?).join('/')
+    node = objects.fetch(full_path)
 
     generator = Schematrix::GENERATORS[generator_name].new(
-      '/tmp', MODULE_NAME, schema['title'], format: true
+      '/tmp', MODULE_NAME, format: true
     )
-    actual = generator.transform(path, node)
+    actual = generator.transform(full_path, node)
 
     expected_file = expected_path(fixture_name, generator_name, path)
     expected = File.read(expected_file)

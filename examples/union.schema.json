@@ -16,7 +16,7 @@
         }
       },
       "required": [
-        "option"
+        "foo"
       ],
       "description": "Maybe of different types"
     }
