@@ -29,11 +29,11 @@ module Schematrix
     schema = Visitor.new.compile(title, json)
 
     instances = output_dirs.zip(generators).map do |(output_dir, name)|
-      GENERATORS[name].new(
+      GENERATORS[name]&.new(
         output_dir,
         module_name
       )
-    end
+    end.compact
 
     schema.each do |path, node|
       logger&.info "Writing #{input_file}#/#{path}"

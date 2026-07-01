@@ -64,7 +64,7 @@ module Schematrix
           module_name: @module_name,
           path:,
           class_name: class_name_from_path(path),
-          properties: object.properties.transform_keys do |key|
+          properties: object&.properties&.transform_keys do |key|
             underscore(key)
           end,
           additional_properties: object.additional_properties,

@@ -41,15 +41,6 @@ module Schematrix
           "T.any(#{types.join(', ')})"
         end
 
-        def strictly_required?(schema)
-          return false if schema.nil?
-          return false if schema.type.include?('null')
-          return false unless schema.required
-          return false unless schema.default.nil?
-
-          true
-        end
-
         def sorbet_additional_properties_type
           @sorbet_additional_properties_type ||= sorbet_type(
             @path,

@@ -30,7 +30,7 @@ module Schematrix
     def compile(title, schema)
       visit_schema(title, schema, required: false)
 
-      @objects
+      @objects.dup
     end
 
     private
@@ -45,9 +45,9 @@ module Schematrix
       items = visit_subtree('items', node)
       additional_properties = visit_subtree('additionalProperties', node)
       required_properties = Set.new(node['required'])
-      properties = node['properties']&.map do |name, body|
-        schema = visit_schema(name, body, required: required_properties.include?(name))
-        [name, schema] unless schema.nil?
+      properties = node['properties']&.map do |prop_name, body|
+        schema = visit_schema(prop_name, body, required: required_properties.include?(prop_name))
+        [prop_name, schema]
       end&.compact&.to_h
 
       schema = Schema.new(

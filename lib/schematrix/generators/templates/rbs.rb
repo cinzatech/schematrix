@@ -69,17 +69,6 @@ module Schematrix
         def rbs_additional_properties_type
           rbs_type(@path, 'additional_properties', @additional_properties)
         end
-
-        # A property is strictly required when it is marked required in the schema
-        # AND has no default value. Properties with defaults are optional in the
-        # constructor (the PlainRuby generator fills them in), so the RBS
-        # signature should match.
-        def strictly_required?(schema)
-          return false unless schema.respond_to?(:required) && schema.required
-          return false if schema.respond_to?(:default) && !schema.default.nil?
-
-          true
-        end
       end
     end
   end
