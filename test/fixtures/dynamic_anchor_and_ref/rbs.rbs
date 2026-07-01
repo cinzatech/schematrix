@@ -1,8 +1,8 @@
 module M
   class Recursive
     attr_accessor value: String?
-    attr_accessor children: Array[untyped]?
+    attr_accessor children: Array[Recursive]?
 
-    def initialize: (?value: String?, ?children: Array[untyped]?) -> void
+    def initialize: (?value: String?, ?children: Array[Recursive]?) -> void
   end
 end

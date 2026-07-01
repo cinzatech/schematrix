@@ -2,7 +2,12 @@
 
 module M
   class Recursive
-    sig { params(value: T.nilable(String), children: T.anything).void }
+    sig do
+      params(
+        value: T.nilable(String),
+        children: T.nilable(T::Array[Recursive])
+      ).void
+    end
     def initialize(value: nil, children: nil)
       @value = value
       @children = children
@@ -11,7 +16,7 @@ module M
     sig { returns(T.nilable(String)) }
     attr_accessor :value
 
-    sig { returns(T.anything) }
+    sig { params(children: T.nilable(T::Array[Recursive])).void }
     attr_accessor :children
   end
 end
