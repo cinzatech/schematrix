@@ -42,9 +42,7 @@ module Schematrix
         # attr_accessor accurately reflects that the value may be nil after
         # construction.
         def rbs_type(path, name, schema)
-          # TODO: This is an smell, too hairy, too many possibilities
           return RBS_TYPE_UNTYPED if schema.nil?
-          return RBS_TYPE_UNTYPED if schema.type.nil?
 
           base = schema.type.flat_map do |type|
             case type

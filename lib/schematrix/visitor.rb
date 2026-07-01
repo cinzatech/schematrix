@@ -27,7 +27,7 @@ module Schematrix
     description: nil,
     enum: nil,
     required: nil,
-    type: nil,
+    type: Set.new,
     items: nil
   )
 

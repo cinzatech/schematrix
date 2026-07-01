@@ -27,7 +27,6 @@ module Schematrix
 
         def strictly_required?(schema)
           return false if schema.nil?
-          return false if schema.type.nil?
           return false if schema.type.include?('null')
           return false unless schema.required
           return false unless schema.default.nil?
