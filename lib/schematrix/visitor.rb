@@ -20,6 +20,17 @@ module Schematrix
     :type
   )
 
+  Schema::Empty = Schema.new(
+    additional_properties: nil,
+    properties: nil,
+    default: nil,
+    description: nil,
+    enum: nil,
+    required: nil,
+    type: nil,
+    items: nil
+  )
+
   # Visitor for a JSON Schema, visits the whole schema document tree
   class Visitor
     def initialize
@@ -37,6 +48,9 @@ module Schematrix
 
     def visit_schema(name, node, required: true)
       @path.push(name)
+
+      # JSON Schema allows "true" as a catch-all
+      return Schema::Empty if node.is_a? TrueClass
 
       type = Set.new(Array(node['type']))
       enum = node['enum']

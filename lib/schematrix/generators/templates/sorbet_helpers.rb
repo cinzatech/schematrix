@@ -16,6 +16,8 @@ module Schematrix
         }.freeze
 
         def sorbet_type(path, name, schema)
+          return SORBET_TYPE_ANYTHING if schema.nil?
+
           base = schema.type.flat_map do |type|
             case type
             when 'object' then [class_name_from_path(path, name)]
