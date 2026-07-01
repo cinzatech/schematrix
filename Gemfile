@@ -8,6 +8,6 @@ group :development do
   gem 'rubocop-performance', '~> 1.26'
 end
 
-gem "tty-logger", "~> 0.6.0"
+gem 'tty-logger', '~> 0.6.0'
 
-gem "syntax_tree-rbs", "~> 1.0"
+gem 'syntax_tree-rbs', '~> 1.0'
