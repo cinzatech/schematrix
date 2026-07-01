@@ -76,8 +76,8 @@ module Schematrix
 
         input_files = Array(params[:input])
         module_name = params[:module]
-        generators = Set.new(params[:generators])
-        unknown = generators - Set['plain_ruby', 'rbs', 'sorbet_ruby', 'rbi']
+        generators = Array(params[:generators]).uniq
+        unknown = generators - %w[plain_ruby rbs sorbet_ruby rbi]
         Schematrix.logger&.warn "Unknown generators: #{unknown.to_a.join(', ')}" unless unknown.empty?
 
         output = Array(params[:output])
