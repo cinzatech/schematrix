@@ -50,7 +50,10 @@ module Schematrix
       @path.push(name)
 
       # JSON Schema allows "true" as a catch-all
-      return Schema::Empty if node.is_a? TrueClass
+      if node.is_a? TrueClass
+        @objects[@path.join('/')] = Schema::Empty
+        return Schema::Empty
+      end
 
       type = Set.new(Array(node['type']))
       enum = node['enum']
@@ -76,9 +79,10 @@ module Schematrix
       )
 
       @objects[@path.join('/')] = schema if type.include?(TYPE_OBJECT)
-      @path.pop
 
       schema
+    ensure
+      @path.pop
     end
 
     # Visit subtrees (other than properties), like items or additionalProperties,
