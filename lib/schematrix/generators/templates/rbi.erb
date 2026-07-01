@@ -4,14 +4,10 @@ module <%= @module_name %>
   <%= @documentation_comment %>
   class <%= @class_name %>
     sig { params(
-      <% unless @properties.nil? %>
       <%= sorbet_constructor_signature_params %>
-      <% end %>
     ).void }
     def initialize(
-      <% unless @properties.nil? %>
       <%= constructor_arguments %>
-      <% end %>
     ); end
 
     <%= sorbet_attr_accessors %>

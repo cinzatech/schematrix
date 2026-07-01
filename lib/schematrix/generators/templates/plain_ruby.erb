@@ -2,9 +2,7 @@ module <%= @module_name %>
   <%= @documentation_comment %>
   class <%= @class_name %>
     def initialize(
-      <% unless @properties.nil? %>
       <%= constructor_arguments %>
-      <% end %>
     )
       <%= constructor_assignments %>
       <% unless @additional_properties.nil? %>
@@ -12,9 +10,7 @@ module <%= @module_name %>
       <% end %>
     end
 
-    <% unless @properties.nil? %>
     attr_accessor <%= plain_attr_accessor_list %>
-    <% end %>
     <% unless @additional_properties.nil? %>
 
     def [](key)

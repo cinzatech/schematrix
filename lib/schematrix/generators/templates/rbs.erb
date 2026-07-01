@@ -4,9 +4,7 @@ module <%= @module_name %>
     <%= rbs_attr_accessors %>
 
     def initialize: (
-      <% unless @properties.nil? %>
       <%= rbs_initialize_params %>
-      <% end %>
     ) -> void
     <% unless @additional_properties.nil? %>
 

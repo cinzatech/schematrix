@@ -11,6 +11,8 @@ module Schematrix
         private
 
         def plain_attr_accessor_list
+          return '' if @properties.nil?
+
           @properties.keys.map(&:to_sym).map(&:inspect).join(', ')
         end
       end

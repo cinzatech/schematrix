@@ -28,6 +28,8 @@ module Schematrix
         end
 
         def rbs_initialize_params
+          return '' if @properties.nil?
+
           @properties.map do |name, schema|
             type = rbs_type(@path, name, schema)
             strictly_required?(schema) ? "#{name}: #{type}" : "?#{name}: #{type}"
