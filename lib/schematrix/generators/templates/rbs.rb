@@ -67,7 +67,7 @@ module Schematrix
         end
 
         def rbs_additional_properties_type
-          rbs_type(@path, 'additional_properties', @object)
+          rbs_type(@path, 'additional_properties', @additional_properties)
         end
 
         # A property is strictly required when it is marked required in the schema
