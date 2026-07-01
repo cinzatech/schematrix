@@ -16,7 +16,7 @@ module <%= @module_name %>
     sig { params(key: Symbol).returns(<%= sorbet_additional_properties_type %>) }
     def [](key); end
 
-    sig { params(key: Symbol, value: <%= %>).returns(<%= sorbet_additional_properties_type %>) }
+    sig { params(key: Symbol, value: <%= sorbet_additional_properties_type %>).returns(<%= sorbet_additional_properties_type %>) }
     def []=(key, value); end
     <% end %>
   end
