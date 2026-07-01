@@ -7,7 +7,9 @@ module <%= @module_name %>
       <%= sorbet_constructor_signature_params %>
     ).void }
     def initialize(
+      <% unless @properties.nil? %>
       <%= constructor_arguments %>
+      <% end %>
     ); end
 
     <%= sorbet_attr_accessors %>

@@ -20,6 +20,8 @@ module Schematrix
         private
 
         def rbs_attr_accessors
+          return '' if @properties.nil?
+
           @properties.map do |name, prop_schema|
             "attr_accessor #{name}: #{rbs_type(@path, name, prop_schema)}"
           end.join("\n")

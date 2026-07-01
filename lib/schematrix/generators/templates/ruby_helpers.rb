@@ -13,6 +13,8 @@ module Schematrix
         end
 
         def constructor_assignments
+          return '' if @properties.nil?
+
           @properties.map do |name, _schema|
             "@#{name} = #{name}"
           end.join("\n")

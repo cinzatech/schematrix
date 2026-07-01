@@ -3,7 +3,11 @@ module <%= @module_name %>
   class <%= @class_name %>
     <%= rbs_attr_accessors %>
 
-    def initialize: (<%= rbs_initialize_params %>) -> void
+    def initialize: (
+      <% unless @properties.nil? %>
+      <%= rbs_initialize_params %>
+      <% end %>
+    ) -> void
     <% unless @additional_properties.nil? %>
 
     def []: (Symbol) -> <%= rbs_additional_properties_type %>
