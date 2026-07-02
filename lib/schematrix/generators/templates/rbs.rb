@@ -43,6 +43,7 @@ module Schematrix
         # construction.
         def rbs_type(path, name, schema)
           return RBS_TYPE_UNTYPED if schema.nil?
+          return 'nil' if schema.type == Set['null']
 
           base = schema.type.flat_map do |type|
             case type

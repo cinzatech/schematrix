@@ -17,6 +17,7 @@ module Schematrix
 
         def sorbet_type(path, name, schema)
           return SORBET_TYPE_ANYTHING if schema.nil?
+          return 'NilClass' if schema.type == Set['null']
 
           base = schema.type.flat_map do |type|
             case type
