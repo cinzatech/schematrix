@@ -1,6 +1,7 @@
 require 'minitest/autorun'
-require 'json'
+require 'yaml'
 require_relative '../lib/schematrix'
+require_relative '../lib/schematrix/generators/base'
 
 module SchematrixTestHelper
   MODULE_NAME = 'M'
@@ -16,7 +17,7 @@ module SchematrixTestHelper
   private
 
   def assert_fixture(fixture_name, generator_name, path: '')
-    schema = JSON.parse(File.read(File.join(FIXTURES_DIR, fixture_name, 'schema.json')))
+    schema = YAML.safe_load(File.read(File.join(FIXTURES_DIR, fixture_name, 'schema.json')))
     root = schema['title']
     objects = Schematrix::Visitor.new.compile(root, schema)
     full_path = [root, path].reject(&:empty?).join('/')

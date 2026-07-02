@@ -128,4 +128,11 @@ module Schematrix
       def self.template_class = Templates::Rbi
     end
   end
+
+  GENERATORS = {
+    'plain_ruby' => Generators::PlainRuby,
+    'rbs' => Generators::Rbs,
+    'sorbet_ruby' => Generators::SorbetRuby,
+    'rbi' => Generators::Rbi
+  }.freeze
 end

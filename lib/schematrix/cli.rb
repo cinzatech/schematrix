@@ -1,6 +1,8 @@
 require 'yaml'
 require 'tty-option'
 
+require_relative 'generators/base'
+
 module Schematrix
   # Command line tooling for the library
   class CLI
@@ -76,7 +78,9 @@ module Schematrix
 
         input_files = Array(params[:input])
         module_name = params[:module]
-        generators = Array(params[:generators]).uniq
+
+        generator_names = Array(params[:generators]).uniq
+
         unknown = generators - GENERATORS.keys
         Schematrix.logger&.warn "Unknown generators: #{unknown.to_a.join(', ')}" unless unknown.empty?
 
@@ -89,15 +93,20 @@ module Schematrix
         # If only one output dir specified, we use it for every generator
         output_dirs = output.size == 1 ? Array.new(generators.size, output.first) : output
 
+        generators = output_dirs.zip(generator_names).map do |(output_dir, name)|
+          GENERATORS[name]&.new(
+            output_dir,
+            module_name
+          )
+        end.compact
+
         input_files.each do |input_file|
           content = File.read(input_file)
           schema = YAML.safe_load(content)
           Schematrix.generate(
             schema,
             generators:,
-            input_file:,
-            module_name:,
-            output_dirs:
+            input_file:
           )
         end
       end
