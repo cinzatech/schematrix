@@ -25,17 +25,18 @@ module Schematrix
 
       def write(path, object)
         uri = URI(path)
-        code = transform(uri, object)
+        class_name = class_name_from_path(uri)
+        code = transform(uri, class_name, object)
 
-        filename = "#{underscore(class_name_from_path(uri))}#{self.class.file_extension}"
+        filename = "#{underscore(class_name)}#{self.class.file_extension}"
         file_path = File.join(@output_dir, filename)
         FileUtils.mkdir_p(File.dirname(file_path))
 
         File.write(file_path, code)
       end
 
-      def transform(path, object)
-        code = template(path, object).render(self.class.erb)
+      def transform(path, class_name, object)
+        code = template(path, class_name, object).render(self.class.erb)
         format_code(code)
       end
 
@@ -60,11 +61,11 @@ module Schematrix
 
       private
 
-      def template(path, object)
+      def template(path, class_name, object)
         self.class.template_class.new(
           module_name: @module_name,
           path:,
-          class_name: class_name_from_path(path),
+          class_name: class_name,
           properties: object&.properties&.transform_keys do |key|
             underscore(key)
           end,
