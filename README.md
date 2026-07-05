@@ -8,7 +8,7 @@
 
 ## Requirements
 
-- Ruby **≥ 3.1**
+- Ruby **≥ 3.4**
 - Bundler (for gem installation)
 
 ---
@@ -56,7 +56,7 @@ Given this JSON Schema (`person.schema.json`):
 Run:
 
 ```sh
-schematrix gen -g plain_ruby -m MyApp -o app/generated person.schema.json
+schematrix -g plain_ruby -m MyApp -o app/generated person.schema.json
 ```
 
 This produces `app/generated/person.rb`:
@@ -82,7 +82,7 @@ end
 ## CLI Reference
 
 ```
-Usage: schematrix gen [OPTIONS] INPUT [INPUT...]
+Usage: schematrix [OPTIONS] INPUT [INPUT...]
 
 Generate code matching a JSON Schema
 
@@ -101,25 +101,25 @@ Options:
 Generate plain Ruby classes for a single schema:
 
 ```sh
-schematrix gen -g plain_ruby -m MyApp -o app/generated schema.json
+schematrix -g plain_ruby -m MyApp -o app/generated schema.json
 ```
 
 Process multiple schemas at once:
 
 ```sh
-schematrix gen -g rbs -m Contracts user.schema.json order.schema.json
+schematrix -g rbs -m Contracts user.schema.json order.schema.json
 ```
 
 Or even:
 
 ```sh
-schematrix gen -g plain_ruby -m Contracts *.schema.json
+schematrix -g plain_ruby -m Contracts *.schema.json
 ```
 
 You might specify different output directories for different generators like so:
 
 ```sh
-schematrix gen -g plain_ruby -o generated -g rbi -o rbi *.schema.json
+schematrix -g plain_ruby -o generated -g rbi -o rbi *.schema.json
 ```
 
 ---
@@ -198,7 +198,7 @@ bundle install
 Run the CLI from the project root:
 
 ```sh
-bundle exec exe/schematrix gen -g plain_ruby -m Test -o /tmp/generated examples/basic.schema.json
+bundle exec exe/schematrix -g plain_ruby -m Test -o /tmp/generated examples/basic.schema.json
 ```
 
 Lint with RuboCop:

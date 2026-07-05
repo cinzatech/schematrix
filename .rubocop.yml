@@ -3,7 +3,7 @@ plugins:
   - rubocop-performance  # Performance optimization analysis
 
 AllCops:
-  TargetRubyVersion: 3.1
+  TargetRubyVersion: 3.4
   StringLiteralsFrozenByDefault: true
 
 Style/FrozenStringLiteralComment:

@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.homepage =
     'https://github.com/cinzatech/schematrix'
   s.license = 'AGPL-3.0-or-later'
-  s.required_ruby_version = '>= 3.1'
+  s.required_ruby_version = '>= 3.4'
 
   s.bindir = 'exe'
   s.executables = s.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
