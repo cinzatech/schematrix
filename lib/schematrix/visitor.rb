@@ -1,4 +1,5 @@
 require 'set'
+require 'uri'
 
 module Schematrix
   TYPE_ARRAY = 'array'
@@ -12,40 +13,54 @@ module Schematrix
   Schema = Data.define(
     :additional_properties,
     :default,
-    :title,
     :description,
     :enum,
     :items,
     :properties,
+    :ref,
     :required,
+    :title,
     :type
   )
 
   Schema::Empty = Schema.new(
     additional_properties: nil,
-    properties: nil,
     default: nil,
-    title: nil,
-    description: nil,
     enum: nil,
+    items: nil,
+    properties: nil,
+    description: nil,
+    ref: nil,
     required: nil,
-    type: Set.new,
-    items: nil
+    title: nil,
+    type: Set.new
   )
 
-  # Visitor for a JSON Schema, visits the whole schema document tree
+  # Visits a single schema subtree rooted at the given locator. When it
+  # finds a $ref it resolves the reference through the document store to
+  # decide how to represent it, and records edges to object schemas so
+  # their classes get generated. It never visits ref targets itself: the
+  # caller (see Compiler) decides when and whether to do that.
   class Visitor
-    def initialize
-      @current_file = ''
-      @fragment_path = []
+    # The findings of a visit: the object schemas the subtree contains
+    # by locator, and edges to object schemas living elsewhere that it
+    # references.
+    attr_reader :objects, :edges
+
+    def initialize(locator, store)
+      @locator = locator
+      @store = store
       @objects = {}
+      @edges = []
+
+      @fragment_path = locator.fragment.split('/')
+      @name = @fragment_path.pop || '' # document root is nameless
     end
 
-    def compile(input_file, schema)
-      @current_file = File.expand_path(input_file)
-      visit_schema('', schema, required: false)
+    def compile(node)
+      visit_schema(@name, node, required: false)
 
-      @objects.dup
+      self
     end
 
     private
@@ -58,6 +73,8 @@ module Schematrix
         @objects[current_locator] = Schema::Empty
         return Schema::Empty
       end
+
+      node, ref = resolve_reference(node)
 
       type = Set.new(Array(node['type']))
       enum = node['enum']
@@ -77,21 +94,61 @@ module Schematrix
 
       schema = Schema.new(
         additional_properties:,
-        properties:,
         default:,
-        title:,
         description:,
         enum:,
+        items:,
+        properties:,
+        ref:,
         required:,
-        type:,
-        items:
+        title:,
+        type:
       )
 
-      @objects[current_locator] = schema if type.include?(TYPE_OBJECT)
+      @objects[current_locator] = schema if ref.nil? && type.include?(TYPE_OBJECT)
 
       schema
     ensure
       @fragment_path.pop
+    end
+
+    # Resolves a $ref, if present, by following the chain of references
+    # to its final target node:
+    # - object target: keep the node as-is and return the target's locator
+    #   as ref, recording the edge so its class is generated.
+    # - scalar target: return the target node itself so its type
+    #   information is compiled in place of the reference, and no ref.
+    # TODO: merge keywords when a $ref has sibling overrides
+    def resolve_reference(node)
+      reference = node['$ref']
+      return [node, nil] if reference.nil?
+
+      target, locator = final_target(@locator, reference)
+      return [node, nil] if target.nil?
+
+      if Array(target['type']).include?(TYPE_OBJECT)
+        @edges << locator
+        [node, locator]
+      else
+        # Inline the target's keywords, local siblings win over them
+        [target.merge(node.except('$ref')), nil]
+      end
+    end
+
+    # Follows chains of pure references to the final node, guarding
+    # against cycles. Returns the node and its locator.
+    def final_target(base, reference, seen = Set.new)
+      locator = URI.join(base, reference)
+      locator.fragment = '/' if locator.fragment.nil?
+
+      return [nil, nil] unless seen.add?(locator.to_s)
+
+      node = @store.node_at(locator)
+      reference = node.is_a?(Hash) ? node['$ref'] : nil
+      return [node, locator] if reference.nil?
+
+      target, target_locator = final_target(locator, reference, seen)
+      target ? [target, target_locator] : [node, locator]
     end
 
     # Visit subtrees (other than properties), like items or additionalProperties,
@@ -106,7 +163,9 @@ module Schematrix
 
     def current_locator
       fragment = @fragment_path.join('/')
-      "file://#{@current_file}##{fragment.empty? ? '/' : fragment}"
+      locator = @locator.dup
+      locator.fragment = fragment.empty? ? '/' : fragment
+      locator.to_s
     end
   end
 end

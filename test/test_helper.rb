@@ -1,5 +1,5 @@
 require 'minitest/autorun'
-require 'yaml'
+require 'uri'
 require_relative '../lib/schematrix'
 require_relative '../lib/schematrix/generators/base'
 
@@ -17,22 +17,46 @@ module SchematrixTestHelper
   private
 
   def assert_fixture(fixture_name, generator_name, path: '')
-    schema = YAML.safe_load(File.read(File.join(FIXTURES_DIR, fixture_name, 'schema.json')))
-    root = schema['title']
-    objects = Schematrix::Visitor.new.compile(root, schema)
-    full_path = [root, path].reject(&:empty?).join('/')
-    node = objects.fetch(full_path)
-
-    generator = Schematrix::GENERATORS[generator_name].new(
-      '/tmp', MODULE_NAME, format: true
-    )
-    actual = generator.transform(full_path, node)
+    actual = generate_fixture(fixture_name, generator_name, path)
 
     expected_file = expected_path(fixture_name, generator_name, path)
     expected = File.read(expected_file)
 
     assert_equal expected, actual,
                  "Output mismatch for #{generator_name} (path: #{path.inspect})"
+  end
+
+  def generate_fixture(fixture_name, generator_name, path)
+    schema_file = File.join(FIXTURES_DIR, fixture_name, 'schema.json')
+    objects = Schematrix::Compiler.new.compile([schema_file])
+    locator = URI(fixture_locator(schema_file, path))
+    node = objects.fetch(locator.to_s)
+
+    generator = Schematrix::GENERATORS[generator_name].new(
+      '/tmp', MODULE_NAME, format: true
+    )
+    generator.transform(locator, generator.class_name_from_path(locator), node)
+  end
+
+  # Maps a test-friendly path like 'l1/l2' or 'Address' to the locator of
+  # the corresponding schema node. Names found under $defs resolve there,
+  # anything else is a chain of property names.
+  def fixture_locator(schema_file, path)
+    fragment =
+      if path.empty?
+        '/'
+      elsif defs_entry?(schema_file, path.split('/').first)
+        "/$defs/#{path}"
+      else
+        "/#{path.split('/').map { |segment| "properties/#{segment}" }.join('/')}"
+      end
+
+    "file://#{File.expand_path(schema_file)}##{fragment}"
+  end
+
+  def defs_entry?(schema_file, name)
+    schema = YAML.safe_load(File.read(schema_file))
+    !schema.dig('$defs', name).nil?
   end
 
   def expected_path(fixture_name, generator_name, path)

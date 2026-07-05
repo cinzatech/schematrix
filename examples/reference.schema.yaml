@@ -1,0 +1,21 @@
+---
+$id: https://example.com/reference.schema.json
+$schema: https://json-schema.org/draft/2020-12/schema
+description: An schema using refs
+title: Reference
+type: object
+properties:
+  rumba:
+    $ref: "#/$defs/samba"
+  salsa:
+    $ref: "#/$defs/cumbia"
+$defs:
+  samba:
+    type: object
+    properties:
+      boogie:
+        type: string
+      polka:
+        $ref: "#/$defs/cumbia"
+  cumbia:
+    type: number

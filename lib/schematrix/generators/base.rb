@@ -37,6 +37,7 @@ module Schematrix
 
       def transform(path, class_name, object)
         code = template(path, class_name, object).render(self.class.erb)
+
         format_code(code)
       end
 

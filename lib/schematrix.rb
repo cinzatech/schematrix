@@ -1,7 +1,6 @@
-require 'yaml'
 require 'tty-logger'
 
-require_relative 'schematrix/visitor'
+require_relative 'schematrix/compiler'
 
 # Generates Ruby code and RBS signatures from JSON Schema definition
 module Schematrix
@@ -13,17 +12,14 @@ module Schematrix
 
   def self.generate(
     generators:,
-    input_file:
+    input_files:
   )
-    content = File.read(input_file)
-    schema = YAML.safe_load(content)
+    objects = Compiler.new.compile(input_files)
 
-    objects = Visitor.new.compile(input_file, schema)
-
-    objects.each do |path, node|
-      logger&.info "Writing output for #{path}"
+    objects.each do |locator, node|
+      logger&.info "Writing output for #{locator}"
       generators.each do |generator|
-        generator.write(path, node)
+        generator.write(locator, node)
       end
     end
   end

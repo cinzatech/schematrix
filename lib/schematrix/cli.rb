@@ -100,12 +100,7 @@ module Schematrix
           )
         end.compact
 
-        input_files.each do |input_file|
-          Schematrix.generate(
-            input_file:,
-            generators:
-          )
-        end
+        Schematrix.generate(input_files:, generators:)
       end
     rescue StandardError => e
       Schematrix.logger&.fatal 'Error: ', e

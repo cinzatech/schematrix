@@ -55,6 +55,9 @@ module Schematrix
             end
           end
 
+          # TODO: Schemas may combine a $ref and some overrides
+          base << class_name_from_path(schema.ref) unless schema.ref.nil?
+
           combined = combine_types(base)
           return combined if combined == RBS_TYPE_UNTYPED
           return combined if strictly_required?(schema)

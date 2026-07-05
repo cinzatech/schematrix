@@ -11,7 +11,7 @@ module Schematrix
       def class_name_from_path(uri, *path)
         file = File.basename(uri.path).split('.').first
         nested_path = [file, *uri.fragment.split('/'), *path].compact.reject(&:empty?).reject do
-          it == 'properties'
+          ['properties', '$defs'].include?(_1)
         end.join('/')
 
         pascal_case(nested_path)

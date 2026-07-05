@@ -28,6 +28,9 @@ module Schematrix
             end
           end
 
+          # TODO: Schemas may combine a $ref and some overrides
+          base << class_name_from_path(schema.ref) unless schema.ref.nil?
+
           combined = combine_types(base)
           return combined if combined == SORBET_TYPE_ANYTHING
           return combined if strictly_required?(schema)
