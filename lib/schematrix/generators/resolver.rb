@@ -7,10 +7,12 @@ module Schematrix
       # Passing a series of path parts to this method will return the qualified
       # class name corresponding to that path.
       # Example: 'foo/bar', 'baz' => Title::Foo::Bar::Baz
-      # Empty parts are removed.
+      # Empty parts are removed. 'properties' also removed.
       def class_name_from_path(uri, *path)
         file = File.basename(uri.path).split('.').first
-        nested_path = [file, uri.fragment.sub('/', ''), *path].compact.reject(&:empty?).join('/')
+        nested_path = [file, *uri.fragment.split('/'), *path].compact.reject(&:empty?).reject do
+          it == 'properties'
+        end.join('/')
 
         pascal_case(nested_path)
       end

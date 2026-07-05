@@ -21,7 +21,7 @@ module Schematrix
     objects = Visitor.new.compile(input_file, schema)
 
     objects.each do |path, node|
-      logger&.info "Writing #{path}"
+      logger&.info "Writing output for #{path}"
       generators.each do |generator|
         generator.write(path, node)
       end

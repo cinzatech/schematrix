@@ -67,10 +67,13 @@ module Schematrix
       items = visit_subtree('items', node)
       additional_properties = visit_subtree('additionalProperties', node)
       required_properties = Set.new(node['required'])
+
+      @fragment_path.push('properties')
       properties = node['properties']&.map do |prop_name, body|
         schema = visit_schema(prop_name, body, required: required_properties.include?(prop_name))
         [prop_name, schema]
       end&.compact&.to_h
+      @fragment_path.pop
 
       schema = Schema.new(
         additional_properties:,
