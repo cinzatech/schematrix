@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class TupleRest
+  class Schema
     sig { params(data: T.anything).void }
     def initialize(data: nil)
       @data = data

@@ -1,5 +1,5 @@
 module M
-  class StringProp
+  class Schema
     attr_accessor value: String?
 
     def initialize: (?value: String?) -> void

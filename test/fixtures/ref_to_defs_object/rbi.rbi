@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class RefObj
+  class Schema
     sig { params(address: T.anything).void }
     def initialize(address: nil)
     end

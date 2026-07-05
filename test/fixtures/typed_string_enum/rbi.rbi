@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class TypedEnum
+  class Schema
     sig { params(status: T.nilable(String)).void }
     def initialize(status: nil)
     end

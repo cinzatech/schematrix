@@ -1,5 +1,5 @@
 module M
-  class Defaults
+  class Schema
     attr_accessor color: String?
     attr_accessor count: Integer?
 

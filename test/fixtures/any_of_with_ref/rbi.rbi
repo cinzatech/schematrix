@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class AnyOfRef
+  class Schema
     sig { params(value: T.anything).void }
     def initialize(value: nil)
     end

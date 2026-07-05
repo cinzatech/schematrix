@@ -1,5 +1,5 @@
 module M
-  class PatternProps
+  class Schema
     attr_accessor config: Hash[String, String]?
 
     def initialize: (?config: Hash[String, String]?) -> void

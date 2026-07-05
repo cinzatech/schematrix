@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class Tuple
+  class Schema
     sig { params(point: T.anything).void }
     def initialize(point: nil)
     end

@@ -1,5 +1,5 @@
 module M
-  class MapLike
+  class Schema
     def initialize(tags: nil)
       @tags = tags
     end

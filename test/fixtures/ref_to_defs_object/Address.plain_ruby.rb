@@ -1,5 +1,5 @@
 module M
-  class RefObj::Address
+  class Schema::Address
     def initialize(city: nil)
       @city = city
     end

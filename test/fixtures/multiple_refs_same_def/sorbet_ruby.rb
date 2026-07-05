@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class MultiRef
+  class Schema
     sig { params(home: T.anything, work: T.anything).void }
     def initialize(home: nil, work: nil)
       @home = home

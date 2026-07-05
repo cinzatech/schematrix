@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class FlatObject
+  class Schema
     sig do
       params(
         name: T.nilable(String),

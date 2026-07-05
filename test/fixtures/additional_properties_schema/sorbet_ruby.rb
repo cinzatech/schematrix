@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class MapLike
+  class Schema
     sig { params(tags: T.nilable(T::Hash[String, String])).void }
     def initialize(tags: nil)
       @tags = tags

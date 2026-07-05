@@ -1,5 +1,5 @@
 module M
-  class RefSibling
+  class Schema
     def initialize(anchor: "myAnchor")
       @anchor = anchor
     end

@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class Conditional
+  class Schema
     sig { params(kind: T.nilable(String), value: T.nilable(String), tier: T.nilable(Integer), reason: T.nilable(String)).void }
     def initialize(kind: nil, value: nil, tier: nil, reason: nil)
       @kind = kind

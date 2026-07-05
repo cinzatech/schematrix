@@ -1,5 +1,5 @@
 module M
-  class Tuple
+  class Schema
     def initialize(point: nil)
       @point = point
     end

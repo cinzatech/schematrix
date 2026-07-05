@@ -1,5 +1,5 @@
 module M
-  class AllOfMerge
+  class Schema
     attr_accessor name: String
     attr_accessor age: Integer?
 

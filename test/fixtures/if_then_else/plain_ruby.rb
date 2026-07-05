@@ -1,5 +1,5 @@
 module M
-  class Conditional
+  class Schema
     def initialize(kind: nil, value: nil, tier: nil, reason: nil)
       @kind = kind
       @value = value

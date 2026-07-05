@@ -1,5 +1,5 @@
 module M
-  class PatternProps
+  class Schema
     def initialize(config: nil)
       @config = config
     end

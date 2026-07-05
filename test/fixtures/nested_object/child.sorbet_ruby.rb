@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class Parent::Child
+  class Schema::Child
     sig { params(value: T.nilable(String)).void }
     def initialize(value: nil)
       @value = value

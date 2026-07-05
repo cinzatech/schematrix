@@ -1,5 +1,5 @@
 module M
-  class IntArray
+  class Schema
     attr_accessor scores: Array[Integer]?
 
     def initialize: (?scores: Array[Integer]?) -> void

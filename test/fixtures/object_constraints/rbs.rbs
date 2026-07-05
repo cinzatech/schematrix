@@ -1,5 +1,5 @@
 module M
-  class ObjConstraints
+  class Schema
     attr_accessor name: String?
 
     def initialize: (?name: String?) -> void

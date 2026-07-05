@@ -1,5 +1,5 @@
 module M
-  class FormatAnnotation
+  class Schema
     attr_accessor email: String?
 
     def initialize: (?email: String?) -> void

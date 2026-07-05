@@ -1,5 +1,5 @@
 module M
-  class ObjConstraints
+  class Schema
     def initialize(name: nil)
       @name = name
     end

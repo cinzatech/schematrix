@@ -1,8 +1,8 @@
 module M
-  class Recursive
+  class Schema
     attr_accessor value: String?
-    attr_accessor children: Array[Recursive]?
+    attr_accessor children: Array[Schema]?
 
-    def initialize: (?value: String?, ?children: Array[Recursive]?) -> void
+    def initialize: (?value: String?, ?children: Array[Schema]?) -> void
   end
 end

@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class ContentEnc
+  class Schema
     sig { params(data: T.nilable(String)).void }
     def initialize(data: nil)
     end

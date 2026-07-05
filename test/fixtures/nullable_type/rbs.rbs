@@ -1,5 +1,5 @@
 module M
-  class NullableType
+  class Schema
     attr_accessor value: String?
 
     def initialize: (?value: String?) -> void

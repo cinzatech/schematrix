@@ -1,5 +1,5 @@
 module M
-  class ContentEnc
+  class Schema
     def initialize(data: nil)
       @data = data
     end

@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class ObjArray
+  class Schema
     sig { params(entries: T.anything).void }
     def initialize(entries: nil)
       @entries = entries

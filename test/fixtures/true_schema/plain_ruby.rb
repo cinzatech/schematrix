@@ -1,5 +1,5 @@
 module M
-  class TrueSchema
+  class Schema
     def initialize(value: nil)
       @value = value
     end

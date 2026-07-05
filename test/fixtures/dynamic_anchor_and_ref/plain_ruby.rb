@@ -1,5 +1,5 @@
 module M
-  class Recursive
+  class Schema
     def initialize(value: nil, children: nil)
       @value = value
       @children = children

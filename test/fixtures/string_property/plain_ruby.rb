@@ -1,5 +1,5 @@
 module M
-  class StringProp
+  class Schema
     def initialize(value: nil)
       @value = value
     end

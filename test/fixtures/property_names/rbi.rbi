@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class PropNames
+  class Schema
     sig { params(vocab: T.nilable(T::Hash[String, T::Boolean])).void }
     def initialize(vocab: nil)
     end

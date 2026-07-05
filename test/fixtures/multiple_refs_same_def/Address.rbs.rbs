@@ -1,5 +1,5 @@
 module M
-  class MultiRef::Address
+  class Schema::Address
     attr_accessor city: String?
 
     def initialize: (?city: String?) -> void

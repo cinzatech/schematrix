@@ -1,5 +1,5 @@
 module M
-  class Deep::L1::L2
+  class Schema::L1::L2
     def initialize(val: nil)
       @val = val
     end

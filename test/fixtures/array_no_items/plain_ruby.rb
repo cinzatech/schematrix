@@ -1,5 +1,5 @@
 module M
-  class UntypedArray
+  class Schema
     def initialize(data: nil)
       @data = data
     end

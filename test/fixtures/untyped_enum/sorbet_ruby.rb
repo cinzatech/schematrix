@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class UntypedEnum
+  class Schema
     sig { params(data: T.anything).void }
     def initialize(data: nil)
       @data = data

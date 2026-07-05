@@ -1,5 +1,5 @@
 module M
-  class Required
+  class Schema
     attr_accessor name: String
     attr_accessor email: String
     attr_accessor age: Integer?

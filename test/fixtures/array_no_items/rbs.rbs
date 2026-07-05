@@ -1,5 +1,5 @@
 module M
-  class UntypedArray
+  class Schema
     attr_accessor data: Array[untyped]?
 
     def initialize: (?data: Array[untyped]?) -> void

@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class TypeUnion
+  class Schema
     sig { params(value: T.nilable(T.any(String, Integer))).void }
     def initialize(value: nil)
     end

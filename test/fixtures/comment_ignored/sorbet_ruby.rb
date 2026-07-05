@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class CommentIgnored
+  class Schema
     sig { params(value: T.nilable(String)).void }
     def initialize(value: nil)
       @value = value

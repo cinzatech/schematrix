@@ -1,5 +1,5 @@
 module M
-  class ArrConstrained
+  class Schema
     attr_accessor tags: Array[String]?
 
     def initialize: (?tags: Array[String]?) -> void

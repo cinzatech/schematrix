@@ -1,5 +1,5 @@
 module M
-  class StringConstrained
+  class Schema
     def initialize(code: nil)
       @code = code
     end

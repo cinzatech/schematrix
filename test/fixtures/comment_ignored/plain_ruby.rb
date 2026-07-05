@@ -1,5 +1,5 @@
 module M
-  class CommentIgnored
+  class Schema
     def initialize(value: nil)
       @value = value
     end

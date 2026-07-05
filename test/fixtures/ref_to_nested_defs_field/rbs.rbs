@@ -1,5 +1,5 @@
 module M
-  class RefArray
+  class Schema
     attr_accessor items: Array[String]?
 
     def initialize: (?items: Array[String]?) -> void

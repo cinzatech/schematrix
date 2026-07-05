@@ -1,5 +1,5 @@
 module M
-  class AnyOfScalars
+  class Schema
     def initialize(value: nil)
       @value = value
     end

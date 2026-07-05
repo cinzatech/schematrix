@@ -1,5 +1,5 @@
 module M
-  class RefObj
+  class Schema
     def initialize(address: nil)
       @address = address
     end

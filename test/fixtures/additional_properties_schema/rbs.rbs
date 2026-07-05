@@ -1,7 +1,7 @@
 module M
-  class MapLike
-    attr_accessor tags: MapLike::Tags?
+  class Schema
+    attr_accessor tags: Schema::Tags?
 
-    def initialize: (?tags: MapLike::Tags?) -> void
+    def initialize: (?tags: Schema::Tags?) -> void
   end
 end

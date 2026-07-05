@@ -1,5 +1,5 @@
 module M
-  class RefArray
+  class Schema
     def initialize(items: nil)
       @items = items
     end

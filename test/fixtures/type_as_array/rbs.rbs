@@ -1,5 +1,5 @@
 module M
-  class TypeUnion
+  class Schema
     attr_accessor value: (String | Integer)?
 
     def initialize: (?value: (String | Integer)?) -> void

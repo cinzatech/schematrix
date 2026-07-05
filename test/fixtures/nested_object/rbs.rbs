@@ -1,7 +1,7 @@
 module M
-  class Parent
-    attr_accessor child: Parent::Child?
+  class Schema
+    attr_accessor child: Schema::Child?
 
-    def initialize: (?child: Parent::Child?) -> void
+    def initialize: (?child: Schema::Child?) -> void
   end
 end

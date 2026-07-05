@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class StringArray
+  class Schema
     sig { params(tags: T.anything).void }
     def initialize(tags: nil)
     end

@@ -1,5 +1,5 @@
 module M
-  class BooleanProp
+  class Schema
     def initialize(value: nil)
       @value = value
     end

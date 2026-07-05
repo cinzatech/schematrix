@@ -1,5 +1,5 @@
 module M
-  class ObjArray
+  class Schema
     def initialize(entries: nil)
       @entries = entries
     end

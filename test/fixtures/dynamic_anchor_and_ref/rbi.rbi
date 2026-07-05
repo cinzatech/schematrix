@@ -1,11 +1,11 @@
 # typed: strict
 
 module M
-  class Recursive
+  class Schema
     sig do
       params(
         value: T.nilable(String),
-        children: T.nilable(T::Array[Recursive])
+        children: T.nilable(T::Array[Schema])
       ).void
     end
     def initialize(value: nil, children: nil)
@@ -19,11 +19,11 @@ module M
     def value=(value)
     end
 
-    sig { returns(T.nilable(T::Array[Recursive])) }
+    sig { returns(T.nilable(T::Array[Schema])) }
     def children
     end
 
-    sig { params(children: T.nilable(T::Array[Recursive])).void }
+    sig { params(children: T.nilable(T::Array[Schema])).void }
     def children=(children)
     end
   end

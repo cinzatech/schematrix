@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class RefSibling
+  class Schema
     sig { params(anchor: T.nilable(String)).void }
     def initialize(anchor: "myAnchor")
     end

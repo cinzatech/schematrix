@@ -1,5 +1,5 @@
 module M
-  class NullProp
+  class Schema
     attr_accessor value: nil
 
     def initialize: (?value: nil) -> void

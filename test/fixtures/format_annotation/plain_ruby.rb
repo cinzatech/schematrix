@@ -1,5 +1,5 @@
 module M
-  class FormatAnnotation
+  class Schema
     def initialize(email: nil)
       @email = email
     end

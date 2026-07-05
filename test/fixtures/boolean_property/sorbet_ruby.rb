@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class BooleanProp
+  class Schema
     sig { params(value: T.nilable(T::Boolean)).void }
     def initialize(value: nil)
       @value = value

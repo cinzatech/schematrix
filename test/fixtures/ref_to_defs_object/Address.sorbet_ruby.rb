@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class RefObj::Address
+  class Schema::Address
     sig { params(city: T.nilable(String)).void }
     def initialize(city: nil)
       @city = city

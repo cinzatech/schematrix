@@ -1,5 +1,5 @@
 module M
-  class ObjArray
+  class Schema
     attr_accessor entries: Array[untyped]?
 
     def initialize: (?entries: Array[untyped]?) -> void

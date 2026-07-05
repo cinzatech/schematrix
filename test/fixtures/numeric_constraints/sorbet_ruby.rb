@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class NumConstrained
+  class Schema
     sig { params(score: T.nilable(Float)).void }
     def initialize(score: nil)
       @score = score

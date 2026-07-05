@@ -1,5 +1,5 @@
 module M
-  class PropNames
+  class Schema
     def initialize(vocab: nil)
       @vocab = vocab
     end

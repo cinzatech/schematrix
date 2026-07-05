@@ -1,5 +1,5 @@
 module M
-  class AllOfMerge
+  class Schema
     def initialize(name:, age: nil)
       @name = name
       @age = age

@@ -1,5 +1,5 @@
 module M
-  class PropNames
+  class Schema
     attr_accessor vocab: Hash[String, bool]?
 
     def initialize: (?vocab: Hash[String, bool]?) -> void

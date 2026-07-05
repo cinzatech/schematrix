@@ -1,5 +1,5 @@
 module M
-  class NumberProp
+  class Schema
     def initialize(value: nil)
       @value = value
     end

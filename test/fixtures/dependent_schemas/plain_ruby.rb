@@ -1,5 +1,5 @@
 module M
-  class DepSchemas
+  class Schema
     def initialize(name: nil, credit_card: nil, billing_address: nil)
       @name = name
       @credit_card = credit_card

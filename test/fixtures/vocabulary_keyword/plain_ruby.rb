@@ -1,5 +1,5 @@
 module M
-  class WithVocab
+  class Schema
     def initialize(name: nil)
       @name = name
     end

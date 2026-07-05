@@ -1,5 +1,5 @@
 module M
-  class ConstValue
+  class Schema
     attr_accessor status: String?
 
     def initialize: (?status: String?) -> void

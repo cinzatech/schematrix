@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class StringProp
+  class Schema
     sig { params(value: T.nilable(String)).void }
     def initialize(value: nil)
       @value = value

@@ -1,5 +1,5 @@
 module M
-  class MultiRef::Address
+  class Schema::Address
     def initialize(city: nil)
       @city = city
     end

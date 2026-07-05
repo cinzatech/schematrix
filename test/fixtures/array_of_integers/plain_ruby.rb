@@ -1,5 +1,5 @@
 module M
-  class IntArray
+  class Schema
     def initialize(scores: nil)
       @scores = scores
     end

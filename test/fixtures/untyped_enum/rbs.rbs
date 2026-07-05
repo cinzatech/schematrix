@@ -1,5 +1,5 @@
 module M
-  class UntypedEnum
+  class Schema
     attr_accessor data: untyped
 
     def initialize: (?data: untyped) -> void

@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class RefArray
+  class Schema
     sig { params(items: T.anything).void }
     def initialize(items: nil)
       @items = items

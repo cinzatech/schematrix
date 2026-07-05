@@ -1,5 +1,5 @@
 module M
-  class RefSibling
+  class Schema
     attr_accessor anchor: String?
 
     def initialize: (?anchor: String?) -> void

@@ -1,6 +1,6 @@
 module M
   # A described object
-  class Described
+  class Schema
     def initialize(name: nil)
       @name = name
     end

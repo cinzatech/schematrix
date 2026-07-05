@@ -1,5 +1,5 @@
 module M
-  class Conditional
+  class Schema
     attr_accessor kind: String?
     attr_accessor value: String?
     attr_accessor tier: Integer?

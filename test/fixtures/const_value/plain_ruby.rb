@@ -1,5 +1,5 @@
 module M
-  class ConstValue
+  class Schema
     def initialize(status: nil)
       @status = status
     end

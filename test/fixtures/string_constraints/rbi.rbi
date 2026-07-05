@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class StringConstrained
+  class Schema
     sig { params(code: T.nilable(String)).void }
     def initialize(code: nil)
     end

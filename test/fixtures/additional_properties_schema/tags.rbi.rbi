@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class MapLike::Tags
+  class Schema::Tags
     sig { void }
     def initialize
     end

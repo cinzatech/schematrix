@@ -1,5 +1,5 @@
 module M
-  class ObjOrBool
+  class Schema
     def initialize(meta: nil)
       @meta = meta
     end

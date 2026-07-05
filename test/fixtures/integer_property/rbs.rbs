@@ -1,5 +1,5 @@
 module M
-  class IntegerProp
+  class Schema
     attr_accessor value: Integer?
 
     def initialize: (?value: Integer?) -> void

@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class FormatAnnotation
+  class Schema
     sig { params(email: T.nilable(String)).void }
     def initialize(email: nil)
       @email = email

@@ -1,5 +1,5 @@
 module M
-  class RefObj::Address
+  class Schema::Address
     attr_accessor city: String?
 
     def initialize: (?city: String?) -> void

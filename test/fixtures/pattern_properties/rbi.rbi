@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class PatternProps
+  class Schema
     sig { params(config: T.nilable(T::Hash[String, String])).void }
     def initialize(config: nil)
     end

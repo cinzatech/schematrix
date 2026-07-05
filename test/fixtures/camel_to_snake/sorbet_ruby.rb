@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class CamelCase
+  class Schema
     sig do
       params(first_name: T.nilable(String), last_name: T.nilable(String)).void
     end

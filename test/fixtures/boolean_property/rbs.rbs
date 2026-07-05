@@ -1,5 +1,5 @@
 module M
-  class BooleanProp
+  class Schema
     attr_accessor value: bool?
 
     def initialize: (?value: bool?) -> void

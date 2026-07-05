@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class NumberProp
+  class Schema
     sig { params(value: T.nilable(Float)).void }
     def initialize(value: nil)
       @value = value

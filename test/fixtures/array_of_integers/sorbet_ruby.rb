@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class IntArray
+  class Schema
     sig { params(scores: T.anything).void }
     def initialize(scores: nil)
       @scores = scores

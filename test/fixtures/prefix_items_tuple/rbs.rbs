@@ -1,5 +1,5 @@
 module M
-  class Tuple
+  class Schema
     attr_accessor point: Array[Float]?
 
     def initialize: (?point: Array[Float]?) -> void

@@ -1,5 +1,5 @@
 module M
-  class ContentEnc
+  class Schema
     attr_accessor data: String?
 
     def initialize: (?data: String?) -> void

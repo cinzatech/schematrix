@@ -2,7 +2,7 @@
 
 module M
   # A described object
-  class Described
+  class Schema
     sig { params(name: T.nilable(String)).void }
     def initialize(name: nil)
       @name = name

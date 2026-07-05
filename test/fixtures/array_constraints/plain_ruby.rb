@@ -1,5 +1,5 @@
 module M
-  class ArrConstrained
+  class Schema
     def initialize(tags: nil)
       @tags = tags
     end

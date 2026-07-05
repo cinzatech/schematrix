@@ -1,5 +1,5 @@
 module M
-  class ObjOrBool
+  class Schema
     attr_accessor meta: untyped
 
     def initialize: (?meta: untyped) -> void

@@ -1,5 +1,5 @@
 module M
-  class NumConstrained
+  class Schema
     def initialize(score: nil)
       @score = score
     end

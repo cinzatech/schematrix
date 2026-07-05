@@ -1,5 +1,5 @@
 module M
-  class MapLike::Tags
+  class Schema::Tags
     def initialize
       @_extra = {}
     end

@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class AllOfMerge
+  class Schema
     sig { params(name: String, age: T.nilable(Integer)).void }
     def initialize(name:, age: nil)
       @name = name

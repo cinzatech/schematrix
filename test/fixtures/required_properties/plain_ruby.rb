@@ -1,5 +1,5 @@
 module M
-  class Required
+  class Schema
     def initialize(name:, email:, age: nil)
       @name = name
       @email = email

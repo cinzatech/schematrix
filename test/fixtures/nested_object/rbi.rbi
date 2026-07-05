@@ -1,16 +1,16 @@
 # typed: strict
 
 module M
-  class Parent
-    sig { params(child: T.nilable(Parent::Child)).void }
+  class Schema
+    sig { params(child: T.nilable(Schema::Child)).void }
     def initialize(child: nil)
     end
 
-    sig { returns(T.nilable(Parent::Child)) }
+    sig { returns(T.nilable(Schema::Child)) }
     def child
     end
 
-    sig { params(child: T.nilable(Parent::Child)).void }
+    sig { params(child: T.nilable(Schema::Child)).void }
     def child=(child)
     end
   end

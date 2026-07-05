@@ -1,5 +1,5 @@
 module M
-  class StringConstrained
+  class Schema
     attr_accessor code: String?
 
     def initialize: (?code: String?) -> void

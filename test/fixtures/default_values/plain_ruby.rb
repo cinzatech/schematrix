@@ -1,5 +1,5 @@
 module M
-  class Defaults
+  class Schema
     def initialize(color: "blue", count: 0)
       @color = color
       @count = count

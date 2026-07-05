@@ -1,7 +1,7 @@
 module M
-  class RefObj
-    attr_accessor address: RefObj::Address?
+  class Schema
+    attr_accessor address: Schema::Address?
 
-    def initialize: (?address: RefObj::Address?) -> void
+    def initialize: (?address: Schema::Address?) -> void
   end
 end

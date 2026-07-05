@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class Defaults
+  class Schema
     sig { params(color: T.nilable(String), count: T.nilable(Integer)).void }
     def initialize(color: "blue", count: 0)
       @color = color

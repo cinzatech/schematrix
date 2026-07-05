@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class ObjOrBool
+  class Schema
     sig { params(meta: T.anything).void }
     def initialize(meta: nil)
     end

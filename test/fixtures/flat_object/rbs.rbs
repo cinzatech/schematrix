@@ -1,5 +1,5 @@
 module M
-  class FlatObject
+  class Schema
     attr_accessor name: String?
     attr_accessor age: Integer?
     attr_accessor active: bool?

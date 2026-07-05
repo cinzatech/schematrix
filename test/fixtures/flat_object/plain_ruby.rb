@@ -1,5 +1,5 @@
 module M
-  class FlatObject
+  class Schema
     def initialize(name: nil, age: nil, active: nil)
       @name = name
       @age = age

@@ -1,5 +1,5 @@
 module M
-  class NullProp
+  class Schema
     def initialize(value: nil)
       @value = value
     end

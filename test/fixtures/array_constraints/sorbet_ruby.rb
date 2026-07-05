@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class ArrConstrained
+  class Schema
     sig { params(tags: T.anything).void }
     def initialize(tags: nil)
       @tags = tags

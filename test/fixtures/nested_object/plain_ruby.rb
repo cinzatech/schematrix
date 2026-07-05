@@ -1,5 +1,5 @@
 module M
-  class Parent
+  class Schema
     def initialize(child: nil)
       @child = child
     end

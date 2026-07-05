@@ -1,5 +1,5 @@
 module M
-  class MultiRef
+  class Schema
     def initialize(home: nil, work: nil)
       @home = home
       @work = work

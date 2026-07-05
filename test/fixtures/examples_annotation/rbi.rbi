@@ -1,7 +1,7 @@
 # typed: strict
 
 module M
-  class ExamplesAnnotation
+  class Schema
     sig { params(name: T.nilable(String)).void }
     def initialize(name: nil)
     end

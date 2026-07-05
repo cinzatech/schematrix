@@ -1,5 +1,5 @@
 module M
-  class Parent::Child
+  class Schema::Child
     attr_accessor value: String?
 
     def initialize: (?value: String?) -> void

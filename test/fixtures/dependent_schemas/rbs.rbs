@@ -1,5 +1,5 @@
 module M
-  class DepSchemas
+  class Schema
     attr_accessor name: String?
     attr_accessor credit_card: String?
     attr_accessor billing_address: String?
