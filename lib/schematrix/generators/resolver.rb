@@ -1,3 +1,5 @@
+require 'uri'
+
 module Schematrix
   module Generators
     # Common functions for Ruby class name and file handling
@@ -6,8 +8,9 @@ module Schematrix
       # class name corresponding to that path.
       # Example: 'foo/bar', 'baz' => Title::Foo::Bar::Baz
       # Empty parts are removed.
-      def class_name_from_path(*path)
-        nested_path = path.compact.reject(&:empty?).join('/')
+      def class_name_from_path(uri, *path)
+        file = File.basename(uri.path).split('.').first
+        nested_path = [file, uri.fragment.sub('/', ''), *path].compact.reject(&:empty?).join('/')
 
         pascal_case(nested_path)
       end

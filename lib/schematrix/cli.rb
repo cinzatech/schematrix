@@ -1,4 +1,3 @@
-require 'yaml'
 require 'tty-option'
 
 require_relative 'generators/base'
@@ -81,32 +80,30 @@ module Schematrix
 
         generator_names = Array(params[:generators]).uniq
 
-        unknown = generators - GENERATORS.keys
+        unknown = generator_names - GENERATORS.keys
         Schematrix.logger&.warn "Unknown generators: #{unknown.to_a.join(', ')}" unless unknown.empty?
 
         output = Array(params[:output])
-        unless [0, 1, generators.size].include?(output.size)
+        unless [0, 1, generator_names.size].include?(output.size)
           Schematrix.logger&.fatal "The specified amount of output directories doesn't match the amount of generators"
           exit 1
         end
         output << 'generated' if output.empty?
         # If only one output dir specified, we use it for every generator
-        output_dirs = output.size == 1 ? Array.new(generators.size, output.first) : output
+        output_dirs = output.size == 1 ? Array.new(generator_names.size, output.first) : output
 
         generators = output_dirs.zip(generator_names).map do |(output_dir, name)|
           GENERATORS[name]&.new(
             output_dir,
-            module_name
+            module_name,
+            format: true
           )
         end.compact
 
         input_files.each do |input_file|
-          content = File.read(input_file)
-          schema = YAML.safe_load(content)
           Schematrix.generate(
-            schema,
-            generators:,
-            input_file:
+            input_file:,
+            generators:
           )
         end
       end

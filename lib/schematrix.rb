@@ -1,3 +1,4 @@
+require 'yaml'
 require 'tty-logger'
 
 require_relative 'schematrix/visitor'
@@ -11,15 +12,16 @@ module Schematrix
   end
 
   def self.generate(
-    json,
     generators:,
     input_file:
   )
-    title = json['title']
-    objects = Visitor.new.compile(title, json)
+    content = File.read(input_file)
+    schema = YAML.safe_load(content)
+
+    objects = Visitor.new.compile(input_file, schema)
 
     objects.each do |path, node|
-      logger&.info "Writing #{input_file}#/#{path}"
+      logger&.info "Writing #{path}"
       generators.each do |generator|
         generator.write(path, node)
       end

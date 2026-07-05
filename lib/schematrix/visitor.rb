@@ -12,6 +12,7 @@ module Schematrix
   Schema = Data.define(
     :additional_properties,
     :default,
+    :title,
     :description,
     :enum,
     :items,
@@ -24,6 +25,7 @@ module Schematrix
     additional_properties: nil,
     properties: nil,
     default: nil,
+    title: nil,
     description: nil,
     enum: nil,
     required: nil,
@@ -34,12 +36,14 @@ module Schematrix
   # Visitor for a JSON Schema, visits the whole schema document tree
   class Visitor
     def initialize
-      @path = []
+      @current_file = ''
+      @fragment_path = []
       @objects = {}
     end
 
-    def compile(title, schema)
-      visit_schema(title, schema, required: false)
+    def compile(input_file, schema)
+      @current_file = File.expand_path(input_file)
+      visit_schema('', schema, required: false)
 
       @objects.dup
     end
@@ -47,17 +51,18 @@ module Schematrix
     private
 
     def visit_schema(name, node, required: true)
-      @path.push(name)
+      @fragment_path.push(name)
 
       # JSON Schema allows "true" as a catch-all
       if node.is_a? TrueClass
-        @objects[@path.join('/')] = Schema::Empty
+        @objects[current_locator] = Schema::Empty
         return Schema::Empty
       end
 
       type = Set.new(Array(node['type']))
       enum = node['enum']
       default = node['default']
+      title = node['title']
       description = node['description']
       items = visit_subtree('items', node)
       additional_properties = visit_subtree('additionalProperties', node)
@@ -71,6 +76,7 @@ module Schematrix
         additional_properties:,
         properties:,
         default:,
+        title:,
         description:,
         enum:,
         required:,
@@ -78,11 +84,11 @@ module Schematrix
         items:
       )
 
-      @objects[@path.join('/')] = schema if type.include?(TYPE_OBJECT)
+      @objects[current_locator] = schema if type.include?(TYPE_OBJECT)
 
       schema
     ensure
-      @path.pop
+      @fragment_path.pop
     end
 
     # Visit subtrees (other than properties), like items or additionalProperties,
@@ -93,6 +99,11 @@ module Schematrix
       return nil if branch.nil?
 
       visit_schema(branch_name, branch)
+    end
+
+    def current_locator
+      fragment = @fragment_path.join('/')
+      "file://#{@current_file}##{fragment.empty? ? '/' : fragment}"
     end
   end
 end

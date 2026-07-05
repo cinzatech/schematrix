@@ -24,9 +24,10 @@ module Schematrix
       end
 
       def write(path, object)
-        code = transform(path, object)
+        uri = URI(path)
+        code = transform(uri, object)
 
-        filename = "#{underscore(class_name_from_path(path))}#{self.class.file_extension}"
+        filename = "#{underscore(class_name_from_path(uri))}#{self.class.file_extension}"
         file_path = File.join(@output_dir, filename)
         FileUtils.mkdir_p(File.dirname(file_path))
 
