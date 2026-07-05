@@ -87,7 +87,7 @@ Usage: schematrix [OPTIONS] INPUT [INPUT...]
 Generate code matching a JSON Schema
 
 Options:
-  -g, --generators list  Output generators to use, i.e.: plain_ruby, rbs
+  -g, --generators list  Output generators to use, e.g.: plain_ruby, rbs
   -h, --help             Print usage
   -m, --module string    Module where the output code will be placed
   -o, --output string    Directory where the output will be written (default
@@ -130,7 +130,7 @@ schematrix -g plain_ruby -o generated -g rbi -o rbi *.schema.json
 
 Produces mutable Ruby classes. For each `object` type encountered in the schema (including nested objects), the generator:
 
-1. Derives a **class name** from the schema `title` and the JSON path to the object, converted to PascalCase.
+1. Derives a **class name** from the schema file name (up to the first period) and the path to the object within the document, converted to PascalCase.
 2. Converts all **property names** from camelCase to snake_case.
 3. Emits a class with a **keyword-argument constructor** (`def initialize(prop_a:, prop_b:)`) and an `attr_accessor` for every property.
 4. Writes one **file per object** into the output directory, with snake_case filenames.
@@ -169,18 +169,18 @@ The generator produces two files:
 
 ```mermaid
 flowchart LR
-    A[JSON Schema file] --> B["Visitor"]
-    B -- "Traverses the schema tree and builds an internal representation of all object and scalar nodes" --> C["Generator\nlib/schematrix/output/*.rb"]
-    C -- "Transforms each node into code and writes one file per object into the output directory" --> D["Output files\ne.g. generated/person.rb"]
+    A["JSON Schema files"] --> B["Compiler"]
+    B -- "Visits every schema reachable from the inputs and builds an internal representation of each object it finds" --> C["Generators\nlib/schematrix/generators/*"]
+    C -- "Transform each object into code and write one file per object into the output directory" --> D["Output files\ne.g. generated/person.rb"]
 ```
 
 The core components are:
 
-- **`Schematrix::Visitor`** — walks the JSON Schema document tree depth-first, resolving `required` fields and dispatching on `type`.
-- **`Schematrix::ArraySchema`** — represents an `array` node with its `items` type.
-- **`Schematrix::ObjectSchema`** — represents an `object` node with its named properties.
-- **`Schematrix::Schema`** — represents a scalar leaf node (`string`, `integer`, `boolean`, etc.).
-- **`Schematrix::Output::*`** — the code generators; handle source code production, formatting, and file I/O.
+- **`Schematrix::Compiler`** — drives compilation: starting from the input files, it turns every reachable object schema into an internal representation.
+- **`Schematrix::DocumentStore`** — loads and caches schema documents, and looks up the nodes they contain.
+- **`Schematrix::Visitor`** — walks a schema subtree depth-first, resolving `required` fields and dispatching on `type`.
+- **`Schematrix::Schema`** — the internal representation of a schema node.
+- **`Schematrix::Generators::*`** — the code generators; handle source code production, formatting, and file I/O.
 - **`Schematrix::CLI`** — the command-line interface, built on [`tty-option`](https://github.com/piotrmurach/tty-option).
 
 ---
