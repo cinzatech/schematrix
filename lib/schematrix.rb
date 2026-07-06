@@ -1,11 +1,10 @@
 require 'tty-logger'
 
+require_relative 'schematrix/version'
 require_relative 'schematrix/compiler'
 
 # Generates Ruby code and RBS signatures from JSON Schema definition
 module Schematrix
-  VERSION = '0.1.0'
-
   class << self
     attr_accessor :logger
   end

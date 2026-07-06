@@ -1,4 +1,4 @@
-require_relative 'lib/schematrix'
+require_relative 'lib/schematrix/version'
 
 Gem::Specification.new do |s|
   s.name        = 'schematrix'
