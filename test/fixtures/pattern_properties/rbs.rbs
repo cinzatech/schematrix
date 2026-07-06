@@ -1,7 +1,7 @@
 module M
   class Schema
-    attr_accessor config: Hash[String, String]?
+    attr_accessor config: Schema::Config?
 
-    def initialize: (?config: Hash[String, String]?) -> void
+    def initialize: (?config: Schema::Config?) -> void
   end
 end

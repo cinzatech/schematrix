@@ -2,12 +2,12 @@
 
 module M
   class Schema
-    sig { params(meta: T.anything).void }
+    sig { params(meta: T.nilable(T.any(Schema::Meta, T::Boolean))).void }
     def initialize(meta: nil)
       @meta = meta
     end
 
-    sig { returns(T.anything) }
+    sig { returns(T.nilable(T.any(Schema::Meta, T::Boolean))) }
     attr_accessor :meta
   end
 end

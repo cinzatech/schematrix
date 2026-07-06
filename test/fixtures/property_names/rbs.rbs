@@ -1,7 +1,7 @@
 module M
   class Schema
-    attr_accessor vocab: Hash[String, bool]?
+    attr_accessor vocab: Schema::Vocab?
 
-    def initialize: (?vocab: Hash[String, bool]?) -> void
+    def initialize: (?vocab: Schema::Vocab?) -> void
   end
 end

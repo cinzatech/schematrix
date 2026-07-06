@@ -2,12 +2,12 @@
 
 module M
   class Schema
-    sig { params(scores: T.anything).void }
+    sig { params(scores: T.nilable(T::Array[Integer])).void }
     def initialize(scores: nil)
       @scores = scores
     end
 
-    sig { returns(T.anything) }
+    sig { returns(T.nilable(T::Array[Integer])) }
     attr_accessor :scores
   end
 end

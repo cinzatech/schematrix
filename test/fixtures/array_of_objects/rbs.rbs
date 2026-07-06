@@ -1,7 +1,7 @@
 module M
   class Schema
-    attr_accessor entries: Array[untyped]?
+    attr_accessor entries: Array[Schema::Entries::Items]?
 
-    def initialize: (?entries: Array[untyped]?) -> void
+    def initialize: (?entries: Array[Schema::Entries::Items]?) -> void
   end
 end

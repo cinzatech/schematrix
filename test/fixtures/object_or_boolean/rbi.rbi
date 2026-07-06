@@ -2,15 +2,15 @@
 
 module M
   class Schema
-    sig { params(meta: T.anything).void }
+    sig { params(meta: T.nilable(T.any(Schema::Meta, T::Boolean))).void }
     def initialize(meta: nil)
     end
 
-    sig { returns(T.anything) }
+    sig { returns(T.nilable(T.any(Schema::Meta, T::Boolean))) }
     def meta
     end
 
-    sig { params(meta: T.anything).void }
+    sig { params(meta: T.nilable(T.any(Schema::Meta, T::Boolean))).void }
     def meta=(meta)
     end
   end

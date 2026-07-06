@@ -2,16 +2,21 @@
 
 module M
   class Schema
-    sig { params(home: T.anything, work: T.anything).void }
+    sig do
+      params(
+        home: T.nilable(Schema::Address),
+        work: T.nilable(Schema::Address)
+      ).void
+    end
     def initialize(home: nil, work: nil)
       @home = home
       @work = work
     end
 
-    sig { returns(T.anything) }
+    sig { returns(T.nilable(Schema::Address)) }
     attr_accessor :home
 
-    sig { returns(T.anything) }
+    sig { returns(T.nilable(Schema::Address)) }
     attr_accessor :work
   end
 end
