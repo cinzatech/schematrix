@@ -10,7 +10,7 @@ module M
     def [](key)
     end
 
-    sig { params(key: Symbol, value:).returns(String) }
+    sig { params(key: Symbol, value: String).returns(String) }
     def []=(key, value)
     end
   end

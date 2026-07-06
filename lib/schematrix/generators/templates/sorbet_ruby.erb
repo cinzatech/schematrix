@@ -6,9 +6,7 @@ module <%= @module_name %>
     sig { params(
       <%= sorbet_constructor_signature_params %>
     ).void }
-    def initialize(
-      <%= constructor_arguments %>
-    )
+    def initialize<%= constructor_arguments %>
       <%= constructor_assignments %>
       <% unless @additional_properties.nil? %>
       @_extra = T.let({}, T::Hash[Symbol, <%= sorbet_additional_properties_type %>])

@@ -1,9 +1,7 @@
 module <%= @module_name %>
   <%= @documentation_comment %>
   class <%= @class_name %>
-    def initialize(
-      <%= constructor_arguments %>
-    )
+    def initialize<%= constructor_arguments %>
       <%= constructor_assignments %>
       <% unless @additional_properties.nil? %>
       @_extra = {}

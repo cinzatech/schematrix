@@ -12,7 +12,7 @@ module M
       @_extra[key]
     end
 
-    sig { params(key: Symbol, value:).returns(String) }
+    sig { params(key: Symbol, value: String).returns(String) }
     def []=(key, value)
       @_extra[key] = value
     end
