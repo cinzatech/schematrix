@@ -3,9 +3,7 @@
 module <%= @module_name %>
   <%= @documentation_comment %>
   class <%= @class_name %>
-    sig { params(
-      <%= sorbet_constructor_signature_params %>
-    ).void }
+    sig { <%= sorbet_constructor_signature_params %>void }
     def initialize<%= constructor_arguments %>; end
 
     <%= sorbet_attr_accessors %>

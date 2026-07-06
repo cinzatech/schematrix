@@ -56,11 +56,13 @@ module Schematrix
         end
 
         def sorbet_constructor_signature_params
-          return '' if @properties.nil?
+          return '' if @properties.nil? || @properties.empty?
 
-          @properties.map do |name, property|
+          params = @properties.map do |name, property|
             "#{name}: #{sorbet_type(@path, name, property)}"
           end.join(', ')
+
+          "params(#{params})."
         end
 
         def sorbet_attr_accessors
