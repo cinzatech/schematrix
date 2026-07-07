@@ -40,18 +40,22 @@ class TestAdvancedObjects < Minitest::Test
 
   def test_property_names_plain_ruby
     assert_fixture('property_names', 'plain_ruby')
+    assert_fixture('property_names', 'plain_ruby', path: 'vocab')
   end
 
   def test_property_names_rbs
     assert_fixture('property_names', 'rbs')
+    assert_fixture('property_names', 'rbs', path: 'vocab')
   end
 
   def test_property_names_sorbet_ruby
     assert_fixture('property_names', 'sorbet_ruby')
+    assert_fixture('property_names', 'sorbet_ruby', path: 'vocab')
   end
 
   def test_property_names_rbi
     assert_fixture('property_names', 'rbi')
+    assert_fixture('property_names', 'rbi', path: 'vocab')
   end
 
   def test_dependent_schemas_plain_ruby
