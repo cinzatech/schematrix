@@ -239,8 +239,10 @@ module Schematrix
     def ignore_keyword(node, keyword)
       return unless node.is_a?(Hash) && node.key?(keyword)
 
+      # ref_base, not @locator: content inlined from another document
+      # belongs to that document (see with_ref_base)
       @store.note_ignored(
-        @store.document_key(@locator),
+        @store.document_key(ref_base),
         keyword,
         current_locator,
       )
