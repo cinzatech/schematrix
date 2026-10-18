@@ -26,5 +26,13 @@ module M
     sig { params(work: T.nilable(Schema::Address)).void }
     def work=(work)
     end
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+    end
   end
 end

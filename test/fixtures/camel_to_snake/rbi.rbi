@@ -23,5 +23,13 @@ module M
     sig { params(last_name: T.nilable(String)).void }
     def last_name=(last_name)
     end
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+    end
   end
 end

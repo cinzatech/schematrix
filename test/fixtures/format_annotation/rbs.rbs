@@ -3,5 +3,9 @@ module M
     attr_accessor email: String?
 
     def initialize: (?email: String?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

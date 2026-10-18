@@ -21,5 +21,13 @@ module M
     sig { params(legacy: T.nilable(T.noreturn)).void }
     def legacy=(legacy)
     end
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+    end
   end
 end

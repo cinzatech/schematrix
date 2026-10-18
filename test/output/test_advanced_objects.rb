@@ -3,6 +3,22 @@ require_relative "../test_helper"
 class TestAdvancedObjects < Minitest::Test
   include SchematrixTestHelper
 
+  def test_closed_shapes_plain_ruby
+    assert_fixture("closed_shapes", "plain_ruby", closed_shapes: true)
+  end
+
+  def test_closed_shapes_rbs
+    assert_fixture("closed_shapes", "rbs", closed_shapes: true)
+  end
+
+  def test_closed_shapes_sorbet_ruby
+    assert_fixture("closed_shapes", "sorbet_ruby", closed_shapes: true)
+  end
+
+  def test_closed_shapes_rbi
+    assert_fixture("closed_shapes", "rbi", closed_shapes: true)
+  end
+
   def test_additional_properties_false_plain_ruby
     assert_fixture("additional_properties_false", "plain_ruby")
   end

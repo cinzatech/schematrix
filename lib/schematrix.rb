@@ -9,8 +9,10 @@ module Schematrix
     attr_accessor :logger
   end
 
-  def self.generate(generators:, input_files:)
-    objects = Compiler.new.compile(input_files)
+  # closed_shapes: true makes absent additionalProperties behave as
+  # false (closed classes) instead of the spec default (D12).
+  def self.generate(generators:, input_files:, closed_shapes: false)
+    objects = Compiler.new(closed_shapes:).compile(input_files)
 
     objects.each do |locator, node|
       logger&.info "Writing output for #{locator}"

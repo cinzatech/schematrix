@@ -13,5 +13,13 @@ module M
     sig { params(city: T.nilable(String)).void }
     def city=(city)
     end
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+    end
   end
 end

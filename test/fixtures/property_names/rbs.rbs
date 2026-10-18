@@ -3,5 +3,9 @@ module M
     attr_accessor vocab: Schema::Vocab?
 
     def initialize: (?vocab: Schema::Vocab?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

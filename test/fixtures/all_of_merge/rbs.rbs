@@ -4,5 +4,9 @@ module M
     attr_accessor age: Integer?
 
     def initialize: (name: String, ?age: Integer?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

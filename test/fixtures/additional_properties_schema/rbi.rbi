@@ -13,5 +13,13 @@ module M
     sig { params(tags: T.nilable(Schema::Tags)).void }
     def tags=(tags)
     end
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+    end
   end
 end

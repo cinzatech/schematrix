@@ -6,6 +6,8 @@ module M
     def initialize(color: "blue", count: 0)
       @color = color
       @count = count
+
+      @_extra = T.let({}, T::Hash[Symbol, T.anything])
     end
 
     sig { returns(T.nilable(String)) }
@@ -13,5 +15,15 @@ module M
 
     sig { returns(T.nilable(Integer)) }
     attr_accessor :count
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+      @_extra[key]
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+      @_extra[key] = value
+    end
   end
 end

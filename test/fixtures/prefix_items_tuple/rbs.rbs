@@ -3,5 +3,9 @@ module M
     attr_accessor point: Array[Float]?
 
     def initialize: (?point: Array[Float]?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

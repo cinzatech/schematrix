@@ -3,5 +3,9 @@ module M
     attr_accessor meta: (Schema::Meta | bool)?
 
     def initialize: (?meta: (Schema::Meta | bool)?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

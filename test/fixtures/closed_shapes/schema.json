@@ -1,0 +1,9 @@
+{
+  "title": "ClosedByFlag",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    }
+  }
+}

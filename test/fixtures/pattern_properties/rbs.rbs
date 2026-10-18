@@ -3,5 +3,9 @@ module M
     attr_accessor config: Schema::Config?
 
     def initialize: (?config: Schema::Config?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

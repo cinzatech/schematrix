@@ -3,5 +3,9 @@ module M
     attr_accessor child: Schema::Child?
 
     def initialize: (?child: Schema::Child?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

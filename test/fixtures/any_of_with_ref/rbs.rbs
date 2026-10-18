@@ -3,5 +3,9 @@ module M
     attr_accessor value: (Schema::Named | String)?
 
     def initialize: (?value: (Schema::Named | String)?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

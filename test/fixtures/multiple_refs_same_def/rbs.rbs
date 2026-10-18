@@ -4,5 +4,9 @@ module M
     attr_accessor work: Schema::Address?
 
     def initialize: (?home: Schema::Address?, ?work: Schema::Address?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

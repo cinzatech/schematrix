@@ -4,5 +4,9 @@ module M
     attr_accessor legacy: untyped
 
     def initialize: (?name: String?, ?legacy: untyped) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

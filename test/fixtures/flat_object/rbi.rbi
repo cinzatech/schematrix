@@ -35,5 +35,13 @@ module M
     sig { params(active: T.nilable(T::Boolean)).void }
     def active=(active)
     end
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+    end
   end
 end

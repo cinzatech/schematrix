@@ -13,5 +13,13 @@ module M
     sig { params(scores: T.nilable(T::Array[Integer])).void }
     def scores=(scores)
     end
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+    end
   end
 end

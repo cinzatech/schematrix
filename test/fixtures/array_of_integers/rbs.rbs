@@ -3,5 +3,9 @@ module M
     attr_accessor scores: Array[Integer]?
 
     def initialize: (?scores: Array[Integer]?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

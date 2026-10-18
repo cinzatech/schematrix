@@ -3,5 +3,9 @@ module M
     attr_accessor tags: Array[untyped]?
 
     def initialize: (?tags: Array[untyped]?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

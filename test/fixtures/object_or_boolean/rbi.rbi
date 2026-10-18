@@ -13,5 +13,13 @@ module M
     sig { params(meta: T.nilable(T.any(Schema::Meta, T::Boolean))).void }
     def meta=(meta)
     end
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+    end
   end
 end

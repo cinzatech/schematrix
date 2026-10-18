@@ -37,5 +37,13 @@ module M
     sig { params(reason: T.nilable(String)).void }
     def reason=(reason)
     end
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+    end
   end
 end

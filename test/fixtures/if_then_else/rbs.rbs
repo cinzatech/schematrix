@@ -6,5 +6,9 @@ module M
     attr_accessor reason: String?
 
     def initialize: (?kind: String?, ?value: String?, ?tier: Integer?, ?reason: String?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

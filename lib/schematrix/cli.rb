@@ -48,6 +48,13 @@ module Schematrix
       desc "Module where the output code will be placed"
     end
 
+    flag :closed_shapes do
+      optional
+      long "--closed-shapes"
+      desc "Treat absent additionalProperties as false: closed classes " \
+             "with no catch-all, instead of the spec default"
+    end
+
     flag :verbose do
       optional
       arity zero_or_more
@@ -115,7 +122,11 @@ module Schematrix
               GENERATORS[name]&.new(output_dir, module_name, format: true)
             end
 
-        Schematrix.generate(input_files:, generators:)
+        Schematrix.generate(
+          input_files:,
+          generators:,
+          closed_shapes: params[:closed_shapes],
+        )
       end
     rescue StandardError => e
       Schematrix.logger&.fatal "Error: ", e

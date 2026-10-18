@@ -5,5 +5,9 @@ module M
     attr_accessor active: bool?
 
     def initialize: (?name: String?, ?age: Integer?, ?active: bool?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

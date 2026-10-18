@@ -9,8 +9,9 @@ module Schematrix
   # edges on demand. Only schemas actually reachable from the inputs are
   # compiled.
   class Compiler
-    def initialize(store: DocumentStore.new)
+    def initialize(store: DocumentStore.new, closed_shapes: false)
       @store = store
+      @closed_shapes = closed_shapes
       @queue = []
       @seen = Set.new
       @objects = {}
@@ -30,7 +31,8 @@ module Schematrix
 
     def visit(uri)
       node = @store.node_at(uri)
-      visitor = Visitor.new(uri, @store).compile(node)
+      visitor =
+        Visitor.new(uri, @store, closed_shapes: @closed_shapes).compile(node)
 
       @objects.merge!(visitor.objects)
       visitor.edges.each { |edge| discover(edge) }

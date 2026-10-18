@@ -4,5 +4,9 @@ module M
     attr_accessor last_name: String?
 
     def initialize: (?first_name: String?, ?last_name: String?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

@@ -13,5 +13,13 @@ module M
     sig { params(anchor: T.nilable(String)).void }
     def anchor=(anchor)
     end
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+    end
   end
 end

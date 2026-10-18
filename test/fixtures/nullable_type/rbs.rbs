@@ -3,5 +3,9 @@ module M
     attr_accessor value: String?
 
     def initialize: (?value: String?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

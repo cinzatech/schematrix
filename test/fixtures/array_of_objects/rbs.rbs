@@ -3,5 +3,9 @@ module M
     attr_accessor entries: Array[Schema::Entries::Items]?
 
     def initialize: (?entries: Array[Schema::Entries::Items]?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

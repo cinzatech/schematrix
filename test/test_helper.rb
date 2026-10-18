@@ -19,8 +19,14 @@ module SchematrixTestHelper
   # UPDATE_FIXTURES=1 rewrites the expected files with the generated
   # output instead of comparing. Only for mechanical churn the worklog
   # calls out (phases 2 and 4); fixtures are target state otherwise.
-  def assert_fixture(fixture_name, generator_name, path: "")
-    actual = generate_fixture(fixture_name, generator_name, path)
+  def assert_fixture(
+    fixture_name,
+    generator_name,
+    path: "",
+    closed_shapes: false
+  )
+    actual =
+      generate_fixture(fixture_name, generator_name, path:, closed_shapes:)
 
     expected_file = expected_path(fixture_name, generator_name, path)
 
@@ -36,9 +42,14 @@ module SchematrixTestHelper
                  "Output mismatch for #{generator_name} (path: #{path.inspect})"
   end
 
-  def generate_fixture(fixture_name, generator_name, path)
+  def generate_fixture(
+    fixture_name,
+    generator_name,
+    path: "",
+    closed_shapes: false
+  )
     schema_file = File.join(FIXTURES_DIR, fixture_name, "schema.json")
-    objects = Schematrix::Compiler.new.compile([schema_file])
+    objects = Schematrix::Compiler.new(closed_shapes:).compile([schema_file])
     locator = URI(fixture_locator(schema_file, path))
     node = objects.fetch(locator.to_s)
 

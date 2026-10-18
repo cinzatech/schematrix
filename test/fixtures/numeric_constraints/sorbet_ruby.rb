@@ -5,9 +5,21 @@ module M
     sig { params(score: T.nilable(Float)).void }
     def initialize(score: nil)
       @score = score
+
+      @_extra = T.let({}, T::Hash[Symbol, T.anything])
     end
 
     sig { returns(T.nilable(Float)) }
     attr_accessor :score
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+      @_extra[key]
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+      @_extra[key] = value
+    end
   end
 end

@@ -3,5 +3,9 @@ module M
     attr_accessor score: Float?
 
     def initialize: (?score: Float?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

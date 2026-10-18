@@ -3,5 +3,9 @@ module M
     attr_accessor tags: Schema::Tags?
 
     def initialize: (?tags: Schema::Tags?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
   end
 end

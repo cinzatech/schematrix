@@ -74,9 +74,10 @@ module Schematrix
     # references.
     attr_reader :objects, :edges
 
-    def initialize(locator, store)
+    def initialize(locator, store, closed_shapes: false)
       @locator = locator
       @store = store
+      @closed_shapes = closed_shapes
       @objects = {}
       @edges = []
 
@@ -95,9 +96,14 @@ module Schematrix
     def visit_schema(name, node, required: true, register_object: true)
       @fragment_path.push(name)
 
-      # JSON Schema allows "true" as a catch-all
+      # JSON Schema allows "true" as a catch-all. A class emitted from
+      # a true schema is open: its catch-all accepts anything (D12).
       if node.is_a? TrueClass
-        @objects[current_locator] = Schema::Empty if register_object
+        if register_object
+          @objects[current_locator] = Schema::Empty.with(
+            additional_properties: Schema::Empty,
+          )
+        end
         return Schema::Empty
       end
 
@@ -112,7 +118,7 @@ module Schematrix
       title = node["title"]
       description = node["description"]
       items = visit_subtree("items", node)
-      additional_properties = visit_subtree("additionalProperties", node)
+      additional_properties = visit_additional_properties(node)
       required_properties = Set.new(node["required"])
 
       # Composition context (D2): a node that is not the document root
@@ -204,18 +210,26 @@ module Schematrix
     # Visit subtrees (other than properties), like items or
     # additionalProperties, that contain nested schema definition. It
     # will store object definitions on a nested path by the name of the
-    # branch being visited. additionalProperties: false is the one
-    # closed shape: no catch-all, so it contributes nil; a false items
-    # branch keeps its bottom schema so templates can tell a closed
-    # tail from an absent one.
+    # branch being visited.
     def visit_subtree(branch_name, node)
       branch = node[branch_name]
       return nil if branch.nil?
-      if branch.is_a?(FalseClass) && branch_name == "additionalProperties"
-        return nil
-      end
 
       visit_schema(branch_name, branch)
+    end
+
+    # additionalProperties normalization (D12): the spec default is
+    # permissive, so absence behaves like true (untyped catch-all)
+    # and only an explicit false closes the shape. nil (meaning
+    # "no catch-all" to the templates) survives only for false, or
+    # for absence when closed_shapes was requested.
+    def visit_additional_properties(node)
+      branch = node["additionalProperties"]
+      return nil if branch.is_a?(FalseClass)
+      return nil if branch.nil? && @closed_shapes
+      return Schema::Empty if branch.nil?
+
+      visit_schema("additionalProperties", branch)
     end
 
     # Visits anyOf/oneOf branches in value context, one Schema per

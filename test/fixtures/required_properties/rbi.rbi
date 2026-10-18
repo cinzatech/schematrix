@@ -29,5 +29,13 @@ module M
     sig { params(age: T.nilable(Integer)).void }
     def age=(age)
     end
+
+    sig { params(key: Symbol).returns(T.anything) }
+    def [](key)
+    end
+
+    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+    end
   end
 end
