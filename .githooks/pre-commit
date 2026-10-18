@@ -1,0 +1,28 @@
+#!/bin/bash
+# Pre-commit: the repo must be stree- and rubocop-clean before committing.
+# stree owns layout and formatting, rubocop owns everything else (see
+# .streerc and .rubocop.yml). Fixtures are golden files of generated code
+# and are excluded from both via .streerc / .rubocop.yml.
+
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+if ! command -v bundle >/dev/null 2>&1; then
+  echo "pre-commit: bundle not found in PATH" >&2
+  exit 1
+fi
+
+shopt -s globstar
+
+echo "pre-commit: stree check"
+bundle exec stree check \
+  lib/**/*.rb \
+  exe/*.rb \
+  test/**/*.rb \
+  scripts/*.rb \
+  Rakefile
+
+echo "pre-commit: rubocop"
+bundle exec rubocop
+
+echo "pre-commit: clean"
