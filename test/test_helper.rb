@@ -7,12 +7,9 @@ module SchematrixTestHelper
   MODULE_NAME = "M"
   FIXTURES_DIR = File.join(__dir__, "fixtures")
 
-  GENERATOR_EXTENSIONS = {
-    "plain_ruby" => ".rb",
-    "sorbet_ruby" => ".rb",
-    "rbs" => ".rbs",
-    "rbi" => ".rbi",
-  }.freeze
+  # One source of truth for generator file extensions: the registry
+  GENERATOR_EXTENSIONS =
+    Schematrix::GENERATORS.transform_values(&:file_extension).freeze
 
   private
 
