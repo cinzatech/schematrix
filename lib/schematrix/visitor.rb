@@ -53,6 +53,11 @@ module Schematrix
   # Sorbet), untyped elsewhere.
   Schema::Bottom = Schema::Empty.with(type: Set[TYPE_BOTTOM])
 
+  # The mergeable shape of an object schema: its own properties and
+  # its normalized additionalProperties schema. The fold algebra
+  # (allOf conjoins, anyOf/oneOf/then/else unions) composes these.
+  Body = Data.define(:properties, :additional_properties)
+
   # Predicates shared by the compiler and the generators: what a
   # compiled schema constrains, and whether the constructor demands
   # the property.
@@ -191,8 +196,8 @@ module Schematrix
         object_context = name.empty? || type.include?(TYPE_OBJECT)
         if object_context
           body = compile_object(node)
-          properties = body[:properties]
-          additional_properties = body[:additional_properties]
+          properties = body.properties
+          additional_properties = body.additional_properties
           any_of = []
           one_of = []
         else
@@ -203,8 +208,8 @@ module Schematrix
             # D3: anyOf object branches merge into one class that
             # registers at this node's own locator
             body = merge_value_branches(node, branches[:mergeable])
-            properties = body[:properties]
-            additional_properties = body[:additional_properties]
+            properties = body.properties
+            additional_properties = body.additional_properties
             type |= Set[TYPE_OBJECT]
           else
             properties = compile_properties(node)
@@ -530,10 +535,10 @@ module Schematrix
     # The mergeable parts of a raw node: its own properties and its
     # normalized additionalProperties.
     def node_body(node)
-      {
+      Body.new(
         properties: compile_properties(node),
         additional_properties: visit_additional_properties(node),
-      }
+      )
     end
 
     # Follows a $ref branch to its final target for merging (D4 flat
@@ -581,17 +586,19 @@ module Schematrix
 
       branch = branch_body(raw)
       properties =
-        acc[:properties].merge(branch[:properties]) do |_name, own, other|
-          conjoin_schemas(own, other)
-        end
-      {
+        acc
+          .properties
+          .merge(branch.properties) do |_name, own, other|
+            conjoin_schemas(own, other)
+          end
+      Body.new(
         properties:,
         additional_properties:
           conjoin_additional(
-            acc[:additional_properties],
-            branch[:additional_properties],
+            acc.additional_properties,
+            branch.additional_properties,
           ),
-      }
+      )
     end
 
     # anyOf/oneOf fold (D3/D3a merge): union semantics. Branches that
@@ -605,7 +612,7 @@ module Schematrix
           # a true branch owns no properties and a fully open shape;
           # pooling it gives every property an untyped contribution
           if raw == true
-            next { properties: {}, additional_properties: Schema::Empty }
+            next Body[properties: {}, additional_properties: Schema::Empty]
           end
           next nil if raw == false || !raw.is_a?(Hash)
 
@@ -613,19 +620,19 @@ module Schematrix
         end
       return acc if compiled.empty?
 
-      pool = acc[:properties].dup
-      names = compiled.flat_map { |body| body[:properties].keys }.uniq
+      pool = acc.properties.dup
+      names = compiled.flat_map { |body| body.properties.keys }.uniq
       names.each do |name|
-        own = acc[:properties][name]
-        contribs = compiled.map { |body| body[:properties][name] || :untyped }
+        own = acc.properties[name]
+        contribs = compiled.map { |body| body.properties[name] || :untyped }
         contribs.unshift(own) if own
         pool[name] = union_schemas(contribs, parent: own)
       end
       additional =
-        compiled.reduce(acc[:additional_properties]) do |own, body|
-          union_additional(own, body[:additional_properties])
+        compiled.reduce(acc.additional_properties) do |own, body|
+          union_additional(own, body.additional_properties)
         end
-      { properties: pool, additional_properties: additional }
+      Body[properties: pool, additional_properties: additional]
     end
 
     # Single union branch (then/else/dependentSchemas entry): merges
@@ -637,17 +644,19 @@ module Schematrix
 
       branch = branch_body(raw)
       properties =
-        acc[:properties].merge(branch[:properties]) do |_name, own, other|
-          union_schemas([own, other], parent: own)
-        end
-      {
+        acc
+          .properties
+          .merge(branch.properties) do |_name, own, other|
+            union_schemas([own, other], parent: own)
+          end
+      Body.new(
         properties:,
         additional_properties:
           union_additional(
-            acc[:additional_properties],
-            branch[:additional_properties],
+            acc.additional_properties,
+            branch.additional_properties,
           ),
-      }
+      )
     end
 
     # D5 conflict rule: distinct declarations of the same property
