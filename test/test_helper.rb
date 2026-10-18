@@ -16,9 +16,9 @@ module SchematrixTestHelper
 
   private
 
-  # UPDATE_FIXTURES=1 rewrites the expected files with the generated
-  # output instead of comparing. Only for mechanical churn the worklog
-  # calls out (phases 2 and 4); fixtures are target state otherwise.
+  # Fixtures are hand-authored target state (hard rule, D15 in the
+  # worklog): never write the expected files from generator output, and
+  # never add a mode here that does.
   def assert_fixture(
     fixture_name,
     generator_name,
@@ -29,11 +29,6 @@ module SchematrixTestHelper
       generate_fixture(fixture_name, generator_name, path:, closed_shapes:)
 
     expected_file = expected_path(fixture_name, generator_name, path)
-
-    if ENV["UPDATE_FIXTURES"]
-      File.write(expected_file, actual)
-      return
-    end
 
     expected = File.read(expected_file)
 
