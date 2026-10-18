@@ -20,8 +20,9 @@ module Schematrix
 
         meaningful =
           segments.each_with_index.filter_map do |segment, index|
-            container =
-              segment == "$defs" && segments[index - 1] != "properties"
+            previous = index.zero? ? nil : segments[index - 1]
+            defs_segment = index.positive? && segment == "$defs"
+            container = defs_segment && previous != "properties"
             next if segment == "properties" || container
 
             segment.delete("$").sub(/_+\z/, "")
