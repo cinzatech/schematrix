@@ -12,7 +12,7 @@ module Schematrix
                 unless schema.default.nil?
                   next "#{name}: #{schema.default.inspect}"
                 end
-                next "#{name}: #{nil.inspect}" unless schema.required
+                next "#{name}: nil" unless schema.required
 
                 "#{name}:"
               end

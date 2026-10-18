@@ -94,17 +94,15 @@ module Schematrix
       end
 
       def self.template_class
-        raise NotImplementedError,
-              "#{self.class} must implement #template_class"
+        raise NotImplementedError, "#{name} must implement #template_class"
       end
 
       def self.template_name
-        raise NotImplementedError, "#{self.class} must implement #template_name"
+        raise NotImplementedError, "#{name} must implement #template_name"
       end
 
       def self.file_extension
-        raise NotImplementedError,
-              "#{self.class} must implement #file_extension"
+        raise NotImplementedError, "#{name} must implement #file_extension"
       end
 
       private

@@ -53,7 +53,7 @@ module Schematrix
         # since the outer property owns it (D7).
         def rbs_type(path, name, schema)
           return RBS_TYPE_UNTYPED if schema.nil?
-          return "nil" if schema.type == Set["null"]
+          return "nil" if schema.type == Set[TYPE_NULL]
 
           combined = bare_rbs_type(path, name, schema)
           return combined if combined == RBS_TYPE_UNTYPED
@@ -72,12 +72,12 @@ module Schematrix
           base =
             schema.type.flat_map do |type|
               case type
-              when "object"
+              when TYPE_OBJECT
                 [class_name_from_path(path, name)]
-              when "array"
+              when TYPE_ARRAY
                 element = array_element_type(nested_locator(path, name), schema)
                 ["Array[#{element}]"]
-              when "null"
+              when TYPE_NULL
                 []
               else
                 # nil elements (malformed type lists) fall through the
@@ -140,8 +140,8 @@ module Schematrix
         # positional path segment (anyOf_0, oneOf_1, ...). Shared by
         # both variant lists: the keyword only names the path segment.
         def variant_types(path, name, variants, keyword)
+          variant_path = nested_locator(path, name)
           variants.each_with_index.map do |variant, index|
-            variant_path = nested_locator(path, name)
             bare_rbs_type(variant_path, "#{keyword}_#{index}", variant)
           end
         end
@@ -156,7 +156,8 @@ module Schematrix
         end
 
         def rbs_additional_properties_type
-          rbs_type(@path, "additional_properties", @additional_properties)
+          @rbs_additional_properties_type ||=
+            rbs_type(@path, "additional_properties", @additional_properties)
         end
       end
     end

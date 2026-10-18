@@ -1,6 +1,7 @@
 require "uri"
 
 module Schematrix
+  TYPE_ARRAY = "array"
   TYPE_BOOLEAN = "boolean"
   # Pseudo type marking the "false" schema (no valid instance). Not a
   # JSON Schema type name: templates map it to their bottom type.

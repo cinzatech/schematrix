@@ -18,7 +18,7 @@ module Schematrix
 
         def sorbet_type(path, name, schema)
           return SORBET_TYPE_ANYTHING if schema.nil?
-          return "NilClass" if schema.type == Set["null"]
+          return "NilClass" if schema.type == Set[TYPE_NULL]
 
           combined = bare_sorbet_type(path, name, schema)
           return combined if combined == SORBET_TYPE_ANYTHING
@@ -36,12 +36,12 @@ module Schematrix
           base =
             schema.type.flat_map do |type|
               case type
-              when "object"
+              when TYPE_OBJECT
                 [class_name_from_path(path, name)]
-              when "array"
+              when TYPE_ARRAY
                 element = array_element_type(nested_locator(path, name), schema)
                 ["T::Array[#{element}]"]
-              when "null"
+              when TYPE_NULL
                 []
               else
                 [SORBET_SCALAR_TYPES.fetch(type, SORBET_TYPE_ANYTHING)]
@@ -98,8 +98,8 @@ module Schematrix
         # Computes the bare type of each variant branch under its
         # positional path segment (anyOf_0, oneOf_1, ...).
         def variant_types(path, name, variants, keyword)
+          variant_path = nested_locator(path, name)
           variants.each_with_index.map do |variant, index|
-            variant_path = nested_locator(path, name)
             bare_sorbet_type(variant_path, "#{keyword}_#{index}", variant)
           end
         end
