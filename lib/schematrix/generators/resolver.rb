@@ -4,17 +4,18 @@ module Schematrix
   module Generators
     # Common functions for Ruby class name and file handling
     module Resolver
-      # Passing a series of path parts to this method will return the qualified
-      # class name corresponding to that path.
-      # Example: 'foo/bar', 'baz' => Title::Foo::Bar::Baz
+      # Returns the qualified class name for a locator and, optionally,
+      # one nested schema name (a property, an items branch, a variant
+      # segment). Example: order.json#/properties/baz + "qux" resolves
+      # the name to Order::Baz::Qux.
       # Empty parts are removed. 'properties' also removed, as is the
       # '$defs' container segment (but not a property named "$defs",
       # which only ever follows a 'properties' segment). "$" prefixes
       # (core vocabulary keywords like "$id") and mangling suffixes
       # ("if_") are stripped so segments form valid constant names.
-      def class_name_from_path(uri, *path)
+      def class_name_from_path(uri, name = nil)
         file = File.basename(uri.path).split(".").first
-        segments = [file, *uri.fragment.split("/"), *path].compact.reject(
+        segments = [file, *uri.fragment.split("/"), name].compact.reject(
           &:empty?
         )
 
@@ -37,8 +38,8 @@ module Schematrix
         string
           .to_s
           .gsub("/", "::")
-          .gsub(/\s*::\s*([a-zA-Z\d])/) { "::#{::Regexp.last_match(1).upcase}" }
-          .gsub(/(?:^|[\s_-]+)([a-zA-Z\d])/) { ::Regexp.last_match(1).upcase }
+          .gsub(/\s*::\s*([a-zA-Z\d])/) { "::#{Regexp.last_match(1).upcase}" }
+          .gsub(/(?:^|[\s_-]+)([a-zA-Z\d])/) { Regexp.last_match(1).upcase }
       end
 
       # Returns a locator one level below the given one, naming the
