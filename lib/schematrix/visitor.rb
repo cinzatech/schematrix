@@ -315,8 +315,7 @@ module Schematrix
     end
 
     def same_document?(one, other)
-      [one.scheme, one.host, one.port, one.path] ==
-        [other.scheme, other.host, other.port, other.path]
+      @store.document_key(one) == @store.document_key(other)
     end
 
     # The URI relative references resolve against: the document of
@@ -372,7 +371,7 @@ module Schematrix
     # Document-order scan for the last $dynamicAnchor with the given
     # name; returns its path segments relative to the document root.
     def last_dynamic_anchor(name)
-      root = @store.node_at(document_root_locator)
+      root = @store.node_at(document_base(@locator))
       found = nil
       scan =
         lambda do |node, path|
@@ -388,12 +387,6 @@ module Schematrix
         end
       scan.call(root, [])
       found
-    end
-
-    def document_root_locator
-      root = @locator.dup
-      root.fragment = "/"
-      root
     end
 
     # node_at that tolerates locators pointing outside this
