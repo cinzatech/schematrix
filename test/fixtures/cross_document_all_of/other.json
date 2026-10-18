@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "$ref": "#/$defs/kind"
+    }
+  },
+  "$defs": {
+    "kind": {
+      "type": "string"
+    }
+  }
+}

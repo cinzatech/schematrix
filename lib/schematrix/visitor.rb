@@ -100,6 +100,7 @@ module Schematrix
       @closed_shapes = closed_shapes
       @objects = {}
       @edges = []
+      @ref_base = nil
 
       @fragment_path = locator.fragment.split("/")
       @name = @fragment_path.pop || "" # document root is nameless
@@ -130,74 +131,81 @@ module Schematrix
       # JSON Schema "false" accepts nothing: no class, bottom type
       return Schema::Bottom if node.is_a?(FalseClass)
 
-      node, ref = resolve_reference(node)
+      node, ref, inline_base = resolve_reference(node)
 
-      IGNORED_KEYWORDS.each { |keyword| ignore_keyword(node, keyword) }
+      # Content inlined from another document compiles against that
+      # document, so refs nested inside it resolve where they were
+      # written (see resolve_reference).
+      schema = nil
+      with_ref_base(inline_base) do
+        IGNORED_KEYWORDS.each { |keyword| ignore_keyword(node, keyword) }
 
-      type = Set.new(Array(node["type"]))
-      # a const with no declared type infers from the value's
-      # Ruby class; values that do not map cleanly fall back to untyped
-      if type.empty? && node.key?("const")
-        inferred = const_type(node["const"])
-        type = Set[inferred] unless inferred.nil?
-      end
-      enum = node["enum"]
-      default = node["default"]
-      title = node["title"]
-      description = node["description"]
-      items = visit_subtree("items", node)
-      prefix_items = visit_prefix_items(node)
+        type = Set.new(Array(node["type"]))
+        # a const with no declared type infers from the value's
+        # Ruby class; values that do not map cleanly fall back to untyped
+        if type.empty? && node.key?("const")
+          inferred = const_type(node["const"])
+          type = Set[inferred] unless inferred.nil?
+        end
+        enum = node["enum"]
+        default = node["default"]
+        title = node["title"]
+        description = node["description"]
+        items = visit_subtree("items", node)
+        prefix_items = visit_prefix_items(node)
 
-      # Composition context (D2): a node that is the document root or
-      # types as object becomes a generated class, so composition
-      # branches merge into one property set (Phase 3). A value node
-      # unions its anyOf/oneOf branches as variants instead, except
-      # that inline object branches inside anyOf merge into the
-      # property's own class (D3).
-      object_context = name.empty? || type.include?(TYPE_OBJECT)
-      if object_context
-        body = compile_object(node)
-        properties = body[:properties]
-        additional_properties = body[:additional_properties]
-        any_of = []
-        one_of = []
-      else
-        branches = split_value_branches(node)
-        any_of = visit_variant_list("anyOf", branches[:any_of])
-        one_of = visit_variant_list("oneOf", branches[:one_of])
-        if branches[:mergeable].any?
-          # D3: anyOf object branches merge into one class that
-          # registers at this node's own locator
-          body = merge_value_branches(node, branches[:mergeable])
+        # Composition context (D2): a node that is the document root or
+        # types as object becomes a generated class, so composition
+        # branches merge into one property set (Phase 3). A value node
+        # unions its anyOf/oneOf branches as variants instead, except
+        # that inline object branches inside anyOf merge into the
+        # property's own class (D3).
+        object_context = name.empty? || type.include?(TYPE_OBJECT)
+        if object_context
+          body = compile_object(node)
           properties = body[:properties]
           additional_properties = body[:additional_properties]
-          type |= Set[TYPE_OBJECT]
+          any_of = []
+          one_of = []
         else
-          properties = compile_properties(node)
-          additional_properties = visit_additional_properties(node)
+          branches = split_value_branches(node)
+          any_of = visit_variant_list("anyOf", branches[:any_of])
+          one_of = visit_variant_list("oneOf", branches[:one_of])
+          if branches[:mergeable].any?
+            # D3: anyOf object branches merge into one class that
+            # registers at this node's own locator
+            body = merge_value_branches(node, branches[:mergeable])
+            properties = body[:properties]
+            additional_properties = body[:additional_properties]
+            type |= Set[TYPE_OBJECT]
+          else
+            properties = compile_properties(node)
+            additional_properties = visit_additional_properties(node)
+          end
+        end
+
+        schema =
+          Schema.new(
+            additional_properties:,
+            any_of:,
+            default:,
+            description:,
+            enum:,
+            intersection: false,
+            items:,
+            one_of:,
+            prefix_items:,
+            properties:,
+            ref:,
+            required:,
+            title:,
+            type:,
+          )
+
+        if register_object && ref.nil? && type.include?(TYPE_OBJECT)
+          @objects[current_locator] = schema
         end
       end
-
-      schema =
-        Schema.new(
-          additional_properties:,
-          any_of:,
-          default:,
-          description:,
-          enum:,
-          intersection: false,
-          items:,
-          one_of:,
-          prefix_items:,
-          properties:,
-          ref:,
-          required:,
-          title:,
-          type:,
-        )
-
-      @objects[current_locator] = schema if register_object && ref.nil? &&
-        type.include?(TYPE_OBJECT)
 
       schema
     ensure
@@ -234,20 +242,60 @@ module Schematrix
           Schematrix.logger&.debug(
             "Unresolvable $dynamicRef #{dynamic_ref} at #{current_locator}",
           )
-          return node, nil
+          return node, nil, nil
         end
       end
-      return node, nil if reference.nil?
+      return node, nil, nil if reference.nil?
 
-      target, locator = final_target(@locator, reference)
-      return node, nil if target.nil?
+      target, locator = final_target(ref_base, reference)
+      return node, nil, nil if target.nil?
 
       if Array(target["type"]).include?(TYPE_OBJECT)
         @edges << locator
-        [node, locator]
+        [node, locator, nil]
       else
-        # Inline the target's keywords, local siblings win over them
-        [target.merge(node.except("$ref")), nil]
+        # Inline the target's keywords, local siblings win over
+        # them. Returns the target's document as the base for the
+        # rest of the visit when it differs from the current one, so
+        # refs nested inside the inlined content resolve against
+        # their own document.
+        base = document_base(locator)
+        base = nil if same_document?(base, ref_base)
+        [target.merge(node.except("$ref")), nil, base]
+      end
+    end
+
+    # The document a locator belongs to, as a root locator.
+    def document_base(locator)
+      base = locator.dup
+      base.fragment = "/"
+      base
+    end
+
+    def same_document?(one, other)
+      [one.scheme, one.host, one.port, one.path] ==
+        [other.scheme, other.host, other.port, other.path]
+    end
+
+    # The URI relative references resolve against: the document of
+    # the nearest dereferenced inline target, else this visitor's
+    # document.
+    def ref_base
+      @ref_base || @locator
+    end
+
+    # Compiles a block against the given document as the reference
+    # base; nil compiles against the current base. Nesting is safe:
+    # the previous base is always restored.
+    def with_ref_base(base)
+      return yield if base.nil?
+
+      previous = @ref_base
+      @ref_base = base
+      begin
+        yield
+      ensure
+        @ref_base = previous
       end
     end
 
@@ -257,13 +305,17 @@ module Schematrix
     # $dynamicAnchor with the referenced name; fall back to the last
     # matching anchor in document order; then unresolvable (untyped +
     # debug log). The name may be empty ("#" in the metaschemas).
+    # Chain links that do not exist in this document are skipped:
+    # inside merged cross-document branches the chain mixes segments
+    # from both documents and can point at nodes that do not exist
+    # here.
     def dynamic_anchor_locator(reference)
       name = reference.delete_prefix("#")
       chain = @fragment_path.dup
       chain.pop # the ref site itself
       until chain.empty?
         locator = locator_at(chain)
-        node = @store.node_at(locator)
+        node = safe_node_at(locator)
         if node.is_a?(Hash) && node["$dynamicAnchor"] == name
           return locator.to_s
         end
@@ -300,6 +352,15 @@ module Schematrix
       root = @locator.dup
       root.fragment = "/"
       root
+    end
+
+    # node_at that tolerates locators pointing outside this
+    # document's shape: a missing link contributes nothing to the
+    # anchor walk instead of failing the whole resolution.
+    def safe_node_at(locator)
+      @store.node_at(locator)
+    rescue UnresolvableLocatorError
+      nil
     end
 
     # Locator for a chain of containment segments (as found in
@@ -454,15 +515,22 @@ module Schematrix
     # merge). The branch itself records no edge and registers no class
     # (D6: merging produces no dead code); value references nested
     # inside its properties still record their edges, because those
-    # classes are referenced from the merged result.
+    # classes are referenced from the merged result. The branch's
+    # content compiles against the target's document, so nested
+    # relative refs resolve where they were written.
     def branch_body(raw)
-      node_body(deref_branch(raw))
+      return node_body(raw) unless raw.is_a?(Hash) && !raw["$ref"].nil?
+
+      target, locator = final_target(ref_base, raw["$ref"])
+      return node_body(raw) if target.nil?
+
+      with_ref_base(document_base(locator)) { node_body(target) }
     end
 
     def deref_branch(raw)
       return raw unless raw.is_a?(Hash) && !raw["$ref"].nil?
 
-      target, = final_target(@locator, raw["$ref"])
+      target, = final_target(ref_base, raw["$ref"])
       target || raw
     end
 

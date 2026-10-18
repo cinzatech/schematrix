@@ -1,0 +1,12 @@
+module M
+  class Schema
+    attr_accessor own: Integer?
+    attr_accessor kind: String?
+
+    def initialize: (?own: Integer?, ?kind: String?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
+  end
+end

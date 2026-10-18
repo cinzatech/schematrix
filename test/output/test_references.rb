@@ -90,4 +90,12 @@ class TestReferences < Minitest::Test
     assert_fixture("multiple_refs_same_def", "rbi")
     assert_fixture("multiple_refs_same_def", "rbi", path: "Address")
   end
+
+  def test_cross_document_all_of_plain_ruby
+    assert_fixture("cross_document_all_of", "plain_ruby")
+  end
+
+  def test_cross_document_all_of_rbs
+    assert_fixture("cross_document_all_of", "rbs")
+  end
 end

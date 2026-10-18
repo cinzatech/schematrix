@@ -1,0 +1,19 @@
+{
+  "title": "CrossDocAllOf",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "other.json"
+    }
+  ],
+  "properties": {
+    "own": {
+      "$ref": "#/$defs/kind"
+    }
+  },
+  "$defs": {
+    "kind": {
+      "type": "integer"
+    }
+  }
+}
