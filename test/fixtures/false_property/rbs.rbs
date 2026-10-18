@@ -1,0 +1,8 @@
+module M
+  class Schema
+    attr_accessor name: String?
+    attr_accessor legacy: untyped
+
+    def initialize: (?name: String?, ?legacy: untyped) -> void
+  end
+end

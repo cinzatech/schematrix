@@ -3,6 +3,22 @@ require_relative "../test_helper"
 class TestAdvancedObjects < Minitest::Test
   include SchematrixTestHelper
 
+  def test_additional_properties_false_plain_ruby
+    assert_fixture("additional_properties_false", "plain_ruby")
+  end
+
+  def test_additional_properties_false_rbs
+    assert_fixture("additional_properties_false", "rbs")
+  end
+
+  def test_additional_properties_false_sorbet_ruby
+    assert_fixture("additional_properties_false", "sorbet_ruby")
+  end
+
+  def test_additional_properties_false_rbi
+    assert_fixture("additional_properties_false", "rbi")
+  end
+
   def test_additional_properties_schema_plain_ruby
     assert_fixture("additional_properties_schema", "plain_ruby")
     assert_fixture("additional_properties_schema", "plain_ruby", path: "tags")

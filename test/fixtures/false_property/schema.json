@@ -1,0 +1,10 @@
+{
+  "title": "Forbidden",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "legacy": false
+  }
+}

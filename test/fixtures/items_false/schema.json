@@ -1,0 +1,10 @@
+{
+  "title": "ClosedArray",
+  "type": "object",
+  "properties": {
+    "tags": {
+      "type": "array",
+      "items": false
+    }
+  }
+}

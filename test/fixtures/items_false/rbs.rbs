@@ -1,0 +1,7 @@
+module M
+  class Schema
+    attr_accessor tags: Array[untyped]?
+
+    def initialize: (?tags: Array[untyped]?) -> void
+  end
+end

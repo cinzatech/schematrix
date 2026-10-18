@@ -13,6 +13,7 @@ module Schematrix
           TYPE_NUMBER => "Float",
           TYPE_BOOLEAN => "T::Boolean",
           TYPE_NULL => "NilClass",
+          TYPE_BOTTOM => "T.noreturn",
         }.freeze
 
         def sorbet_type(path, name, schema)
@@ -25,7 +26,13 @@ module Schematrix
               when "object"
                 [class_name_from_path(path, name)]
               when "array"
-                ["T::Array[#{sorbet_type(@path, "items", schema.items)}]"]
+                items_type =
+                  sorbet_type(
+                    nested_locator(path, name),
+                    "items",
+                    schema.items,
+                  )
+                ["T::Array[#{items_type}]"]
               when "null"
                 []
               else

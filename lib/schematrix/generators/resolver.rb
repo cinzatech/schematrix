@@ -28,6 +28,16 @@ module Schematrix
           .gsub(/\s*::\s*([a-zA-Z\d])/) { "::#{::Regexp.last_match(1).upcase}" }
           .gsub(/(?:^|[\s_-]+)([a-zA-Z\d])/) { ::Regexp.last_match(1).upcase }
       end
+
+      # Returns a locator one level below the given one, naming the
+      # nested schema (property, items, ...). Recursions through it keep
+      # the property name in the path so class names resolve to the
+      # locators the compiler registered, e.g. Schema::Entries::Items.
+      def nested_locator(uri, name)
+        child = uri.dup
+        child.fragment = "#{uri.fragment}/#{name}"
+        child
+      end
     end
   end
 end

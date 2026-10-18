@@ -3,6 +3,9 @@ require "uri"
 module Schematrix
   TYPE_ARRAY = "array"
   TYPE_BOOLEAN = "boolean"
+  # Pseudo type marking the "false" schema (no valid instance). Not a
+  # JSON Schema type name: templates map it to their bottom type.
+  TYPE_BOTTOM = "bottom"
   TYPE_INTEGER = "integer"
   TYPE_NULL = "null"
   TYPE_NUMBER = "number"
@@ -35,6 +38,23 @@ module Schematrix
       required: nil,
       title: nil,
       type: Set.new,
+    )
+
+  # The "false" schema accepts no instance at all. It types as a
+  # bottom type where the target language has one (T.noreturn in
+  # Sorbet), untyped elsewhere.
+  Schema::Bottom =
+    Schema.new(
+      additional_properties: nil,
+      default: nil,
+      enum: nil,
+      items: nil,
+      properties: nil,
+      description: nil,
+      ref: nil,
+      required: nil,
+      title: nil,
+      type: Set[TYPE_BOTTOM],
     )
 
   # Visits a single schema subtree rooted at the given locator. When it
@@ -74,6 +94,9 @@ module Schematrix
         @objects[current_locator] = Schema::Empty
         return Schema::Empty
       end
+
+      # JSON Schema "false" accepts nothing: no class, bottom type
+      return Schema::Bottom if node.is_a?(FalseClass)
 
       node, ref = resolve_reference(node)
 
@@ -164,10 +187,16 @@ module Schematrix
     # Visit subtrees (other than properties), like items or
     # additionalProperties, that contain nested schema definition. It
     # will store object definitions on a nested path by the name of the
-    # branch being visited.
+    # branch being visited. additionalProperties: false is the one
+    # closed shape: no catch-all, so it contributes nil; a false items
+    # branch keeps its bottom schema so templates can tell a closed
+    # tail from an absent one.
     def visit_subtree(branch_name, node)
       branch = node[branch_name]
       return nil if branch.nil?
+      if branch.is_a?(FalseClass) && branch_name == "additionalProperties"
+        return nil
+      end
 
       visit_schema(branch_name, branch)
     end

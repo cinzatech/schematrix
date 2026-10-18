@@ -59,7 +59,9 @@ module Schematrix
               when "object"
                 [class_name_from_path(path, name)]
               when "array"
-                ["Array[#{rbs_type(@path, "items", schema.items)}]"]
+                items_type =
+                  rbs_type(nested_locator(path, name), "items", schema.items)
+                ["Array[#{items_type}]"]
               when "null"
                 []
               when nil
