@@ -10,12 +10,15 @@ module Schematrix
     usage do
       program "schematrix"
 
-      command "gen"
+      # Subcommand-less interface (as documented in the README): without
+      # this, tty-option displays a command derived from the class name
+      # and treats any first token as an input file.
+      no_command
 
       desc "Generate code matching a JSON Schema"
 
       example "Produce plain Ruby code for the given schema",
-              "  $ schematrix gen -g plain_ruby -m MyModule " \
+              "  $ schematrix -g plain_ruby -m MyModule " \
                 "-o /output/dir my-json-schema.json"
     end
 
