@@ -2,15 +2,15 @@
 
 module M
   class Schema
-    sig { params(point: T.anything).void }
+    sig { params(point: T.nilable(T::Array[T.anything])).void }
     def initialize(point: nil)
     end
 
-    sig { returns(T.anything) }
+    sig { returns(T.nilable(T::Array[T.anything])) }
     def point
     end
 
-    sig { params(point: T.anything).void }
+    sig { params(point: T.nilable(T::Array[T.anything])).void }
     def point=(point)
     end
 

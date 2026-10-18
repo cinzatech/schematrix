@@ -2,14 +2,14 @@
 
 module M
   class Schema
-    sig { params(tags: T.nilable(T::Array[T.nilable(T.noreturn)])).void }
+    sig { params(tags: T.nilable(T::Array[T.anything])).void }
     def initialize(tags: nil)
       @tags = tags
 
       @_extra = T.let({}, T::Hash[Symbol, T.anything])
     end
 
-    sig { returns(T.nilable(T::Array[T.nilable(T.noreturn)])) }
+    sig { returns(T.nilable(T::Array[T.anything])) }
     attr_accessor :tags
 
     sig { params(key: Symbol).returns(T.anything) }

@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor point: Array[Float]?
+    attr_accessor point: Array[untyped]?
 
-    def initialize: (?point: Array[Float]?) -> void
+    def initialize: (?point: Array[untyped]?) -> void
 
     def []: (Symbol) -> untyped
 

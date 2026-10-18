@@ -2,15 +2,15 @@
 
 module M
   class Schema
-    sig { params(data: T.anything).void }
+    sig { params(data: T.nilable(T::Array[T.any(String, Integer)])).void }
     def initialize(data: nil)
     end
 
-    sig { returns(T.anything) }
+    sig { returns(T.nilable(T::Array[T.any(String, Integer)])) }
     def data
     end
 
-    sig { params(data: T.anything).void }
+    sig { params(data: T.nilable(T::Array[T.any(String, Integer)])).void }
     def data=(data)
     end
 

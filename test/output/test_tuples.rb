@@ -34,4 +34,20 @@ class TestTuples < Minitest::Test
   def test_prefix_items_with_items_rbi
     assert_fixture("prefix_items_with_items", "rbi")
   end
+
+  def test_prefix_items_closed_plain_ruby
+    assert_fixture("prefix_items_closed", "plain_ruby")
+  end
+
+  def test_prefix_items_closed_rbs
+    assert_fixture("prefix_items_closed", "rbs")
+  end
+
+  def test_prefix_items_closed_sorbet_ruby
+    assert_fixture("prefix_items_closed", "sorbet_ruby")
+  end
+
+  def test_prefix_items_closed_rbi
+    assert_fixture("prefix_items_closed", "rbi")
+  end
 end

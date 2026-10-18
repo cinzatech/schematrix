@@ -22,6 +22,7 @@ module Schematrix
       :intersection,
       :items,
       :one_of,
+      :prefix_items,
       :properties,
       :ref,
       :required,
@@ -38,6 +39,7 @@ module Schematrix
       intersection: false,
       items: nil,
       one_of: [].freeze,
+      prefix_items: [].freeze,
       properties: nil,
       description: nil,
       ref: nil,
@@ -58,6 +60,7 @@ module Schematrix
       intersection: false,
       items: nil,
       one_of: [].freeze,
+      prefix_items: [].freeze,
       properties: nil,
       description: nil,
       ref: nil,
@@ -116,11 +119,18 @@ module Schematrix
       node, ref = resolve_reference(node)
 
       type = Set.new(Array(node["type"]))
+      # D8: a const with no declared type infers from the value's
+      # Ruby class; values that do not map cleanly degrade to untyped
+      if type.empty? && node.key?("const")
+        inferred = const_type(node["const"])
+        type = Set[inferred] unless inferred.nil?
+      end
       enum = node["enum"]
       default = node["default"]
       title = node["title"]
       description = node["description"]
       items = visit_subtree("items", node)
+      prefix_items = visit_prefix_items(node)
 
       # Composition context (D2): a node that is the document root or
       # types as object becomes a generated class, so composition
@@ -162,6 +172,7 @@ module Schematrix
           intersection: false,
           items:,
           one_of:,
+          prefix_items:,
           properties:,
           ref:,
           required:,
@@ -225,6 +236,35 @@ module Schematrix
       return nil if branch.nil?
 
       visit_schema(branch_name, branch)
+    end
+
+    # Visits prefixItems entries as value schemas (D13). All entries
+    # share the "prefixItems" path segment: inline object entries
+    # register no class (their numeric position is not a valid class
+    # name; they degrade to untyped in the element union), while $ref
+    # entries keep their target's class through the recorded edge.
+    def visit_prefix_items(node)
+      node["prefixItems"]&.filter_map do |item|
+        visit_schema("prefixItems", item, register_object: false)
+      end || []
+    end
+
+    # D8: maps a const value to its JSON Schema type when the mapping
+    # is clean; nil means no inference (arrays, objects as const
+    # values degrade to untyped).
+    def const_type(value)
+      case value
+      when String
+        TYPE_STRING
+      when Integer
+        TYPE_INTEGER
+      when Float
+        TYPE_NUMBER
+      when TrueClass, FalseClass
+        TYPE_BOOLEAN
+      when NilClass
+        TYPE_NULL
+      end
     end
 
     # additionalProperties normalization (D12): the spec default is

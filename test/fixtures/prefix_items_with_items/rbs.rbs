@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor data: Array[untyped]?
+    attr_accessor data: Array[(String | Integer)]?
 
-    def initialize: (?data: Array[untyped]?) -> void
+    def initialize: (?data: Array[(String | Integer)]?) -> void
 
     def []: (Symbol) -> untyped
 

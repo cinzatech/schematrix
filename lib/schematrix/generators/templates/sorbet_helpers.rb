@@ -39,9 +39,8 @@ module Schematrix
               when "object"
                 [class_name_from_path(path, name)]
               when "array"
-                items_type =
-                  sorbet_type(nested_locator(path, name), "items", schema.items)
-                ["T::Array[#{items_type}]"]
+                element = array_element_type(nested_locator(path, name), schema)
+                ["T::Array[#{element}]"]
               when "null"
                 []
               else
@@ -58,6 +57,29 @@ module Schematrix
           return intersect_types(base) if schema.intersection
 
           combine_types(base)
+        end
+
+        # D13 element union: the union of prefix item types, plus the
+        # items type when present, plus T.anything whenever the tail
+        # is open (no items). items: false closes the tail and adds no
+        # term. Inline object prefix items degrade to untyped (no
+        # stable class name); $ref items keep their class.
+        def array_element_type(path, schema)
+          terms =
+            schema.prefix_items.map { |item| prefix_item_type(path, item) }.uniq
+          if schema.items.nil?
+            terms << SORBET_TYPE_ANYTHING
+          elsif !schema.items.type.include?(TYPE_BOTTOM)
+            terms << sorbet_type(path, "items", schema.items)
+          end
+
+          combine_types(terms)
+        end
+
+        def prefix_item_type(path, item)
+          return SORBET_TYPE_ANYTHING if item.type.include?(TYPE_OBJECT)
+
+          sorbet_type(path, "prefixItems", item)
         end
 
         # D5 conjoin: distinct declarations intersect syntactically as
