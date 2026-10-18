@@ -75,6 +75,20 @@ module Schematrix
   # their classes get generated. It never visits ref targets itself: the
   # caller (see Compiler) decides when and whether to do that.
   class Visitor
+    # Keywords without a codegen representation. They are ignored
+    # and logged once per document at debug level; the shapes stay
+    # open. Extend the list when the official metaschemas reveal
+    # more keywords we cannot express as Ruby types.
+    IGNORED_KEYWORDS = %w[
+      not
+      unevaluatedProperties
+      unevaluatedItems
+      contains
+      minContains
+      maxContains
+      dependentRequired
+    ].freeze
+
     # The findings of a visit: the object schemas the subtree contains
     # by locator, and edges to object schemas living elsewhere that it
     # references.
@@ -118,9 +132,11 @@ module Schematrix
 
       node, ref = resolve_reference(node)
 
+      IGNORED_KEYWORDS.each { |keyword| ignore_keyword(node, keyword) }
+
       type = Set.new(Array(node["type"]))
-      # D8: a const with no declared type infers from the value's
-      # Ruby class; values that do not map cleanly degrade to untyped
+      # a const with no declared type infers from the value's
+      # Ruby class; values that do not map cleanly fall back to untyped
       if type.empty? && node.key?("const")
         inferred = const_type(node["const"])
         type = Set[inferred] unless inferred.nil?
@@ -186,6 +202,15 @@ module Schematrix
       schema
     ensure
       @fragment_path.pop
+    end
+
+    # Notes a keyword without codegen representation on the
+    # document's registry; the store logs it the first time it is
+    # seen in this document.
+    def ignore_keyword(node, keyword)
+      return unless node.is_a?(Hash) && node.key?(keyword)
+
+      @store.note_ignored(@locator.path, keyword, current_locator)
     end
 
     # Resolves a $ref, if present, by following the chain of references
@@ -313,7 +338,7 @@ module Schematrix
     # Visits prefixItems entries as value schemas (D13). All entries
     # share the "prefixItems" path segment: inline object entries
     # register no class (their numeric position is not a valid class
-    # name; they degrade to untyped in the element union), while $ref
+    # name; they fall back to untyped in the element union), while $ref
     # entries keep their target's class through the recorded edge.
     def visit_prefix_items(node)
       node["prefixItems"]&.filter_map do |item|
@@ -321,9 +346,9 @@ module Schematrix
       end || []
     end
 
-    # D8: maps a const value to its JSON Schema type when the mapping
+    # maps a const value to its JSON Schema type when the mapping
     # is clean; nil means no inference (arrays, objects as const
-    # values degrade to untyped).
+    # values fall back to untyped).
     def const_type(value)
       case value
       when String
@@ -460,7 +485,7 @@ module Schematrix
     # allOf fold (D5 conjunction): properties conjoin, required unions,
     # additionalProperties intersects. A `true` branch is the identity;
     # a `false` branch would make the schema uninhabitable and is
-    # skipped (approximation, same family as D10).
+    # skipped (approximation: over-accepting, never under-accepting).
     def conjoin_body(acc, raw)
       return acc unless raw.is_a?(Hash)
 
@@ -557,9 +582,10 @@ module Schematrix
     # union, because any value is then acceptable for some branch.
     def union_schemas(contribs, parent: nil)
       required = parent&.required || false
-      degrades = contribs.include?(:untyped)
-      degrades ||= contribs.any? { |c| c.is_a?(Schema) && untyped_schema?(c) }
-      return Schema::Empty.with(required:) if degrades
+      has_untyped = contribs.include?(:untyped)
+      has_untyped ||=
+        contribs.any? { |c| c.is_a?(Schema) && untyped_schema?(c) }
+      return Schema::Empty.with(required:) if has_untyped
 
       schemas = contribs
       return schemas.first if schemas.size == 1

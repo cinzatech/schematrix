@@ -14,6 +14,7 @@ module Schematrix
     def initialize
       @documents = {}
       @anchors = {}
+      @ignored = {}
     end
 
     # Returns the schema node the given URI points at, walking the
@@ -21,6 +22,18 @@ module Schematrix
     def node_at(uri)
       uri = canonicalize(uri)
       walk_pointer(document(uri), uri)
+    end
+
+    # Ignore bookkeeping: keywords with no codegen representation
+    # are skipped; each one is logged once per document at debug
+    # level.
+    def note_ignored(path, keyword, locator)
+      seen = (@ignored[path] ||= Set.new)
+      return unless seen.add?(keyword)
+
+      Schematrix.logger&.debug(
+        "Ignoring #{keyword} at #{locator}: no codegen representation",
+      )
     end
 
     # Rewrites plain-name fragments (no leading slash) to the JSON

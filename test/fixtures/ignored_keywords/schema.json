@@ -1,0 +1,21 @@
+{
+  "title": "Ignored",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    }
+  },
+  "not": {
+    "type": "integer"
+  },
+  "unevaluatedProperties": false,
+  "unevaluatedItems": false,
+  "contains": {
+    "type": "string"
+  },
+  "dependentRequired": {
+    "name": ["other"]
+  },
+  "minContains": 1
+}

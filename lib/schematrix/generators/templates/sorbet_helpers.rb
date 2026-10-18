@@ -62,7 +62,7 @@ module Schematrix
         # D13 element union: the union of prefix item types, plus the
         # items type when present, plus T.anything whenever the tail
         # is open (no items). items: false closes the tail and adds no
-        # term. Inline object prefix items degrade to untyped (no
+        # term. Inline object prefix items fall back to untyped (no
         # stable class name); $ref items keep their class.
         def array_element_type(path, schema)
           terms =
@@ -84,7 +84,7 @@ module Schematrix
 
         # D5 conjoin: distinct declarations intersect syntactically as
         # T.all(String, Integer), even if uninhabited. T.anything is
-        # the identity; an empty conjunction degrades to untyped.
+        # the identity; an empty conjunction falls back to untyped.
         def intersect_types(types)
           terms = types.reject { |type| type == SORBET_TYPE_ANYTHING }
           return SORBET_TYPE_ANYTHING if terms.empty?
