@@ -2,7 +2,13 @@
 
 module M
   class Schema
-    sig { params(name: T.nilable(String), credit_card: T.nilable(String), billing_address: T.nilable(String)).void }
+    sig do
+      params(
+        name: T.nilable(String),
+        credit_card: T.nilable(String),
+        billing_address: T.nilable(String)
+      ).void
+    end
     def initialize(name: nil, credit_card: nil, billing_address: nil)
     end
 

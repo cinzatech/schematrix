@@ -2,7 +2,14 @@
 
 module M
   class Schema
-    sig { params(kind: T.nilable(String), value: T.nilable(String), tier: T.nilable(Integer), reason: T.nilable(String)).void }
+    sig do
+      params(
+        kind: T.nilable(String),
+        value: T.nilable(String),
+        tier: T.nilable(Integer),
+        reason: T.nilable(String)
+      ).void
+    end
     def initialize(kind: nil, value: nil, tier: nil, reason: nil)
       @kind = kind
       @value = value

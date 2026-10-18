@@ -1,0 +1,22 @@
+{
+  "title": "AnyOfRoot",
+  "type": "object",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "foo": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "bar": {
+          "type": "number"
+        }
+      }
+    }
+  ]
+}

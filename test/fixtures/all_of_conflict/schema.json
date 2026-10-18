@@ -1,0 +1,20 @@
+{
+  "title": "AllOfConflict",
+  "type": "object",
+  "allOf": [
+    {
+      "properties": {
+        "a": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "properties": {
+        "a": {
+          "type": "integer"
+        }
+      }
+    }
+  ]
+}

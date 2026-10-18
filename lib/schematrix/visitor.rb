@@ -19,6 +19,7 @@ module Schematrix
       :default,
       :description,
       :enum,
+      :intersection,
       :items,
       :one_of,
       :properties,
@@ -34,6 +35,7 @@ module Schematrix
       any_of: [].freeze,
       default: nil,
       enum: nil,
+      intersection: false,
       items: nil,
       one_of: [].freeze,
       properties: nil,
@@ -53,6 +55,7 @@ module Schematrix
       any_of: [].freeze,
       default: nil,
       enum: nil,
+      intersection: false,
       items: nil,
       one_of: [].freeze,
       properties: nil,
@@ -118,31 +121,36 @@ module Schematrix
       title = node["title"]
       description = node["description"]
       items = visit_subtree("items", node)
-      additional_properties = visit_additional_properties(node)
-      required_properties = Set.new(node["required"])
 
-      # Composition context (D2): a node that is not the document root
-      # and does not itself type as object describes a value, so
-      # anyOf/oneOf branches become variant lists to union into the
-      # value's type. Object-context composition merges instead and
-      # lands with the Phase 3 machinery.
+      # Composition context (D2): a node that is the document root or
+      # types as object becomes a generated class, so composition
+      # branches merge into one property set (Phase 3). A value node
+      # unions its anyOf/oneOf branches as variants instead, except
+      # that inline object branches inside anyOf merge into the
+      # property's own class (D3).
       object_context = name.empty? || type.include?(TYPE_OBJECT)
-      any_of = object_context ? [] : visit_variants("anyOf", node)
-      one_of = object_context ? [] : visit_variants("oneOf", node)
-
-      @fragment_path.push("properties")
-      pairs =
-        node["properties"]&.filter_map do |prop_name, body|
-          schema =
-            visit_schema(
-              prop_name,
-              body,
-              required: required_properties.include?(prop_name),
-            )
-          [prop_name, schema]
+      if object_context
+        body = compile_object(node)
+        properties = body[:properties]
+        additional_properties = body[:additional_properties]
+        any_of = []
+        one_of = []
+      else
+        branches = split_value_branches(node)
+        any_of = visit_variant_list("anyOf", branches[:any_of])
+        one_of = visit_variant_list("oneOf", branches[:one_of])
+        if branches[:mergeable].any?
+          # D3: anyOf object branches merge into one class that
+          # registers at this node's own locator
+          body = merge_value_branches(node, branches[:mergeable])
+          properties = body[:properties]
+          additional_properties = body[:additional_properties]
+          type |= Set[TYPE_OBJECT]
+        else
+          properties = compile_properties(node)
+          additional_properties = visit_additional_properties(node)
         end
-      properties = pairs&.to_h
-      @fragment_path.pop
+      end
 
       schema =
         Schema.new(
@@ -151,6 +159,7 @@ module Schematrix
           default:,
           description:,
           enum:,
+          intersection: false,
           items:,
           one_of:,
           properties:,
@@ -236,16 +245,257 @@ module Schematrix
     # branch, in the matching variant list (D1). Branch locators use
     # anyOf_0 / oneOf_0 path segments (D3). Object branches inside
     # oneOf register positional classes (OneOf0); anyOf branches do not
-    # register (they merge per D3, Phase 3 machinery). $ref branches
-    # keep working through resolve_reference, recording their edge. A
-    # false branch accepts nothing and contributes no variant.
-    def visit_variants(keyword, node)
-      node[keyword]&.each_with_index&.filter_map do |branch, index|
+    # register (they merge per D3). $ref branches keep working through
+    # resolve_reference, recording their edge. A false branch accepts
+    # nothing and contributes no variant.
+    def visit_variant_list(keyword, branches)
+      branches.each_with_index.filter_map do |branch, index|
         next if branch.is_a?(FalseClass)
 
         register_object = keyword == "oneOf"
         visit_schema("#{keyword}_#{index}", branch, register_object:)
-      end || []
+      end
+    end
+
+    # Splits a value-context node's composition branches. Inline
+    # object branches inside anyOf are mergeable into the node's own
+    # class (D3); everything else stays a variant, including $ref
+    # branches to objects (their target keeps its own class via the
+    # recorded edge).
+    def split_value_branches(node)
+      any_branches = Array(node["anyOf"])
+      mergeable, any_variants =
+        any_branches.partition do |branch|
+          branch.is_a?(Hash) && branch["$ref"].nil? &&
+            Array(branch["type"]).include?(TYPE_OBJECT)
+        end
+      { mergeable:, any_of: any_variants, one_of: Array(node["oneOf"]) }
+    end
+
+    # Object-context composition (Phase 3): merge the branch
+    # properties of every composition keyword into one property set,
+    # parent first, then branches in document order. allOf conjoins
+    # (D5: required unions, conflicting types intersect); the union
+    # keywords merge optional branches with the untyped-contribution
+    # rule inside anyOf/oneOf lists (D12); then/else/dependentSchemas
+    # are single branches and merge their own properties only; `if` is
+    # a condition and is ignored.
+    def compile_object(node)
+      body = node_body(node)
+      Array(node["allOf"]).each { |raw| body = conjoin_body(body, raw) }
+      body = union_list_body(body, node["anyOf"])
+      body = union_list_body(body, node["oneOf"])
+      body = union_body(body, node["then"])
+      body = union_body(body, node["else"])
+      node["dependentSchemas"].to_a.each do |_key, raw|
+        body = union_body(body, raw)
+      end
+      body
+    end
+
+    # Merges inline object branches of a value-level anyOf into the
+    # node's own class (D3): union semantics with the
+    # untyped-contribution rule, every property optional.
+    def merge_value_branches(node, branches)
+      union_list_body(node_body(node), branches)
+    end
+
+    # The mergeable parts of a raw node: its own properties and its
+    # normalized additionalProperties.
+    def node_body(node)
+      {
+        properties: compile_properties(node),
+        additional_properties: visit_additional_properties(node),
+      }
+    end
+
+    # Follows a $ref branch to its final target for merging (D4 flat
+    # merge). The branch itself records no edge and registers no class
+    # (D6: merging produces no dead code); value references nested
+    # inside its properties still record their edges, because those
+    # classes are referenced from the merged result.
+    def branch_body(raw)
+      node_body(deref_branch(raw))
+    end
+
+    def deref_branch(raw)
+      return raw unless raw.is_a?(Hash) && !raw["$ref"].nil?
+
+      target, = final_target(@locator, raw["$ref"])
+      target || raw
+    end
+
+    # Visits a node's own properties at the current path. Shared by
+    # the node itself and by merged branches, so nested classes of a
+    # merged branch land under the merging node's locator.
+    def compile_properties(node)
+      required_props = Set.new(node["required"])
+      @fragment_path.push("properties")
+      pairs =
+        node["properties"]&.filter_map do |prop_name, body|
+          schema =
+            visit_schema(
+              prop_name,
+              body,
+              required: required_props.include?(prop_name),
+            )
+          [prop_name, schema]
+        end
+      @fragment_path.pop
+      pairs.to_h
+    end
+
+    # allOf fold (D5 conjunction): properties conjoin, required unions,
+    # additionalProperties intersects. A `true` branch is the identity;
+    # a `false` branch would make the schema uninhabitable and is
+    # skipped (approximation, same family as D10).
+    def conjoin_body(acc, raw)
+      return acc unless raw.is_a?(Hash)
+
+      branch = branch_body(raw)
+      properties =
+        acc[:properties].merge(branch[:properties]) do |_name, own, other|
+          conjoin_schemas(own, other)
+        end
+      {
+        properties:,
+        additional_properties:
+          conjoin_additional(
+            acc[:additional_properties],
+            branch[:additional_properties],
+          ),
+      }
+    end
+
+    # anyOf/oneOf fold (D3/D3a merge): union semantics. Branches that
+    # do not constrain a property contribute untyped to its union
+    # (D12), so properties mentioned by only some branches are not
+    # over-constrained; branch-introduced properties are optional
+    # (D5), the parent's own required-ness survives.
+    def union_list_body(acc, list)
+      compiled =
+        Array(list).filter_map do |raw|
+          # a true branch owns no properties and a fully open shape;
+          # pooling it gives every property an untyped contribution
+          if raw == true
+            next { properties: {}, additional_properties: Schema::Empty }
+          end
+          next nil if raw == false || !raw.is_a?(Hash)
+
+          branch_body(raw)
+        end
+      return acc if compiled.empty?
+
+      pool = acc[:properties].dup
+      names = compiled.flat_map { |body| body[:properties].keys }.uniq
+      names.each do |name|
+        own = acc[:properties][name]
+        contribs = compiled.map { |body| body[:properties][name] || :untyped }
+        contribs.unshift(own) if own
+        pool[name] = union_schemas(contribs, parent: own)
+      end
+      additional =
+        compiled.reduce(acc[:additional_properties]) do |own, body|
+          union_additional(own, body[:additional_properties])
+        end
+      { properties: pool, additional_properties: additional }
+    end
+
+    # Single union branch (then/else/dependentSchemas entry): merges
+    # its own properties as optional, no phantom untyped from
+    # siblings (each keyword entry is one schema, not a list of
+    # alternatives).
+    def union_body(acc, raw)
+      return acc unless raw.is_a?(Hash)
+
+      branch = branch_body(raw)
+      properties =
+        acc[:properties].merge(branch[:properties]) do |_name, own, other|
+          union_schemas([own, other], parent: own)
+        end
+      {
+        properties:,
+        additional_properties:
+          union_additional(
+            acc[:additional_properties],
+            branch[:additional_properties],
+          ),
+      }
+    end
+
+    # D5 conflict rule: distinct declarations of the same property
+    # conjoin syntactically (String & Integer / T.all), even if
+    # uninhabited; that is the schema author's problem. Facets beyond
+    # type/ref/variants keep the parent's declaration.
+    def conjoin_schemas(own, other)
+      return own if own == other
+
+      own.with(
+        type: own.type | other.type,
+        ref: own.ref || other.ref,
+        any_of: own.any_of + other.any_of,
+        one_of: own.one_of + other.one_of,
+        required: own.required || other.required,
+        intersection: true,
+      )
+    end
+
+    # Union of property contributions. :untyped marks a branch that
+    # does not constrain the property (D12); it swallows the whole
+    # union, because any value is then acceptable for some branch.
+    def union_schemas(contribs, parent: nil)
+      required = parent&.required || false
+      degrades = contribs.include?(:untyped)
+      degrades ||= contribs.any? { |c| c.is_a?(Schema) && untyped_schema?(c) }
+      return Schema::Empty.with(required:) if degrades
+
+      schemas = contribs
+      return schemas.first if schemas.size == 1
+
+      schemas.first.with(
+        type: schemas.reduce(Set.new) { |set, schema| set | schema.type },
+        ref: schemas.filter_map(&:ref).first,
+        any_of: schemas.flat_map(&:any_of),
+        one_of: schemas.flat_map(&:one_of),
+        required:,
+      )
+    end
+
+    # allOf intersects additionalProperties (D12): any false closes
+    # the result; untyped (absent) is the identity; declared schemas
+    # conjoin.
+    def conjoin_additional(own, other)
+      return nil if own.nil? || other.nil?
+
+      decls = [own, other].reject { |schema| untyped_schema?(schema) }
+      return Schema::Empty if decls.empty?
+      return decls.first if decls.size == 1
+
+      conjoin_schemas(decls.first, decls.last)
+    end
+
+    # Union branches open the shape (D12): untyped wins, a closed
+    # (false) branch contributes nothing because an instance from
+    # another branch may still carry extra keys, and declared schemas
+    # union their types.
+    def union_additional(own, other)
+      return Schema::Empty if untyped_schema?(own) || untyped_schema?(other)
+      return other if own.nil?
+      return own if other.nil?
+
+      own.with(
+        type: own.type | other.type,
+        any_of: own.any_of + other.any_of,
+        one_of: own.one_of + other.one_of,
+      )
+    end
+
+    # A schema that constrains nothing: empty type set, no ref, no
+    # variants. It types as untyped and is the identity for
+    # intersections.
+    def untyped_schema?(schema)
+      schema.type.empty? && schema.ref.nil? && schema.any_of.empty? &&
+        schema.one_of.empty?
     end
 
     def current_locator

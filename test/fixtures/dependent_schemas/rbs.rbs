@@ -4,7 +4,11 @@ module M
     attr_accessor credit_card: String?
     attr_accessor billing_address: String?
 
-    def initialize: (?name: String?, ?credit_card: String?, ?billing_address: String?) -> void
+    def initialize: (
+      ?name: String?,
+      ?credit_card: String?,
+      ?billing_address: String?
+    ) -> void
 
     def []: (Symbol) -> untyped
 

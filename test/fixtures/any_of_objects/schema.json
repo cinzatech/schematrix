@@ -1,0 +1,29 @@
+{
+  "title": "AnyOfObjects",
+  "type": "object",
+  "properties": {
+    "value": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "age": {
+              "type": "integer"
+            }
+          }
+        },
+        {
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

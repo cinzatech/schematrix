@@ -5,7 +5,12 @@ module M
     attr_accessor tier: Integer?
     attr_accessor reason: String?
 
-    def initialize: (?kind: String?, ?value: String?, ?tier: Integer?, ?reason: String?) -> void
+    def initialize: (
+      ?kind: String?,
+      ?value: String?,
+      ?tier: Integer?,
+      ?reason: String?
+    ) -> void
 
     def []: (Symbol) -> untyped
 

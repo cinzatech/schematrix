@@ -1,0 +1,12 @@
+module M
+  class Schema
+    attr_accessor foo: untyped
+    attr_accessor bar: untyped
+
+    def initialize: (?foo: untyped, ?bar: untyped) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
+  end
+end

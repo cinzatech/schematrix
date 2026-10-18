@@ -55,7 +55,20 @@ module Schematrix
           base.concat(variant_types(path, name, schema.any_of, "anyOf"))
           base.concat(variant_types(path, name, schema.one_of, "oneOf"))
 
+          return intersect_types(base) if schema.intersection
+
           combine_types(base)
+        end
+
+        # D5 conjoin: distinct declarations intersect syntactically as
+        # T.all(String, Integer), even if uninhabited. T.anything is
+        # the identity; an empty conjunction degrades to untyped.
+        def intersect_types(types)
+          terms = types.reject { |type| type == SORBET_TYPE_ANYTHING }
+          return SORBET_TYPE_ANYTHING if terms.empty?
+          return terms.first if terms.size == 1
+
+          "T.all(#{terms.join(", ")})"
         end
 
         # Computes the bare type of each variant branch under its

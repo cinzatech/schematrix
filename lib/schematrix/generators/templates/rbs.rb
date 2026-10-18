@@ -59,7 +59,8 @@ module Schematrix
           return combined if combined == RBS_TYPE_UNTYPED
           return combined if strictly_required?(schema)
 
-          combined.include?(" | ") ? "(#{combined})?" : "#{combined}?"
+          multi = combined.include?(" | ") || combined.include?(" & ")
+          multi ? "(#{combined})?" : "#{combined}?"
         end
 
         # Returns the type for a schema as a union string, without
@@ -92,7 +93,20 @@ module Schematrix
           base.concat(variant_types(path, name, schema.any_of, "anyOf"))
           base.concat(variant_types(path, name, schema.one_of, "oneOf"))
 
+          return intersect_types(base) if schema.intersection
+
           combine_types(base)
+        end
+
+        # D5 conjoin: distinct declarations intersect syntactically
+        # (String & Integer), even if uninhabited. untyped is the
+        # identity; an empty conjunction degrades to untyped.
+        def intersect_types(types)
+          terms = types.reject { |type| type == RBS_TYPE_UNTYPED }
+          return RBS_TYPE_UNTYPED if terms.empty?
+          return terms.first if terms.size == 1
+
+          terms.join(" & ")
         end
 
         # Computes the bare type of each variant branch under its

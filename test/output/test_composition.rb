@@ -98,4 +98,72 @@ class TestComposition < Minitest::Test
   def test_one_of_with_ref_rbi
     assert_fixture("one_of_with_ref", "rbi")
   end
+
+  def test_any_of_root_plain_ruby
+    assert_fixture("any_of_root", "plain_ruby")
+  end
+
+  def test_any_of_root_rbs
+    assert_fixture("any_of_root", "rbs")
+  end
+
+  def test_any_of_root_sorbet_ruby
+    assert_fixture("any_of_root", "sorbet_ruby")
+  end
+
+  def test_any_of_root_rbi
+    assert_fixture("any_of_root", "rbi")
+  end
+
+  def test_one_of_root_plain_ruby
+    assert_fixture("one_of_root", "plain_ruby")
+  end
+
+  def test_one_of_root_rbs
+    assert_fixture("one_of_root", "rbs")
+  end
+
+  def test_one_of_root_sorbet_ruby
+    assert_fixture("one_of_root", "sorbet_ruby")
+  end
+
+  def test_one_of_root_rbi
+    assert_fixture("one_of_root", "rbi")
+  end
+
+  def test_any_of_objects_plain_ruby
+    assert_fixture("any_of_objects", "plain_ruby")
+    assert_fixture("any_of_objects", "plain_ruby", path: "value")
+  end
+
+  def test_any_of_objects_rbs
+    assert_fixture("any_of_objects", "rbs")
+    assert_fixture("any_of_objects", "rbs", path: "value")
+  end
+
+  def test_any_of_objects_sorbet_ruby
+    assert_fixture("any_of_objects", "sorbet_ruby")
+    assert_fixture("any_of_objects", "sorbet_ruby", path: "value")
+  end
+
+  def test_any_of_objects_rbi
+    assert_fixture("any_of_objects", "rbi")
+    assert_fixture("any_of_objects", "rbi", path: "value")
+  end
+
+  def test_all_of_conflict_plain_ruby
+    assert_fixture("all_of_conflict", "plain_ruby")
+  end
+
+  def test_all_of_conflict_rbs
+    assert_fixture("all_of_conflict", "rbs")
+  end
+
+  def test_all_of_conflict_sorbet_ruby
+    assert_fixture("all_of_conflict", "sorbet_ruby")
+  end
+
+  def test_all_of_conflict_rbi
+    assert_fixture("all_of_conflict", "rbi")
+  end
 end
