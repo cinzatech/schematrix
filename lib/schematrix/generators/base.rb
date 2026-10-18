@@ -17,6 +17,49 @@ module Schematrix
     class Base
       include Resolver
 
+      # Ruby keywords that cannot appear as generated accessor names or
+      # keyword arguments; property_name suffixes them with "_".
+      RUBY_KEYWORDS = %w[
+        BEGIN
+        END
+        alias
+        and
+        begin
+        break
+        case
+        class
+        def
+        defined?
+        do
+        else
+        elsif
+        end
+        ensure
+        false
+        for
+        if
+        in
+        module
+        next
+        nil
+        not
+        or
+        redo
+        rescue
+        retry
+        return
+        self
+        super
+        then
+        true
+        undef
+        unless
+        until
+        when
+        while
+        yield
+      ].freeze
+
       def initialize(output_dir, module_name, format: true)
         @output_dir = output_dir
         @module_name = module_name
@@ -72,7 +115,7 @@ module Schematrix
           path:,
           class_name: class_name,
           properties:
-            object&.properties&.transform_keys { |key| underscore(key) },
+            object&.properties&.transform_keys { |key| property_name(key) },
           additional_properties: object.additional_properties,
           documentation_comment: documentation_comment(object),
         )
@@ -99,6 +142,17 @@ module Schematrix
           .gsub(/([a-z\d])([A-Z])/, '\1_\2')
           .tr("-", "_")
           .downcase
+      end
+
+      # A property name safe to use as a Ruby identifier: snake-cased,
+      # the leading "$" of core vocabulary keywords ($id, $ref, ...)
+      # stripped, and Ruby keywords suffixed with an underscore so
+      # generated accessors and keyword arguments stay parseable.
+      # Original keys stay reachable through the catch-all accessors.
+      def property_name(key)
+        name = underscore(key).delete_prefix("$")
+        name = "#{name}_" if RUBY_KEYWORDS.include?(name)
+        name
       end
     end
 

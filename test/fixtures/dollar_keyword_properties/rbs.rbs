@@ -1,0 +1,21 @@
+module M
+  class Schema
+    attr_accessor id: String?
+    attr_accessor if_: String?
+    attr_accessor then_: Integer?
+    attr_accessor defs: Schema::Defs?
+    attr_accessor named: Schema::Named?
+
+    def initialize: (
+      ?id: String?,
+      ?if_: String?,
+      ?then_: Integer?,
+      ?defs: Schema::Defs?,
+      ?named: Schema::Named?
+    ) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
+  end
+end

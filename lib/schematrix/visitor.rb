@@ -481,7 +481,10 @@ module Schematrix
       return nil if branch.nil? && @closed_shapes
       return Schema::Empty if branch.nil?
 
-      visit_schema("additionalProperties", branch)
+      # required: false: the catch-all schema is not a constructor
+      # argument, so its type renders as an optional union (and gets
+      # parenthesized in method-type positions)
+      visit_schema("additionalProperties", branch, required: false)
     end
 
     # Visits anyOf/oneOf branches in value context, one Schema per

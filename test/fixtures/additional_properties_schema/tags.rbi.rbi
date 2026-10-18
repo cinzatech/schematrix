@@ -6,11 +6,13 @@ module M
     def initialize
     end
 
-    sig { params(key: Symbol).returns(String) }
+    sig { params(key: Symbol).returns(T.nilable(String)) }
     def [](key)
     end
 
-    sig { params(key: Symbol, value: String).returns(String) }
+    sig do
+      params(key: Symbol, value: T.nilable(String)).returns(T.nilable(String))
+    end
     def []=(key, value)
     end
   end

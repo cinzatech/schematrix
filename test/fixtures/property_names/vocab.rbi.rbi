@@ -6,11 +6,15 @@ module M
     def initialize
     end
 
-    sig { params(key: Symbol).returns(T::Boolean) }
+    sig { params(key: Symbol).returns(T.nilable(T::Boolean)) }
     def [](key)
     end
 
-    sig { params(key: Symbol, value: T::Boolean).returns(T::Boolean) }
+    sig do
+      params(key: Symbol, value: T.nilable(T::Boolean)).returns(
+        T.nilable(T::Boolean)
+      )
+    end
     def []=(key, value)
     end
   end

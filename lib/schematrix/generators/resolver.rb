@@ -7,16 +7,27 @@ module Schematrix
       # Passing a series of path parts to this method will return the qualified
       # class name corresponding to that path.
       # Example: 'foo/bar', 'baz' => Title::Foo::Bar::Baz
-      # Empty parts are removed. 'properties' also removed.
+      # Empty parts are removed. 'properties' also removed, as is the
+      # '$defs' container segment (but not a property named "$defs",
+      # which only ever follows a 'properties' segment). "$" prefixes
+      # (core vocabulary keywords like "$id") and mangling suffixes
+      # ("if_") are stripped so segments form valid constant names.
       def class_name_from_path(uri, *path)
         file = File.basename(uri.path).split(".").first
-        nested_path =
-          [file, *uri.fragment.split("/"), *path].compact
-            .reject(&:empty?)
-            .reject { |segment| %w[properties $defs].include?(segment) }
-            .join("/")
+        segments = [file, *uri.fragment.split("/"), *path].compact.reject(
+          &:empty?
+        )
 
-        pascal_case(nested_path)
+        meaningful =
+          segments.each_with_index.filter_map do |segment, index|
+            container =
+              segment == "$defs" && segments[index - 1] != "properties"
+            next if segment == "properties" || container
+
+            segment.delete("$").sub(/_+\z/, "")
+          end
+
+        pascal_case(meaningful.join("/"))
       end
 
       private

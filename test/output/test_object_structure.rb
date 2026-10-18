@@ -118,4 +118,43 @@ class TestObjectStructure < Minitest::Test
   def test_camel_to_snake_rbi
     assert_fixture("camel_to_snake", "rbi")
   end
+
+  def test_dollar_keyword_properties_plain_ruby
+    assert_fixture("dollar_keyword_properties", "plain_ruby")
+    assert_fixture(
+      "dollar_keyword_properties",
+      "plain_ruby",
+      path: "defs",
+      locator: defs_property_locator,
+    )
+    assert_fixture("dollar_keyword_properties", "plain_ruby", path: "Named")
+  end
+
+  def test_dollar_keyword_properties_rbs
+    assert_fixture("dollar_keyword_properties", "rbs")
+    assert_fixture(
+      "dollar_keyword_properties",
+      "rbs",
+      path: "defs",
+      locator: defs_property_locator,
+    )
+    assert_fixture("dollar_keyword_properties", "rbs", path: "Named")
+  end
+
+  private
+
+  # A property named "$defs" is not the definitions container; the
+  # helper's plain-name resolution cannot express it, so the locator
+  # is spelled out.
+  def defs_property_locator
+    schema =
+      File.expand_path(
+        File.join(
+          SchematrixTestHelper::FIXTURES_DIR,
+          "dollar_keyword_properties",
+          "schema.json",
+        ),
+      )
+    "file://#{schema}#/properties/$defs"
+  end
 end

@@ -2,8 +2,8 @@ module M
   class Schema::Vocab
     def initialize: -> void
 
-    def []: (Symbol) -> bool
+    def []: (Symbol) -> bool?
 
-    def []=: (Symbol, bool) -> bool
+    def []=: (Symbol, bool?) -> bool?
   end
 end

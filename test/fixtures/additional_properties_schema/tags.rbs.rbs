@@ -2,8 +2,8 @@ module M
   class Schema::Tags
     def initialize: -> void
 
-    def []: (Symbol) -> String
+    def []: (Symbol) -> String?
 
-    def []=: (Symbol, String) -> String
+    def []=: (Symbol, String?) -> String?
   end
 end

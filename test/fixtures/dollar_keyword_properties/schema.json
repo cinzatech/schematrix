@@ -1,0 +1,36 @@
+{
+  "title": "DollarKeywords",
+  "type": "object",
+  "properties": {
+    "$id": {
+      "type": "string"
+    },
+    "if": {
+      "type": "string"
+    },
+    "then": {
+      "type": "integer"
+    },
+    "$defs": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "named": {
+      "$ref": "#/$defs/Named"
+    }
+  },
+  "$defs": {
+    "Named": {
+      "type": "object",
+      "properties": {
+        "tag": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
