@@ -79,9 +79,9 @@ module Schematrix
                 ["Array[#{element}]"]
               when "null"
                 []
-              when nil
-                RBS_TYPE_UNTYPED
               else
+                # nil elements (malformed type lists) fall through the
+                # map's nil key to untyped, like any unknown type
                 [RBS_SCALAR_TYPES.fetch(type, RBS_TYPE_UNTYPED)]
               end
             end

@@ -141,11 +141,12 @@ module Schematrix
                 "configured (pass --schema-dir)"
       end
 
-      candidate = remote_candidates(uri).find { |path| File.file?(path) }
+      candidates = remote_candidates(uri)
+      candidate = candidates.find { |path| File.file?(path) }
       if candidate.nil?
         raise UnresolvableLocatorError,
               "No local file for #{uri}: none of " \
-                "#{remote_candidates(uri).join(", ")} exists"
+                "#{candidates.join(", ")} exists"
       end
 
       Schematrix.logger&.debug "Mapped #{uri} to #{candidate}"

@@ -6,7 +6,7 @@
 # involved, so speedscope's left-heavy view groups by library code paths.
 #
 # Usage:
-#   ruby profile_fixtures.rb [output.json] [iterations]
+#   ruby profile_tests.rb [output.json] [iterations]
 #
 # View the result at https://www.speedscope.app or with `npx speedscope`.
 
