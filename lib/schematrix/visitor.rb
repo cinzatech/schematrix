@@ -86,6 +86,11 @@ module Schematrix
   # decide how to represent it, and records edges to object schemas so
   # their classes get generated. It never visits ref targets itself: the
   # caller (see Compiler) decides when and whether to do that.
+  #
+  # Positions inside the document are threaded down as explicit path
+  # segments (leading empty segment for the document root, e.g.
+  # ["", "properties", "tags"]); every locator the visitor derives is a
+  # pure function of that path.
   class Visitor
     # Keywords without a codegen representation. They are ignored
     # and logged once per document at debug level; the shapes stay
@@ -134,27 +139,32 @@ module Schematrix
       @objects = {}
       @edges = []
       @ref_base = nil
-
-      @fragment_path = locator.fragment.split("/")
-      @name = @fragment_path.pop || "" # document root is nameless
     end
 
     def compile(node)
-      visit_schema(@name, node, required: false)
+      # Seed the path from the locator's fragment: a visitor may start
+      # at the document root ("/" seeds the nameless [""] site) or at
+      # an interior locator the compiler discovered through an edge.
+      path = @locator.fragment.split("/")
+      name = path.pop || "" # document root is nameless
+      visit_schema(path, name, node, required: false)
 
       self
     end
 
     private
 
-    def visit_schema(name, node, required: true, register_object: true)
-      @fragment_path.push(name)
+    # Compiles the schema at `path + [name]`. The path segments name
+    # the containing chain (properties, $defs, anyOf_0, ...); an
+    # empty name is the document root.
+    def visit_schema(path, name, node, required: true, register_object: true)
+      site = path + [name]
 
       # JSON Schema allows "true" as a catch-all. A class emitted from
       # a true schema is open: its catch-all accepts anything (D12).
       if node.is_a? TrueClass
         if register_object
-          @objects[current_locator] = Schema::Empty.with(
+          @objects[current_locator(site)] = Schema::Empty.with(
             additional_properties: Schema::Empty,
           )
         end
@@ -164,14 +174,14 @@ module Schematrix
       # JSON Schema "false" accepts nothing: no class, bottom type
       return Schema::Bottom if node.is_a?(FalseClass)
 
-      node, ref, inline_base = resolve_reference(node)
+      node, ref, inline_base = resolve_reference(site, node)
 
       # Content inlined from another document compiles against that
       # document, so refs nested inside it resolve where they were
       # written (see resolve_reference).
       schema = nil
       with_ref_base(inline_base) do
-        IGNORED_KEYWORDS.each { |keyword| ignore_keyword(node, keyword) }
+        IGNORED_KEYWORDS.each { |keyword| ignore_keyword(site, node, keyword) }
 
         type = Set.new(Array(node["type"]))
         # a const with no declared type infers from the value's
@@ -184,8 +194,8 @@ module Schematrix
         default = node["default"]
         title = node["title"]
         description = node["description"]
-        items = visit_subtree("items", node)
-        prefix_items = visit_prefix_items(node)
+        items = visit_subtree(site, "items", node)
+        prefix_items = visit_prefix_items(site, node)
 
         # Composition context (D2): a node that is the document root or
         # types as object becomes a generated class, so composition
@@ -195,25 +205,25 @@ module Schematrix
         # property's own class (D3).
         object_context = name.empty? || type.include?(TYPE_OBJECT)
         if object_context
-          body = compile_object(node)
+          body = compile_object(site, node)
           properties = body.properties
           additional_properties = body.additional_properties
           any_of = []
           one_of = []
         else
           branches = split_value_branches(node)
-          any_of = visit_variant_list("anyOf", branches[:any_of])
-          one_of = visit_variant_list("oneOf", branches[:one_of])
+          any_of = visit_variant_list(site, "anyOf", branches[:any_of])
+          one_of = visit_variant_list(site, "oneOf", branches[:one_of])
           if branches[:mergeable].any?
             # D3: anyOf object branches merge into one class that
             # registers at this node's own locator
-            body = merge_value_branches(node, branches[:mergeable])
+            body = merge_value_branches(site, node, branches[:mergeable])
             properties = body.properties
             additional_properties = body.additional_properties
             type |= Set[TYPE_OBJECT]
           else
-            properties = compile_properties(node)
-            additional_properties = visit_additional_properties(node)
+            properties = compile_properties(site, node)
+            additional_properties = visit_additional_properties(site, node)
           end
         end
 
@@ -236,19 +246,17 @@ module Schematrix
           )
 
         if register_object && ref.nil? && type.include?(TYPE_OBJECT)
-          @objects[current_locator] = schema
+          @objects[current_locator(site)] = schema
         end
       end
 
       schema
-    ensure
-      @fragment_path.pop
     end
 
     # Notes a keyword without codegen representation on the
     # document's registry; the store logs it the first time it is
     # seen in this document.
-    def ignore_keyword(node, keyword)
+    def ignore_keyword(site, node, keyword)
       return unless node.is_a?(Hash) && node.key?(keyword)
 
       # ref_base, not @locator: content inlined from another document
@@ -256,7 +264,7 @@ module Schematrix
       @store.note_ignored(
         @store.document_key(ref_base),
         keyword,
-        current_locator,
+        current_locator(site),
       )
     end
 
@@ -269,14 +277,15 @@ module Schematrix
     # - scalar target: return the target node itself so its type
     #   information is compiled in place of the reference, and no ref.
     # A $dynamicRef resolves through the D9 static approximation first.
-    def resolve_reference(node)
+    def resolve_reference(site, node)
       reference = node["$ref"]
       if reference.nil? && node["$dynamicRef"]
         dynamic_ref = node["$dynamicRef"]
-        reference = dynamic_anchor_locator(dynamic_ref)
+        reference = dynamic_anchor_locator(site, dynamic_ref)
         if reference.nil?
           Schematrix.logger&.debug(
-            "Unresolvable $dynamicRef #{dynamic_ref} at #{current_locator}",
+            "Unresolvable $dynamicRef #{dynamic_ref} at " \
+              "#{current_locator(site)}",
           )
           return node, nil, nil
         end
@@ -363,18 +372,17 @@ module Schematrix
     # inside merged cross-document branches the chain mixes segments
     # from both documents and can point at nodes that do not exist
     # here.
-    def dynamic_anchor_locator(reference)
+    def dynamic_anchor_locator(site, reference)
       name = reference.delete_prefix("#")
-      chain = @fragment_path.dup
-      chain.pop # the ref site itself
+      chain = site[0...-1] # the ref site itself is not its own ancestor
       until chain.empty?
-        locator = locator_at(chain)
+        locator = locator_for(chain)
         node = safe_node_at(locator)
         if node.is_a?(Hash) && node["$dynamicAnchor"] == name
           return locator.to_s
         end
 
-        chain.pop
+        chain = chain[0...-1]
       end
 
       pointer = @store.last_dynamic_anchor_locator(@locator, name)
@@ -388,15 +396,6 @@ module Schematrix
       @store.node_at(locator)
     rescue UnresolvableLocatorError
       nil
-    end
-
-    # Locator for a chain of containment segments (as found in
-    # @fragment_path, leading empty segment included).
-    def locator_at(chain)
-      segments = chain.first == "" ? chain.drop(1) : chain
-      locator = @locator.dup
-      locator.fragment = "/#{segments.join("/")}"
-      locator
     end
 
     # Follows chains of pure references to the final node, guarding
@@ -416,15 +415,29 @@ module Schematrix
       target ? [target, target_locator] : [node, locator]
     end
 
+    # The locator URI for a path of containment segments, leading
+    # empty segment included ([""] names the document root itself).
+    def locator_for(path)
+      fragment = path.join("/")
+      locator = @locator.dup
+      locator.fragment = fragment.empty? ? "/" : fragment
+      locator
+    end
+
+    # The string form of a path's locator: the object registry key.
+    def current_locator(path)
+      locator_for(path).to_s
+    end
+
     # Visit subtrees (other than properties), like items or
     # additionalProperties, that contain nested schema definition. It
     # will store object definitions on a nested path by the name of the
     # branch being visited.
-    def visit_subtree(branch_name, node)
+    def visit_subtree(path, branch_name, node)
       branch = node[branch_name]
       return nil if branch.nil?
 
-      visit_schema(branch_name, branch)
+      visit_schema(path, branch_name, branch)
     end
 
     # Visits prefixItems entries as value schemas (D13). All entries
@@ -432,9 +445,9 @@ module Schematrix
     # register no class (their numeric position is not a valid class
     # name; they fall back to untyped in the element union), while $ref
     # entries keep their target's class through the recorded edge.
-    def visit_prefix_items(node)
+    def visit_prefix_items(path, node)
       node["prefixItems"]&.filter_map do |item|
-        visit_schema("prefixItems", item, register_object: false)
+        visit_schema(path, "prefixItems", item, register_object: false)
       end || []
     end
 
@@ -461,7 +474,7 @@ module Schematrix
     # and only an explicit false closes the shape. nil (meaning
     # "no catch-all" to the templates) survives only for false, or
     # for absence when closed_shapes was requested.
-    def visit_additional_properties(node)
+    def visit_additional_properties(path, node)
       branch = node["additionalProperties"]
       return nil if branch.is_a?(FalseClass)
       return nil if branch.nil? && @closed_shapes
@@ -470,7 +483,7 @@ module Schematrix
       # required: false: the catch-all schema is not a constructor
       # argument, so its type renders as an optional union (and gets
       # parenthesized in method-type positions)
-      visit_schema("additionalProperties", branch, required: false)
+      visit_schema(path, "additionalProperties", branch, required: false)
     end
 
     # Visits anyOf/oneOf branches in value context, one Schema per
@@ -480,12 +493,12 @@ module Schematrix
     # register (they merge per D3). $ref branches keep working through
     # resolve_reference, recording their edge. A false branch accepts
     # nothing and contributes no variant.
-    def visit_variant_list(keyword, branches)
+    def visit_variant_list(path, keyword, branches)
       branches.each_with_index.filter_map do |branch, index|
         next if branch.is_a?(FalseClass)
 
         register_object = keyword == "oneOf"
-        visit_schema("#{keyword}_#{index}", branch, register_object:)
+        visit_schema(path, "#{keyword}_#{index}", branch, register_object:)
       end
     end
 
@@ -512,15 +525,15 @@ module Schematrix
     # rule inside anyOf/oneOf lists (D12); then/else/dependentSchemas
     # are single branches and merge their own properties only; `if` is
     # a condition and is ignored.
-    def compile_object(node)
-      body = node_body(node)
-      Array(node["allOf"]).each { |raw| body = conjoin_body(body, raw) }
-      body = union_list_body(body, node["anyOf"])
-      body = union_list_body(body, node["oneOf"])
-      body = union_body(body, node["then"])
-      body = union_body(body, node["else"])
+    def compile_object(path, node)
+      body = node_body(path, node)
+      Array(node["allOf"]).each { |raw| body = conjoin_body(path, body, raw) }
+      body = union_list_body(path, body, node["anyOf"])
+      body = union_list_body(path, body, node["oneOf"])
+      body = union_body(path, body, node["then"])
+      body = union_body(path, body, node["else"])
       node["dependentSchemas"].to_a.each do |_key, raw|
-        body = union_body(body, raw)
+        body = union_body(path, body, raw)
       end
       body
     end
@@ -528,16 +541,16 @@ module Schematrix
     # Merges inline object branches of a value-level anyOf into the
     # node's own class (D3): union semantics with the
     # untyped-contribution rule, every property optional.
-    def merge_value_branches(node, branches)
-      union_list_body(node_body(node), branches)
+    def merge_value_branches(path, node, branches)
+      union_list_body(path, node_body(path, node), branches)
     end
 
     # The mergeable parts of a raw node: its own properties and its
     # normalized additionalProperties.
-    def node_body(node)
+    def node_body(path, node)
       Body.new(
-        properties: compile_properties(node),
-        additional_properties: visit_additional_properties(node),
+        properties: compile_properties(path, node),
+        additional_properties: visit_additional_properties(path, node),
       )
     end
 
@@ -548,32 +561,32 @@ module Schematrix
     # classes are referenced from the merged result. The branch's
     # content compiles against the target's document, so nested
     # relative refs resolve where they were written.
-    def branch_body(raw)
-      return node_body(raw) unless raw.is_a?(Hash) && !raw["$ref"].nil?
+    def branch_body(path, raw)
+      return node_body(path, raw) unless raw.is_a?(Hash) && !raw["$ref"].nil?
 
       target, locator = final_target(ref_base, raw["$ref"])
-      return node_body(raw) if target.nil?
+      return node_body(path, raw) if target.nil?
 
-      with_ref_base(document_base(locator)) { node_body(target) }
+      with_ref_base(document_base(locator)) { node_body(path, target) }
     end
 
-    # Visits a node's own properties at the current path. Shared by
+    # Visits a node's own properties at the given path. Shared by
     # the node itself and by merged branches, so nested classes of a
     # merged branch land under the merging node's locator.
-    def compile_properties(node)
+    def compile_properties(path, node)
       required_props = Set.new(node["required"])
-      @fragment_path.push("properties")
+      properties_path = path + ["properties"]
       pairs =
         node["properties"]&.filter_map do |prop_name, body|
           schema =
             visit_schema(
+              properties_path,
               prop_name,
               body,
               required: required_props.include?(prop_name),
             )
           [prop_name, schema]
         end
-      @fragment_path.pop
       pairs.to_h
     end
 
@@ -581,10 +594,10 @@ module Schematrix
     # additionalProperties intersects. A `true` branch is the identity;
     # a `false` branch would make the schema uninhabitable and is
     # skipped (approximation: over-accepting, never under-accepting).
-    def conjoin_body(acc, raw)
+    def conjoin_body(path, acc, raw)
       return acc unless raw.is_a?(Hash)
 
-      branch = branch_body(raw)
+      branch = branch_body(path, raw)
       properties =
         acc
           .properties
@@ -606,17 +619,17 @@ module Schematrix
     # (D12), so properties mentioned by only some branches are not
     # over-constrained; branch-introduced properties are optional
     # (D5), the parent's own required-ness survives.
-    def union_list_body(acc, list)
+    def union_list_body(path, acc, list)
       compiled =
         Array(list).filter_map do |raw|
           # a true branch owns no properties and a fully open shape;
           # pooling it gives every property an untyped contribution
           if raw == true
-            next Body[properties: {}, additional_properties: Schema::Empty]
+            next Body.new(properties: {}, additional_properties: Schema::Empty)
           end
           next nil if raw == false || !raw.is_a?(Hash)
 
-          branch_body(raw)
+          branch_body(path, raw)
         end
       return acc if compiled.empty?
 
@@ -632,17 +645,17 @@ module Schematrix
         compiled.reduce(acc.additional_properties) do |own, body|
           union_additional(own, body.additional_properties)
         end
-      Body[properties: pool, additional_properties: additional]
+      Body.new(properties: pool, additional_properties: additional)
     end
 
     # Single union branch (then/else/dependentSchemas entry): merges
     # its own properties as optional, no phantom untyped from
     # siblings (each keyword entry is one schema, not a list of
     # alternatives).
-    def union_body(acc, raw)
+    def union_body(path, acc, raw)
       return acc unless raw.is_a?(Hash)
 
-      branch = branch_body(raw)
+      branch = branch_body(path, raw)
       properties =
         acc
           .properties
@@ -727,13 +740,6 @@ module Schematrix
         any_of: own.any_of + other.any_of,
         one_of: own.one_of + other.one_of,
       )
-    end
-
-    def current_locator
-      fragment = @fragment_path.join("/")
-      locator = @locator.dup
-      locator.fragment = fragment.empty? ? "/" : fragment
-      locator.to_s
     end
   end
 end
