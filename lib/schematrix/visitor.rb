@@ -50,23 +50,7 @@ module Schematrix
   # The "false" schema accepts no instance at all. It types as a
   # bottom type where the target language has one (T.noreturn in
   # Sorbet), untyped elsewhere.
-  Schema::Bottom =
-    Schema.new(
-      additional_properties: nil,
-      any_of: [].freeze,
-      default: nil,
-      enum: nil,
-      intersection: false,
-      items: nil,
-      one_of: [].freeze,
-      prefix_items: [].freeze,
-      properties: nil,
-      description: nil,
-      ref: nil,
-      required: nil,
-      title: nil,
-      type: Set[TYPE_BOTTOM],
-    )
+  Schema::Bottom = Schema::Empty.with(type: Set[TYPE_BOTTOM])
 
   # Visits a single schema subtree rooted at the given locator. When it
   # finds a $ref it resolves the reference through the document store to
