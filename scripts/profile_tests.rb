@@ -12,22 +12,22 @@
 
 # Load stackprof from system gems *before* activating the bundle, since it
 # is intentionally not part of the project's Gemfile.
-require 'stackprof'
-require 'json'
+require "stackprof"
+require "json"
 
 # Now restrict the load path to the project's locked dependencies.
-require 'bundler/setup'
+require "bundler/setup"
 
-$LOAD_PATH.unshift File.expand_path('lib', __dir__)
+$LOAD_PATH.unshift File.expand_path("lib", __dir__)
 
-require 'schematrix'
-require 'schematrix/generators/base'
+require "schematrix"
+require "schematrix/generators/base"
 
-output = ARGV.first&.end_with?('.json') ? ARGV.shift : 'fixtures_profile.json'
+output = ARGV.first&.end_with?(".json") ? ARGV.shift : "fixtures_profile.json"
 iterations = Integer(ARGV.shift || 20)
 
-schemas = Dir[File.expand_path('test/fixtures/*/schema.json', __dir__)].sort
-abort 'No fixture schemas found' if schemas.empty?
+schemas = Dir[File.expand_path("test/fixtures/*/schema.json", __dir__)]
+abort "No fixture schemas found" if schemas.empty?
 
 errors = Hash.new(0)
 
@@ -40,7 +40,7 @@ iterations.times do
 
     objects.each do |locator, node|
       Schematrix::GENERATORS.each_value do |generator_class|
-        generator = generator_class.new('/tmp', 'M', format: false)
+        generator = generator_class.new("/tmp", "M", format: false)
         uri = URI(locator)
         generator.transform(uri, generator.class_name_from_path(uri), node)
       rescue StandardError => e
@@ -48,7 +48,8 @@ iterations.times do
       end
     end
   rescue StandardError => e
-    errors["#{File.basename(File.dirname(schema_file))} (compile): #{e.class}"] += 1
+    key = "#{File.basename(File.dirname(schema_file))} (compile): #{e.class}"
+    errors[key] += 1
   end
 end
 
@@ -56,5 +57,7 @@ StackProf.stop
 File.write(output, JSON.generate(StackProf.results))
 
 puts "#{iterations} iterations over #{schemas.size} schemas"
-errors.each { |what, count| warn "  skipped #{what} x#{count / iterations}" } if errors.any?
+if errors.any?
+  errors.each { |what, count| warn "  skipped #{what} x#{count / iterations}" }
+end
 puts "Profile written to #{output} (stackprof JSON, speedscope-compatible)"

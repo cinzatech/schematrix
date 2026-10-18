@@ -1,10 +1,50 @@
 ---
 plugins:
-  - rubocop-performance  # Performance optimization analysis
+  - rubocop-performance # Performance optimization analysis
 
 AllCops:
   TargetRubyVersion: 3.4
   StringLiteralsFrozenByDefault: true
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "test/fixtures/**/*" # golden files of generated code, not project source
+
+# stree owns layout: match its constants so the tools converge instead of
+# fighting. Print width 80 (stree default), indented method chains/operands
+Layout/LineLength:
+  Max: 80
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+Layout/MultilineOperationIndentation:
+  EnforcedStyle: indented
+
+# stree hanging-indents continued arguments; default alignment fights it.
+# stree owns layout for argument/continuation indentation
+Layout/ArgumentAlignment:
+  Enabled: false
+
+Layout/LineEndStringConcatenationIndentation:
+  Enabled: false
+
+# Quote style follows stree (see .streerc), which enforces double quotes
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+# stree's trailing_comma plugin adds them to multiline literals
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
 
 Style/FrozenStringLiteralComment:
   Enabled: false

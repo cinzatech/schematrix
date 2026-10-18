@@ -1,4 +1,4 @@
-require 'uri'
+require "uri"
 
 module Schematrix
   module Generators
@@ -9,10 +9,12 @@ module Schematrix
       # Example: 'foo/bar', 'baz' => Title::Foo::Bar::Baz
       # Empty parts are removed. 'properties' also removed.
       def class_name_from_path(uri, *path)
-        file = File.basename(uri.path).split('.').first
-        nested_path = [file, *uri.fragment.split('/'), *path].compact.reject(&:empty?).reject do
-          ['properties', '$defs'].include? it
-        end.join('/')
+        file = File.basename(uri.path).split(".").first
+        nested_path =
+          [file, *uri.fragment.split("/"), *path].compact
+            .reject(&:empty?)
+            .reject { |segment| %w[properties $defs].include?(segment) }
+            .join("/")
 
         pascal_case(nested_path)
       end
@@ -22,7 +24,7 @@ module Schematrix
       def pascal_case(string)
         string
           .to_s
-          .gsub('/', '::')
+          .gsub("/", "::")
           .gsub(/\s*::\s*([a-zA-Z\d])/) { "::#{::Regexp.last_match(1).upcase}" }
           .gsub(/(?:^|[\s_-]+)([a-zA-Z\d])/) { ::Regexp.last_match(1).upcase }
       end

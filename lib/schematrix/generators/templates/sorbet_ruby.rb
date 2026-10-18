@@ -1,6 +1,6 @@
-require_relative 'base'
-require_relative 'ruby_helpers'
-require_relative 'sorbet_helpers'
+require_relative "base"
+require_relative "ruby_helpers"
+require_relative "sorbet_helpers"
 
 module Schematrix
   module Generators

@@ -1,8 +1,7 @@
-require 'set'
-require 'uri'
+require "uri"
 
-require_relative 'document_store'
-require_relative 'visitor'
+require_relative "document_store"
+require_relative "visitor"
 
 module Schematrix
   # Drives schema compilation with a worklist. Starting from the input

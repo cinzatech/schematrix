@@ -1,53 +1,53 @@
-require_relative '../test_helper'
+require_relative "../test_helper"
 
 class TestAnnotations < Minitest::Test
   include SchematrixTestHelper
 
   def test_format_annotation_plain_ruby
-    assert_fixture('format_annotation', 'plain_ruby')
+    assert_fixture("format_annotation", "plain_ruby")
   end
 
   def test_format_annotation_rbs
-    assert_fixture('format_annotation', 'rbs')
+    assert_fixture("format_annotation", "rbs")
   end
 
   def test_format_annotation_sorbet_ruby
-    assert_fixture('format_annotation', 'sorbet_ruby')
+    assert_fixture("format_annotation", "sorbet_ruby")
   end
 
   def test_format_annotation_rbi
-    assert_fixture('format_annotation', 'rbi')
+    assert_fixture("format_annotation", "rbi")
   end
 
   def test_comment_ignored_plain_ruby
-    assert_fixture('comment_ignored', 'plain_ruby')
+    assert_fixture("comment_ignored", "plain_ruby")
   end
 
   def test_comment_ignored_rbs
-    assert_fixture('comment_ignored', 'rbs')
+    assert_fixture("comment_ignored", "rbs")
   end
 
   def test_comment_ignored_sorbet_ruby
-    assert_fixture('comment_ignored', 'sorbet_ruby')
+    assert_fixture("comment_ignored", "sorbet_ruby")
   end
 
   def test_comment_ignored_rbi
-    assert_fixture('comment_ignored', 'rbi')
+    assert_fixture("comment_ignored", "rbi")
   end
 
   def test_examples_annotation_plain_ruby
-    assert_fixture('examples_annotation', 'plain_ruby')
+    assert_fixture("examples_annotation", "plain_ruby")
   end
 
   def test_examples_annotation_rbs
-    assert_fixture('examples_annotation', 'rbs')
+    assert_fixture("examples_annotation", "rbs")
   end
 
   def test_examples_annotation_sorbet_ruby
-    assert_fixture('examples_annotation', 'sorbet_ruby')
+    assert_fixture("examples_annotation", "sorbet_ruby")
   end
 
   def test_examples_annotation_rbi
-    assert_fixture('examples_annotation', 'rbi')
+    assert_fixture("examples_annotation", "rbi")
   end
 end

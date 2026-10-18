@@ -1,13 +1,13 @@
-require 'erb'
-require 'fileutils'
-require 'syntax_tree'
-require 'syntax_tree/rbs'
+require "erb"
+require "fileutils"
+require "syntax_tree"
+require "syntax_tree/rbs"
 
-require_relative 'resolver'
-require_relative 'templates/plain_ruby'
-require_relative 'templates/rbs'
-require_relative 'templates/sorbet_ruby'
-require_relative 'templates/rbi'
+require_relative "resolver"
+require_relative "templates/plain_ruby"
+require_relative "templates/rbs"
+require_relative "templates/sorbet_ruby"
+require_relative "templates/rbi"
 
 module Schematrix
   module Generators
@@ -42,14 +42,17 @@ module Schematrix
       end
 
       def self.erb
-        @erb ||= begin
-          template_file = File.join(File.dirname(__FILE__), 'templates', template_name)
-          ERB.new(File.read(template_file), trim_mode: '-')
-        end
+        @erb ||=
+          begin
+            template_file =
+              File.join(File.dirname(__FILE__), "templates", template_name)
+            ERB.new(File.read(template_file), trim_mode: "-")
+          end
       end
 
       def self.template_class
-        raise NotImplementedError, "#{self.class} must implement #template_class"
+        raise NotImplementedError,
+              "#{self.class} must implement #template_class"
       end
 
       def self.template_name
@@ -57,7 +60,8 @@ module Schematrix
       end
 
       def self.file_extension
-        raise NotImplementedError, "#{self.class} must implement #file_extension"
+        raise NotImplementedError,
+              "#{self.class} must implement #file_extension"
       end
 
       private
@@ -67,11 +71,10 @@ module Schematrix
           module_name: @module_name,
           path:,
           class_name: class_name,
-          properties: object&.properties&.transform_keys do |key|
-            underscore(key)
-          end,
+          properties:
+            object&.properties&.transform_keys { |key| underscore(key) },
           additional_properties: object.additional_properties,
-          documentation_comment: documentation_comment(object)
+          documentation_comment: documentation_comment(object),
         )
       end
 
@@ -83,7 +86,7 @@ module Schematrix
 
       def documentation_comment(schema)
         description = schema.description
-        return '' if description.nil?
+        return "" if description.nil?
 
         "# #{description}"
       end
@@ -91,25 +94,25 @@ module Schematrix
       def underscore(string)
         string
           .to_s
-          .gsub('::', '/')
+          .gsub("::", "/")
           .gsub(/([A-Z\d]+)([A-Z][a-z])/, '\1_\2')
           .gsub(/([a-z\d])([A-Z])/, '\1_\2')
-          .tr('-', '_')
+          .tr("-", "_")
           .downcase
       end
     end
 
     # Outputs a schema as a plain, mutable Ruby class
     class PlainRuby < Base
-      def self.template_name = 'plain_ruby.erb'
-      def self.file_extension = '.rb'
+      def self.template_name = "plain_ruby.erb"
+      def self.file_extension = ".rb"
       def self.template_class = Templates::PlainRuby
     end
 
     # Outputs RBS type signatures matching a JSON Schema object
     class Rbs < Base
-      def self.template_name = 'rbs.erb'
-      def self.file_extension = '.rbs'
+      def self.template_name = "rbs.erb"
+      def self.file_extension = ".rbs"
       def self.template_class = Templates::Rbs
 
       private
@@ -119,23 +122,23 @@ module Schematrix
 
     # Outputs a schema as a mutable Ruby class with inline Sorbet signatures
     class SorbetRuby < Base
-      def self.template_name = 'sorbet_ruby.erb'
-      def self.file_extension = '.rb'
+      def self.template_name = "sorbet_ruby.erb"
+      def self.file_extension = ".rb"
       def self.template_class = Templates::SorbetRuby
     end
 
     # Outputs a schema as an RBI sorbet signature file
     class Rbi < Base
-      def self.template_name = 'rbi.erb'
-      def self.file_extension = '.rbi'
+      def self.template_name = "rbi.erb"
+      def self.file_extension = ".rbi"
       def self.template_class = Templates::Rbi
     end
   end
 
   GENERATORS = {
-    'plain_ruby' => Generators::PlainRuby,
-    'rbs' => Generators::Rbs,
-    'sorbet_ruby' => Generators::SorbetRuby,
-    'rbi' => Generators::Rbi
+    "plain_ruby" => Generators::PlainRuby,
+    "rbs" => Generators::Rbs,
+    "sorbet_ruby" => Generators::SorbetRuby,
+    "rbi" => Generators::Rbi,
   }.freeze
 end

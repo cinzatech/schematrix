@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-require_relative '../lib/schematrix'
-require_relative '../lib/schematrix/cli'
+require_relative "../lib/schematrix"
+require_relative "../lib/schematrix/cli"
 
 cli = Schematrix::CLI.new
 

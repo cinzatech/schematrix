@@ -1,5 +1,5 @@
-require_relative 'base'
-require_relative 'ruby_helpers'
+require_relative "base"
+require_relative "ruby_helpers"
 
 module Schematrix
   module Generators
@@ -11,9 +11,9 @@ module Schematrix
         private
 
         def plain_attr_accessor_list
-          return '' if @properties.nil?
+          return "" if @properties.nil?
 
-          @properties.keys.map(&:to_sym).map(&:inspect).join(', ')
+          @properties.keys.map { |key| key.to_sym.inspect }.join(", ")
         end
       end
     end
