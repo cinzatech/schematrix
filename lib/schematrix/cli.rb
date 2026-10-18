@@ -108,8 +108,9 @@ module Schematrix
 
         unknown = generator_names - GENERATORS.keys
         unless unknown.empty?
-          names = unknown.to_a.join(", ")
-          Schematrix.logger&.warn "Unknown generators: #{names}"
+          names = unknown.join(", ")
+          Schematrix.logger&.fatal "Unknown generators: #{names}"
+          exit 1
         end
 
         output = Array(params[:output])
@@ -134,8 +135,8 @@ module Schematrix
         generators =
           output_dirs
             .zip(generator_names)
-            .filter_map do |(output_dir, name)|
-              GENERATORS[name]&.new(output_dir, module_name, format: true)
+            .map do |(output_dir, name)|
+              GENERATORS.fetch(name).new(output_dir, module_name, format: true)
             end
 
         Schematrix.generate(

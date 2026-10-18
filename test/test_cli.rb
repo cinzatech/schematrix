@@ -53,6 +53,13 @@ class TestCLI < Minitest::Test
     )
   end
 
+  def test_unknown_generator_is_fatal
+    cli = Schematrix::CLI.new
+    cli.parse(%w[-g nope -m M schema.json])
+
+    assert_raises(SystemExit) { cli.run }
+  end
+
   private
 
   # Runs the CLI with Schematrix.generate replaced by a capture, and
