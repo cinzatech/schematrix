@@ -95,8 +95,8 @@ Options:
   -m, --module string      Module where the output code will be placed
   -o, --output string      Directory where the output will be written
       --schema-dir string  Directory where remote schema URIs resolve to local
-                           files, e.g.: vendor/schemas; may be given multiple
-                           times
+                           files; may be given multiple times, defaults to
+                           vendor/schemas
   -v, --verbose            Each additional occurrence lowers logger level,
                            -vvv for the minimum
 ```
@@ -133,11 +133,17 @@ schematrix -g plain_ruby -o generated -g rbi -o rbi *.schema.json
 
 `schematrix` never fetches anything over the network. When a schema
 references another schema through an `http(s)` URI, that URI must resolve
-to a local file through a schema directory, given with `--schema-dir`:
+to a local file through a schema directory. By default the tool searches
+`vendor/schemas` in the current directory; pass `--schema-dir` to point
+somewhere else:
 
 ```sh
-schematrix -g plain_ruby -m MyApp --schema-dir vendor/schemas schema.json
+schematrix -g plain_ruby -m MyApp --schema-dir local/schemas schema.json
 ```
+
+The option may be given multiple times; the directories are searched in
+order, and explicit directories replace the default rather than adding
+to it.
 
 The directory mirrors the URI structure: host, then path. The URI
 
@@ -156,7 +162,10 @@ vendor/schemas/json-schema.org/draft/2020-12/meta/core.yml
 
 Directories given more than once are searched in order, and the first
 matching file wins. A remote URI with no matching local file is an error
-listing every candidate path.
+listing every candidate path. The 2020-12 JSON Schema meta files are
+vendored in this repository under `vendor/schemas`, so schemas referencing
+`https://json-schema.org/draft/2020-12/...` resolve out of the box when
+running from the repository root.
 
 ---
 

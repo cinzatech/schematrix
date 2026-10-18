@@ -48,8 +48,8 @@ module Schematrix
       optional
       arity zero_or_more
       long "--schema-dir string"
-      desc "Directory where remote schema URIs resolve to local files, " \
-             "e.g.: vendor/schemas; may be given multiple times"
+      desc "Directory where remote schema URIs resolve to local files; " \
+             "may be given multiple times, defaults to vendor/schemas"
     end
 
     option :module do
@@ -99,6 +99,11 @@ module Schematrix
         input_files = Array(params[:input])
         module_name = params[:module]
 
+        # vendor/schemas is searched unless the user points elsewhere;
+        # explicit directories replace the default, never stack with it
+        schema_dirs = Array(params[:schema_dir])
+        schema_dirs = %w[vendor/schemas] if schema_dirs.empty?
+
         generator_names = Array(params[:generators]).uniq
 
         unknown = generator_names - GENERATORS.keys
@@ -137,7 +142,7 @@ module Schematrix
           input_files:,
           generators:,
           closed_shapes: params[:closed_shapes],
-          schema_dirs: Array(params[:schema_dir]),
+          schema_dirs:,
         )
       end
     rescue StandardError => e

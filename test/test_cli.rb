@@ -38,4 +38,38 @@ class TestCLI < Minitest::Test
     assert_equal %w[vendor/schemas local/schemas],
                  Array(cli.params[:schema_dir])
   end
+
+  def test_schema_dir_defaults_to_vendor_schemas
+    assert_generate_receives_schema_dirs(
+      %w[-g plain_ruby -m M schema.json],
+      %w[vendor/schemas],
+    )
+  end
+
+  def test_explicit_schema_dir_replaces_the_default
+    assert_generate_receives_schema_dirs(
+      %w[-g plain_ruby -m M --schema-dir local/schemas schema.json],
+      %w[local/schemas],
+    )
+  end
+
+  private
+
+  # Runs the CLI with Schematrix.generate replaced by a capture, and
+  # asserts which schema directories were passed through.
+  def assert_generate_receives_schema_dirs(argv, expected)
+    cli = Schematrix::CLI.new
+    cli.parse(argv)
+
+    captured = nil
+    original = Schematrix.method(:generate)
+    Schematrix.define_singleton_method(:generate) do |**kwargs|
+      captured = kwargs
+    end
+    cli.run
+  ensure
+    Schematrix.define_singleton_method(:generate, original)
+
+    assert_equal expected, captured[:schema_dirs]
+  end
 end
