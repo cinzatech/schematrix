@@ -44,6 +44,14 @@ module Schematrix
       desc "Directory where the output will be written"
     end
 
+    option :schema_dir do
+      optional
+      arity zero_or_more
+      long "--schema-dir string"
+      desc "Directory where remote schema URIs resolve to local files, " \
+             "e.g.: vendor/schemas; may be given multiple times"
+    end
+
     option :module do
       required
       short "-m"
@@ -129,6 +137,7 @@ module Schematrix
           input_files:,
           generators:,
           closed_shapes: params[:closed_shapes],
+          schema_dirs: Array(params[:schema_dir]),
         )
       end
     rescue StandardError => e

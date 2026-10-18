@@ -87,14 +87,21 @@ Usage: schematrix [OPTIONS] INPUT [INPUT...]
 Generate code matching a JSON Schema
 
 Options:
-  -g, --generators list  Output generators to use, e.g.: plain_ruby, rbs
-  -h, --help             Print usage
-  -m, --module string    Module where the output code will be placed
-  -o, --output string    Directory where the output will be written (default
-                         "generated")
-  -v, --verbose          Each additional occurrence lowers logger level, -vvv
-                         for the minimum
+      --closed-shapes      Treat absent additionalProperties as false: closed
+                           classes with no catch-all, instead of the spec
+                           default
+  -g, --generators list    Output generators to use, e.g.: plain_ruby, rbs
+  -h, --help               Print usage
+  -m, --module string      Module where the output code will be placed
+  -o, --output string      Directory where the output will be written
+      --schema-dir string  Directory where remote schema URIs resolve to local
+                           files, e.g.: vendor/schemas; may be given multiple
+                           times
+  -v, --verbose            Each additional occurrence lowers logger level,
+                           -vvv for the minimum
 ```
+
+The options list above mirrors `schematrix --help`.
 
 ### Example usages
 
@@ -121,6 +128,35 @@ You might specify different output directories for different generators like so:
 ```sh
 schematrix -g plain_ruby -o generated -g rbi -o rbi *.schema.json
 ```
+
+### Resolving remote schemas
+
+`schematrix` never fetches anything over the network. When a schema
+references another schema through an `http(s)` URI, that URI must resolve
+to a local file through a schema directory, given with `--schema-dir`:
+
+```sh
+schematrix -g plain_ruby -m MyApp --schema-dir vendor/schemas schema.json
+```
+
+The directory mirrors the URI structure: host, then path. The URI
+
+```text
+https://json-schema.org/draft/2020-12/meta/core
+```
+
+resolves to the first existing file among
+
+```text
+vendor/schemas/json-schema.org/draft/2020-12/meta/core
+vendor/schemas/json-schema.org/draft/2020-12/meta/core.json
+vendor/schemas/json-schema.org/draft/2020-12/meta/core.yaml
+vendor/schemas/json-schema.org/draft/2020-12/meta/core.yml
+```
+
+Directories given more than once are searched in order, and the first
+matching file wins. A remote URI with no matching local file is an error
+listing every candidate path.
 
 ---
 

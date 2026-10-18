@@ -17,4 +17,25 @@ class TestCLI < Minitest::Test
     assert_empty cli.params.errors.to_a
     assert_equal %w[schema.json other.json], Array(cli.params[:input])
   end
+
+  def test_schema_dir_option_is_repeatable
+    cli = Schematrix::CLI.new
+    cli.parse(
+      %w[
+        -g
+        plain_ruby
+        -m
+        M
+        --schema-dir
+        vendor/schemas
+        --schema-dir
+        local/schemas
+        schema.json
+      ],
+    )
+
+    assert_empty cli.params.errors.to_a
+    assert_equal %w[vendor/schemas local/schemas],
+                 Array(cli.params[:schema_dir])
+  end
 end

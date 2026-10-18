@@ -23,10 +23,19 @@ module SchematrixTestHelper
     fixture_name,
     generator_name,
     path: "",
-    closed_shapes: false
+    closed_shapes: false,
+    schema_dirs: [],
+    locator: nil
   )
     actual =
-      generate_fixture(fixture_name, generator_name, path:, closed_shapes:)
+      generate_fixture(
+        fixture_name,
+        generator_name,
+        path:,
+        closed_shapes:,
+        schema_dirs:,
+        locator:,
+      )
 
     expected_file = expected_path(fixture_name, generator_name, path)
 
@@ -41,12 +50,18 @@ module SchematrixTestHelper
     fixture_name,
     generator_name,
     path: "",
-    closed_shapes: false
+    closed_shapes: false,
+    schema_dirs: [],
+    locator: nil
   )
     schema_file = File.join(FIXTURES_DIR, fixture_name, "schema.json")
-    objects = Schematrix::Compiler.new(closed_shapes:).compile([schema_file])
-    locator = URI(fixture_locator(schema_file, path))
-    node = objects.fetch(locator.to_s)
+    objects =
+      Schematrix::Compiler.new(
+        store: Schematrix::DocumentStore.new(schema_dirs:),
+        closed_shapes:,
+      ).compile([schema_file])
+    uri = URI(locator || fixture_locator(schema_file, path))
+    node = objects.fetch(uri.to_s)
 
     generator =
       Schematrix::GENERATORS[generator_name].new(
@@ -54,7 +69,7 @@ module SchematrixTestHelper
         MODULE_NAME,
         format: true,
       )
-    generator.transform(locator, generator.class_name_from_path(locator), node)
+    generator.transform(uri, generator.class_name_from_path(uri), node)
   end
 
   # Maps a test-friendly path like 'l1/l2' or 'Address' to the locator of

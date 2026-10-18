@@ -11,8 +11,16 @@ module Schematrix
 
   # closed_shapes: true makes absent additionalProperties behave as
   # false (closed classes) instead of the spec default (D12).
-  def self.generate(generators:, input_files:, closed_shapes: false)
-    objects = Compiler.new(closed_shapes:).compile(input_files)
+  # schema_dirs: directories that remote schema URIs resolve through
+  # (D16), searched in order.
+  def self.generate(
+    generators:,
+    input_files:,
+    closed_shapes: false,
+    schema_dirs: []
+  )
+    store = DocumentStore.new(schema_dirs:)
+    objects = Compiler.new(store:, closed_shapes:).compile(input_files)
 
     objects.each do |locator, node|
       logger&.info "Writing output for #{locator}"

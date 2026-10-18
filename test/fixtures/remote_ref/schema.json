@@ -1,0 +1,18 @@
+{
+  "title": "RemoteRef",
+  "type": "object",
+  "properties": {
+    "shipping_address": {
+      "$ref": "https://example.com/schemas/address"
+    },
+    "billing_address": {
+      "$ref": "https://other.example/postal_address"
+    },
+    "contact": {
+      "$ref": "https://example.com/schemas/address#zip"
+    },
+    "email": {
+      "$ref": "https://example.com/schemas/email"
+    }
+  }
+}

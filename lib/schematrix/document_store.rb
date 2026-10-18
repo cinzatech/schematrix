@@ -10,8 +10,17 @@ module Schematrix
   # node they point at. Each file is read and parsed at most once.
   # Fragments that are plain names (no leading slash) resolve through
   # the document's $anchor index instead of the JSON pointer walk.
+  # Remote http(s) locators never touch the network: they resolve
+  # through the configured schema directories (D16), which mirror the
+  # URI as host/path below the directory, optionally carrying one of
+  # the known file extensions.
   class DocumentStore
-    def initialize
+    # File extensions probed for a mapped remote URI, in order: the
+    # exact mirrored path first, then common schema file extensions.
+    REMOTE_EXTENSIONS = ["", ".json", ".yaml", ".yml"].freeze
+
+    def initialize(schema_dirs: [])
+      @schema_dirs = schema_dirs.map { |dir| File.expand_path(dir) }
       @documents = {}
       @anchors = {}
       @ignored = {}
@@ -26,14 +35,24 @@ module Schematrix
 
     # Ignore bookkeeping: keywords with no codegen representation
     # are skipped; each one is logged once per document at debug
-    # level.
-    def note_ignored(path, keyword, locator)
-      seen = (@ignored[path] ||= Set.new)
+    # level. The key identifies a document (see document_key).
+    def note_ignored(key, keyword, locator)
+      seen = (@ignored[key] ||= Set.new)
       return unless seen.add?(keyword)
 
       Schematrix.logger&.debug(
         "Ignoring #{keyword} at #{locator}: no codegen representation",
       )
+    end
+
+    # Identity of the document a locator points into: the URI with
+    # the fragment stripped. Every locator into the same document
+    # shares one cache key this way, and documents on different
+    # hosts (or schemes) never collide on a shared path.
+    def document_key(uri)
+      key = uri.dup
+      key.fragment = nil
+      key.to_s
     end
 
     # Rewrites plain-name fragments (no leading slash) to the JSON
@@ -64,7 +83,7 @@ module Schematrix
     # Scans a document once for $anchor keys: anchor name => JSON
     # pointer of the schema carrying it.
     def anchor_pointers(document, uri)
-      @anchors[uri.path] ||= begin
+      @anchors[document_key(uri)] ||= begin
         pointers = {}
         scan =
           lambda do |node, path|
@@ -91,11 +110,78 @@ module Schematrix
     end
 
     def document(uri)
-      unless uri.scheme == "file"
+      @documents[document_key(uri)] ||= read_document(uri)
+    end
+
+    # Reads and parses a document: local files directly, remote
+    # locators through the schema directory mapping (D16).
+    def read_document(uri)
+      case uri.scheme
+      when "file"
+        YAML.safe_load_file(uri.path)
+      when "http", "https"
+        YAML.safe_load_file(map_remote(uri))
+      else
         raise UnresolvableLocatorError, "Unsupported scheme in #{uri}"
       end
+    end
 
-      @documents[uri.path] ||= YAML.safe_load_file(uri.path)
+    # D16 mapping: a remote locator resolves to the first existing
+    # local file among the schema directories. Raises when the URI
+    # cannot be mapped (query string) or nothing is found.
+    def map_remote(uri)
+      if uri.query
+        raise UnresolvableLocatorError,
+              "Cannot map #{uri} to a local file: query strings are " \
+                "not part of the folder mapping"
+      end
+      if @schema_dirs.empty?
+        raise UnresolvableLocatorError,
+              "Remote locator #{uri} but no schema directory " \
+                "configured (pass --schema-dir)"
+      end
+
+      candidate = remote_candidates(uri).find { |path| File.file?(path) }
+      if candidate.nil?
+        raise UnresolvableLocatorError,
+              "No local file for #{uri}: none of " \
+                "#{remote_candidates(uri).join(", ")} exists"
+      end
+
+      Schematrix.logger&.debug "Mapped #{uri} to #{candidate}"
+      candidate
+    end
+
+    # Local paths a remote locator could map to, in lookup order:
+    # schema directories in configuration order, mirrored host/path
+    # names with each known extension. The port is kept in the first
+    # path segment when the URI carries a non-default one.
+    def remote_candidates(uri)
+      host =
+        if uri.port == uri.default_port
+          uri.host
+        else
+          "#{uri.host}:#{uri.port}"
+        end
+      segments = [host]
+      segments.concat(
+        uri
+          .path
+          .delete_prefix("/")
+          .split("/")
+          .map { |segment| URI::DEFAULT_PARSER.unescape(segment) },
+      )
+      if segments.intersect?(%w[.. .])
+        raise UnresolvableLocatorError,
+              "Cannot map #{uri} to a local file: dot path segments " \
+                "cannot leave the schema directory"
+      end
+
+      relative = File.join(*segments)
+
+      @schema_dirs.flat_map do |dir|
+        REMOTE_EXTENSIONS.map { |ext| "#{dir}/#{relative}#{ext}" }
+      end
     end
 
     def walk_pointer(node, uri)

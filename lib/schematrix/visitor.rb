@@ -210,7 +210,11 @@ module Schematrix
     def ignore_keyword(node, keyword)
       return unless node.is_a?(Hash) && node.key?(keyword)
 
-      @store.note_ignored(@locator.path, keyword, current_locator)
+      @store.note_ignored(
+        @store.document_key(@locator),
+        keyword,
+        current_locator,
+      )
     end
 
     # Resolves a $ref, if present, by following the chain of references

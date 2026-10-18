@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "street": {
+      "type": "string"
+    },
+    "zip": {
+      "$anchor": "zip",
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
