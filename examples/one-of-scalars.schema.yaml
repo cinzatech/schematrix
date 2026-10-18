@@ -1,0 +1,15 @@
+---
+$id: https://example.com/reference.schema.json
+$schema: https://json-schema.org/draft/2020-12/schema
+description: An schema using oneOf
+title: One of
+type: object
+anyOf:
+  - type: object
+    properties:
+      foo:
+        type: string
+  - type: object
+    properties:
+      bar:
+        type: number

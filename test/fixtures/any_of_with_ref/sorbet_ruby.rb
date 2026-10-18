@@ -2,12 +2,12 @@
 
 module M
   class Schema
-    sig { params(value: T.anything).void }
+    sig { params(value: T.nilable(T.any(Schema::Named, String))).void }
     def initialize(value: nil)
       @value = value
     end
 
-    sig { returns(T.anything) }
+    sig { returns(T.nilable(T.any(Schema::Named, String))) }
     attr_accessor :value
   end
 end
