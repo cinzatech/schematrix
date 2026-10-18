@@ -15,10 +15,12 @@ module Schematrix
   Schema =
     Data.define(
       :additional_properties,
+      :any_of,
       :default,
       :description,
       :enum,
       :items,
+      :one_of,
       :properties,
       :ref,
       :required,
@@ -29,9 +31,11 @@ module Schematrix
   Schema::Empty =
     Schema.new(
       additional_properties: nil,
+      any_of: [].freeze,
       default: nil,
       enum: nil,
       items: nil,
+      one_of: [].freeze,
       properties: nil,
       description: nil,
       ref: nil,
@@ -46,9 +50,11 @@ module Schematrix
   Schema::Bottom =
     Schema.new(
       additional_properties: nil,
+      any_of: [].freeze,
       default: nil,
       enum: nil,
       items: nil,
+      one_of: [].freeze,
       properties: nil,
       description: nil,
       ref: nil,
@@ -86,12 +92,12 @@ module Schematrix
 
     private
 
-    def visit_schema(name, node, required: true)
+    def visit_schema(name, node, required: true, register_object: true)
       @fragment_path.push(name)
 
       # JSON Schema allows "true" as a catch-all
       if node.is_a? TrueClass
-        @objects[current_locator] = Schema::Empty
+        @objects[current_locator] = Schema::Empty if register_object
         return Schema::Empty
       end
 
@@ -108,6 +114,15 @@ module Schematrix
       items = visit_subtree("items", node)
       additional_properties = visit_subtree("additionalProperties", node)
       required_properties = Set.new(node["required"])
+
+      # Composition context (D2): a node that is not the document root
+      # and does not itself type as object describes a value, so
+      # anyOf/oneOf branches become variant lists to union into the
+      # value's type. Object-context composition merges instead and
+      # lands with the Phase 3 machinery.
+      object_context = name.empty? || type.include?(TYPE_OBJECT)
+      any_of = object_context ? [] : visit_variants("anyOf", node)
+      one_of = object_context ? [] : visit_variants("oneOf", node)
 
       @fragment_path.push("properties")
       pairs =
@@ -126,10 +141,12 @@ module Schematrix
       schema =
         Schema.new(
           additional_properties:,
+          any_of:,
           default:,
           description:,
           enum:,
           items:,
+          one_of:,
           properties:,
           ref:,
           required:,
@@ -137,7 +154,7 @@ module Schematrix
           type:,
         )
 
-      @objects[current_locator] = schema if ref.nil? &&
+      @objects[current_locator] = schema if register_object && ref.nil? &&
         type.include?(TYPE_OBJECT)
 
       schema
@@ -199,6 +216,22 @@ module Schematrix
       end
 
       visit_schema(branch_name, branch)
+    end
+
+    # Visits anyOf/oneOf branches in value context, one Schema per
+    # branch, in the matching variant list (D1). Branch locators use
+    # anyOf_0 / oneOf_0 path segments (D3). Object branches inside
+    # oneOf register positional classes (OneOf0); anyOf branches do not
+    # register (they merge per D3, Phase 3 machinery). $ref branches
+    # keep working through resolve_reference, recording their edge. A
+    # false branch accepts nothing and contributes no variant.
+    def visit_variants(keyword, node)
+      node[keyword]&.each_with_index&.filter_map do |branch, index|
+        next if branch.is_a?(FalseClass)
+
+        register_object = keyword == "oneOf"
+        visit_schema("#{keyword}_#{index}", branch, register_object:)
+      end || []
     end
 
     def current_locator

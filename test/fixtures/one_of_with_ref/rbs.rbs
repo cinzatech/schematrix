@@ -1,0 +1,7 @@
+module M
+  class Schema
+    attr_accessor value: (Schema::Named | String)?
+
+    def initialize: (?value: (Schema::Named | String)?) -> void
+  end
+end

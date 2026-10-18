@@ -66,4 +66,36 @@ class TestComposition < Minitest::Test
   def test_any_of_with_ref_rbi
     assert_fixture("any_of_with_ref", "rbi")
   end
+
+  def test_one_of_scalars_plain_ruby
+    assert_fixture("one_of_scalars", "plain_ruby")
+  end
+
+  def test_one_of_scalars_rbs
+    assert_fixture("one_of_scalars", "rbs")
+  end
+
+  def test_one_of_scalars_sorbet_ruby
+    assert_fixture("one_of_scalars", "sorbet_ruby")
+  end
+
+  def test_one_of_scalars_rbi
+    assert_fixture("one_of_scalars", "rbi")
+  end
+
+  def test_one_of_with_ref_plain_ruby
+    assert_fixture("one_of_with_ref", "plain_ruby")
+  end
+
+  def test_one_of_with_ref_rbs
+    assert_fixture("one_of_with_ref", "rbs")
+  end
+
+  def test_one_of_with_ref_sorbet_ruby
+    assert_fixture("one_of_with_ref", "sorbet_ruby")
+  end
+
+  def test_one_of_with_ref_rbi
+    assert_fixture("one_of_with_ref", "rbi")
+  end
 end

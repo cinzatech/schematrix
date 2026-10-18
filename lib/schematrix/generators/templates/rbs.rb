@@ -48,10 +48,25 @@ module Schematrix
         #
         # The type is made nilable (Type?) for optional properties so the
         # attr_accessor accurately reflects that the value may be nil after
-        # construction.
+        # construction. The bare union underneath comes from
+        # bare_rbs_type; variants join it without their own nilability
+        # since the outer property owns it (D7).
         def rbs_type(path, name, schema)
           return RBS_TYPE_UNTYPED if schema.nil?
           return "nil" if schema.type == Set["null"]
+
+          combined = bare_rbs_type(path, name, schema)
+          return combined if combined == RBS_TYPE_UNTYPED
+          return combined if strictly_required?(schema)
+
+          combined.include?(" | ") ? "(#{combined})?" : "#{combined}?"
+        end
+
+        # Returns the type for a schema as a union string, without
+        # nilability: the declared type set, the $ref target, and both
+        # variant lists folded in (D1), each variant a bare type too.
+        def bare_rbs_type(path, name, schema)
+          return RBS_TYPE_UNTYPED if schema.nil?
 
           base =
             schema.type.flat_map do |type|
@@ -74,11 +89,20 @@ module Schematrix
           # TODO: Schemas may combine a $ref and some overrides
           base << class_name_from_path(schema.ref) unless schema.ref.nil?
 
-          combined = combine_types(base)
-          return combined if combined == RBS_TYPE_UNTYPED
-          return combined if strictly_required?(schema)
+          base.concat(variant_types(path, name, schema.any_of, "anyOf"))
+          base.concat(variant_types(path, name, schema.one_of, "oneOf"))
 
-          base.size > 1 ? "(#{combined})?" : "#{combined}?"
+          combine_types(base)
+        end
+
+        # Computes the bare type of each variant branch under its
+        # positional path segment (anyOf_0, oneOf_1, ...). Shared by
+        # both variant lists: the keyword only names the path segment.
+        def variant_types(path, name, variants, keyword)
+          variants.each_with_index.map do |variant, index|
+            variant_path = nested_locator(path, name)
+            bare_rbs_type(variant_path, "#{keyword}_#{index}", variant)
+          end
         end
 
         def combine_types(types)
