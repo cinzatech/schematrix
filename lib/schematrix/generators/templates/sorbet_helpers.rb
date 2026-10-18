@@ -22,7 +22,7 @@ module Schematrix
 
           combined = bare_sorbet_type(path, name, schema)
           return combined if combined == SORBET_TYPE_ANYTHING
-          return combined if strictly_required?(schema)
+          return combined if schema&.strictly_required?
 
           "T.nilable(#{combined})"
         end

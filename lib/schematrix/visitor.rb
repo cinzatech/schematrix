@@ -53,6 +53,29 @@ module Schematrix
   # Sorbet), untyped elsewhere.
   Schema::Bottom = Schema::Empty.with(type: Set[TYPE_BOTTOM])
 
+  # Predicates shared by the compiler and the generators: what a
+  # compiled schema constrains, and whether the constructor demands
+  # the property.
+  class Schema
+    # A schema that constrains nothing: empty type set, no ref, no
+    # variants. It types as untyped and is the identity for
+    # intersections.
+    def untyped?
+      type.empty? && ref.nil? && any_of.empty? && one_of.empty?
+    end
+
+    # A property the constructor demands: required, no default to
+    # fall back on, and not nil-typed (optional values render
+    # nilable wherever they may be absent).
+    def strictly_required?
+      return false if type.include?(TYPE_NULL)
+      return false unless required
+      return false unless default.nil?
+
+      true
+    end
+  end
+
   # Visits a single schema subtree rooted at the given locator. When it
   # finds a $ref it resolves the reference through the document store to
   # decide how to represent it, and records edges to object schemas so
@@ -650,8 +673,7 @@ module Schematrix
     def union_schemas(contribs, parent: nil)
       required = parent&.required || false
       has_untyped = contribs.include?(:untyped)
-      has_untyped ||=
-        contribs.any? { |c| c.is_a?(Schema) && untyped_schema?(c) }
+      has_untyped ||= contribs.any? { |c| c.is_a?(Schema) && c.untyped? }
       return Schema::Empty.with(required:) if has_untyped
 
       schemas = contribs
@@ -672,7 +694,7 @@ module Schematrix
     def conjoin_additional(own, other)
       return nil if own.nil? || other.nil?
 
-      decls = [own, other].reject { |schema| untyped_schema?(schema) }
+      decls = [own, other].reject(&:untyped?)
       return Schema::Empty if decls.empty?
       return decls.first if decls.size == 1
 
@@ -689,21 +711,13 @@ module Schematrix
       return other if own.nil?
       return own if other.nil?
 
-      return Schema::Empty if untyped_schema?(own) || untyped_schema?(other)
+      return Schema::Empty if own.untyped? || other.untyped?
 
       own.with(
         type: own.type | other.type,
         any_of: own.any_of + other.any_of,
         one_of: own.one_of + other.one_of,
       )
-    end
-
-    # A schema that constrains nothing: empty type set, no ref, no
-    # variants. It types as untyped and is the identity for
-    # intersections.
-    def untyped_schema?(schema)
-      schema.type.empty? && schema.ref.nil? && schema.any_of.empty? &&
-        schema.one_of.empty?
     end
 
     def current_locator

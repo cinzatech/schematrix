@@ -35,7 +35,7 @@ module Schematrix
           @properties
             .map do |name, schema|
               type = rbs_type(@path, name, schema)
-              if strictly_required?(schema)
+              if schema&.strictly_required?
                 "#{name}: #{type}"
               else
                 "?#{name}: #{type}"
@@ -57,7 +57,7 @@ module Schematrix
 
           combined = bare_rbs_type(path, name, schema)
           return combined if combined == RBS_TYPE_UNTYPED
-          return combined if strictly_required?(schema)
+          return combined if schema&.strictly_required?
 
           multi = combined.include?(" | ") || combined.include?(" & ")
           multi ? "(#{combined})?" : "#{combined}?"

@@ -24,15 +24,6 @@ module Schematrix
         def render(erb)
           erb.result(binding)
         end
-
-        def strictly_required?(schema)
-          return false if schema.nil?
-          return false if schema.type.include?(TYPE_NULL)
-          return false unless schema.required
-          return false unless schema.default.nil?
-
-          true
-        end
       end
     end
   end
