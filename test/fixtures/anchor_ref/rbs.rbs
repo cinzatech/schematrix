@@ -1,0 +1,11 @@
+module M
+  class Schema
+    attr_accessor owner: Schema::Named?
+
+    def initialize: (?owner: Schema::Named?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
+  end
+end

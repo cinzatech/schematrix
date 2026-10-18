@@ -194,9 +194,20 @@ module Schematrix
     #   as ref, recording the edge so its class is generated.
     # - scalar target: return the target node itself so its type
     #   information is compiled in place of the reference, and no ref.
+    # A $dynamicRef resolves through the D9 static approximation first.
     # TODO: merge keywords when a $ref has sibling overrides
     def resolve_reference(node)
       reference = node["$ref"]
+      if reference.nil? && node["$dynamicRef"]
+        dynamic_ref = node["$dynamicRef"]
+        reference = dynamic_anchor_locator(dynamic_ref)
+        if reference.nil?
+          Schematrix.logger&.debug(
+            "Unresolvable $dynamicRef #{dynamic_ref} at #{current_locator}",
+          )
+          return node, nil
+        end
+      end
       return node, nil if reference.nil?
 
       target, locator = final_target(@locator, reference)
@@ -211,11 +222,72 @@ module Schematrix
       end
     end
 
+    # D9 static approximation for $dynamicRef: assume the dynamic
+    # scope equals this document. Walk up the containment chain from
+    # the ref site to the document root and take the nearest
+    # $dynamicAnchor with the referenced name; fall back to the last
+    # matching anchor in document order; then unresolvable (untyped +
+    # debug log). The name may be empty ("#" in the metaschemas).
+    def dynamic_anchor_locator(reference)
+      name = reference.delete_prefix("#")
+      chain = @fragment_path.dup
+      chain.pop # the ref site itself
+      until chain.empty?
+        locator = locator_at(chain)
+        node = @store.node_at(locator)
+        if node.is_a?(Hash) && node["$dynamicAnchor"] == name
+          return locator.to_s
+        end
+
+        chain.pop
+      end
+
+      pointer = last_dynamic_anchor(name)
+      locator_at(pointer)&.to_s unless pointer.nil?
+    end
+
+    # Document-order scan for the last $dynamicAnchor with the given
+    # name; returns its path segments relative to the document root.
+    def last_dynamic_anchor(name)
+      root = @store.node_at(document_root_locator)
+      found = nil
+      scan =
+        lambda do |node, path|
+          case node
+          when Hash
+            found = path if node["$dynamicAnchor"] == name
+            node.each { |key, value| scan.call(value, path + [key]) }
+          when Array
+            node.each_with_index do |value, i|
+              scan.call(value, path + [i.to_s])
+            end
+          end
+        end
+      scan.call(root, [])
+      found
+    end
+
+    def document_root_locator
+      root = @locator.dup
+      root.fragment = "/"
+      root
+    end
+
+    # Locator for a chain of containment segments (as found in
+    # @fragment_path, leading empty segment included).
+    def locator_at(chain)
+      segments = chain.first == "" ? chain.drop(1) : chain
+      locator = @locator.dup
+      locator.fragment = "/#{segments.join("/")}"
+      locator
+    end
+
     # Follows chains of pure references to the final node, guarding
     # against cycles. Returns the node and its locator.
     def final_target(base, reference, seen = Set.new)
       locator = URI.join(base, reference)
       locator.fragment = "/" if locator.fragment.nil?
+      locator = @store.canonicalize(locator)
 
       return nil, nil unless seen.add?(locator.to_s)
 

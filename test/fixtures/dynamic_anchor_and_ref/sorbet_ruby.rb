@@ -18,7 +18,7 @@ module M
     sig { returns(T.nilable(String)) }
     attr_accessor :value
 
-    sig { params(children: T.nilable(T::Array[Schema])).void }
+    sig { returns(T.nilable(T::Array[Schema])) }
     attr_accessor :children
 
     sig { params(key: Symbol).returns(T.anything) }

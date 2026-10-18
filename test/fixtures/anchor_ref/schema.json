@@ -1,0 +1,20 @@
+{
+  "title": "AnchorRef",
+  "type": "object",
+  "properties": {
+    "owner": {
+      "$ref": "#person"
+    }
+  },
+  "$defs": {
+    "named": {
+      "$anchor": "person",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -18,6 +18,26 @@ class TestDynamicRefs < Minitest::Test
   def test_dynamic_anchor_and_ref_rbi
     assert_fixture("dynamic_anchor_and_ref", "rbi")
   end
+
+  def test_anchor_ref_plain_ruby
+    assert_fixture("anchor_ref", "plain_ruby")
+    assert_fixture("anchor_ref", "plain_ruby", path: "named")
+  end
+
+  def test_anchor_ref_rbs
+    assert_fixture("anchor_ref", "rbs")
+    assert_fixture("anchor_ref", "rbs", path: "named")
+  end
+
+  def test_anchor_ref_sorbet_ruby
+    assert_fixture("anchor_ref", "sorbet_ruby")
+    assert_fixture("anchor_ref", "sorbet_ruby", path: "named")
+  end
+
+  def test_anchor_ref_rbi
+    assert_fixture("anchor_ref", "rbi")
+    assert_fixture("anchor_ref", "rbi", path: "named")
+  end
 end
 
 class TestMetaschemaVocab < Minitest::Test
