@@ -73,6 +73,21 @@ module Schematrix
       rewritten
     end
 
+    # D9 helper: the locator of the last schema carrying a
+    # $dynamicAnchor with the given name, in document order. nil when
+    # the document names no such anchor.
+    def last_dynamic_anchor_locator(uri, name)
+      segments = nil
+      each_node(document(uri)) do |node, path|
+        segments = path if node.is_a?(Hash) && node["$dynamicAnchor"] == name
+      end
+      return nil if segments.nil?
+
+      locator = uri.dup
+      locator.fragment = "/#{segments.map { |token| escape(token) }.join("/")}"
+      locator
+    end
+
     private
 
     def anchor_name?(uri)
@@ -80,27 +95,37 @@ module Schematrix
         !uri.fragment.start_with?("/")
     end
 
+    # Depth-first scan of a parsed document in document order. Yields
+    # every node with its path segments relative to the document root.
+    def each_node(document)
+      scan =
+        lambda do |node, path|
+          case node
+          when Hash
+            yield(node, path)
+            node.each { |key, value| scan.call(value, path + [key]) }
+          when Array
+            node.each_with_index do |value, index|
+              scan.call(value, path + [index.to_s])
+            end
+          end
+        end
+      scan.call(document, [])
+    end
+
     # Scans a document once for $anchor keys: anchor name => JSON
     # pointer of the schema carrying it.
     def anchor_pointers(document, uri)
       @anchors[document_key(uri)] ||= begin
         pointers = {}
-        scan =
-          lambda do |node, path|
-            case node
-            when Hash
-              anchor = node["$anchor"]
-              pointers[anchor] = path if anchor
-              node.each do |key, value|
-                scan.call(value, "#{path}/#{escape(key)}")
-              end
-            when Array
-              node.each_with_index do |value, index|
-                scan.call(value, "#{path}/#{index}")
-              end
-            end
-          end
-        scan.call(document, "")
+        each_node(document) do |node, segments|
+          anchor = node["$anchor"]
+          next unless anchor
+
+          pointers[
+            anchor
+          ] = "/#{segments.map { |token| escape(token) }.join("/")}"
+        end
         pointers
       end
     end

@@ -349,29 +349,8 @@ module Schematrix
         chain.pop
       end
 
-      pointer = last_dynamic_anchor(name)
-      locator_at(pointer)&.to_s unless pointer.nil?
-    end
-
-    # Document-order scan for the last $dynamicAnchor with the given
-    # name; returns its path segments relative to the document root.
-    def last_dynamic_anchor(name)
-      root = @store.node_at(document_base(@locator))
-      found = nil
-      scan =
-        lambda do |node, path|
-          case node
-          when Hash
-            found = path if node["$dynamicAnchor"] == name
-            node.each { |key, value| scan.call(value, path + [key]) }
-          when Array
-            node.each_with_index do |value, i|
-              scan.call(value, path + [i.to_s])
-            end
-          end
-        end
-      scan.call(root, [])
-      found
+      pointer = @store.last_dynamic_anchor_locator(@locator, name)
+      pointer&.to_s
     end
 
     # node_at that tolerates locators pointing outside this
