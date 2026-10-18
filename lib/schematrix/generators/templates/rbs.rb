@@ -86,7 +86,9 @@ module Schematrix
               end
             end
 
-          # TODO: Schemas may combine a $ref and some overrides
+          # A conjoined schema (D5) may combine its own terms with a
+          # $ref; they intersect when the intersection flag is set,
+          # union otherwise
           base << class_name_from_path(schema.ref) unless schema.ref.nil?
 
           base.concat(variant_types(path, name, schema.any_of, "anyOf"))

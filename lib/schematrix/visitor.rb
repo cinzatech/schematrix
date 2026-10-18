@@ -89,6 +89,27 @@ module Schematrix
       dependentRequired
     ].freeze
 
+    # Sibling keywords beside a $ref that change the compiled shape.
+    # When any of these appears next to a $ref the node applies both
+    # (2020-12), so it rewrites into its allOf-equivalent; everything
+    # else beside a $ref (annotations, scalar constraints without
+    # codegen) leaves the reference on the pure-ref path.
+    SHAPE_SIBLINGS = %w[
+      type
+      const
+      properties
+      required
+      additionalProperties
+      items
+      prefixItems
+      allOf
+      anyOf
+      oneOf
+      then
+      else
+      dependentSchemas
+    ].freeze
+
     # The findings of a visit: the object schemas the subtree contains
     # by locator, and edges to object schemas living elsewhere that it
     # references.
@@ -228,11 +249,12 @@ module Schematrix
     # Resolves a $ref, if present, by following the chain of references
     # to its final target node:
     # - object target: keep the node as-is and return the target's locator
-    #   as ref, recording the edge so its class is generated.
+    #   as ref, recording the edge so its class is generated; shape-
+    #   applying siblings rewrite the node into the allOf-equivalent
+    #   instead (2020-12 semantics, see resolve_reference).
     # - scalar target: return the target node itself so its type
     #   information is compiled in place of the reference, and no ref.
     # A $dynamicRef resolves through the D9 static approximation first.
-    # TODO: merge keywords when a $ref has sibling overrides
     def resolve_reference(node)
       reference = node["$ref"]
       if reference.nil? && node["$dynamicRef"]
@@ -251,6 +273,25 @@ module Schematrix
       return node, nil, nil if target.nil?
 
       if Array(target["type"]).include?(TYPE_OBJECT)
+        # 2020-12 semantics: a $ref applies alongside its siblings, so
+        # a ref with shape-applying siblings is the allOf-equivalent
+        # of the target and those siblings. Rewrite the node into
+        # that form instead of keeping the ref: the site becomes its
+        # own conjoined class (D4/D5), no dead sibling classes
+        # register, and no dangling class references render.
+        # Annotation-only siblings (title, description, default, ...)
+        # and scalar constraints without codegen stay on the pure-ref
+        # path, where the edge and the target's class remain.
+        siblings = node.except("$ref")
+        if SHAPE_SIBLINGS.any? { |keyword| siblings.key?(keyword) }
+          rewritten =
+            siblings.merge(
+              "type" => Array(siblings["type"]) | [TYPE_OBJECT],
+              "allOf" => [{ "$ref" => reference }, *Array(siblings["allOf"])],
+            )
+          return rewritten, nil, nil
+        end
+
         @edges << locator
         [node, locator, nil]
       else
@@ -525,13 +566,6 @@ module Schematrix
       return node_body(raw) if target.nil?
 
       with_ref_base(document_base(locator)) { node_body(target) }
-    end
-
-    def deref_branch(raw)
-      return raw unless raw.is_a?(Hash) && !raw["$ref"].nil?
-
-      target, = final_target(ref_base, raw["$ref"])
-      target || raw
     end
 
     # Visits a node's own properties at the current path. Shared by

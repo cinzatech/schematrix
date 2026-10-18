@@ -1,0 +1,17 @@
+module M
+  class Schema::Address
+    attr_accessor zip: String & Integer
+    attr_accessor country: String?
+    attr_accessor street: String?
+
+    def initialize: (
+      zip: String & Integer,
+      ?country: String?,
+      ?street: String?
+    ) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
+  end
+end

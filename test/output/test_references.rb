@@ -98,4 +98,28 @@ class TestReferences < Minitest::Test
   def test_cross_document_all_of_rbs
     assert_fixture("cross_document_all_of", "rbs")
   end
+
+  def test_ref_with_shape_siblings_plain_ruby
+    assert_fixture("ref_shape_siblings", "plain_ruby")
+    assert_fixture("ref_shape_siblings", "plain_ruby", path: "address")
+  end
+
+  def test_ref_with_shape_siblings_rbs
+    assert_fixture("ref_shape_siblings", "rbs")
+    assert_fixture("ref_shape_siblings", "rbs", path: "address")
+  end
+
+  def test_ref_with_shape_siblings_registers_no_target_class
+    schema =
+      File.join(
+        SchematrixTestHelper::FIXTURES_DIR,
+        "ref_shape_siblings",
+        "schema.json",
+      )
+    root = "file://#{File.expand_path(schema)}"
+    objects = Schematrix::Compiler.new.compile([schema])
+
+    assert_includes objects.keys, "#{root}#/properties/address"
+    refute_includes objects.keys, "#{root}#/$defs/Address"
+  end
 end

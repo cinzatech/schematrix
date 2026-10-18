@@ -1,0 +1,31 @@
+{
+  "title": "RefShapeSiblings",
+  "type": "object",
+  "properties": {
+    "address": {
+      "$ref": "#/$defs/Address",
+      "required": ["zip"],
+      "properties": {
+        "zip": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "Address": {
+      "type": "object",
+      "properties": {
+        "street": {
+          "type": "string"
+        },
+        "zip": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
