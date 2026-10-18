@@ -55,6 +55,22 @@ class TestAdvancedObjects < Minitest::Test
     assert_fixture("additional_properties_schema", "rbi", path: "tags")
   end
 
+  def test_additional_properties_union_plain_ruby
+    assert_fixture("additional_properties_union", "plain_ruby")
+  end
+
+  def test_additional_properties_union_rbs
+    assert_fixture("additional_properties_union", "rbs")
+  end
+
+  def test_additional_properties_union_sorbet_ruby
+    assert_fixture("additional_properties_union", "sorbet_ruby")
+  end
+
+  def test_additional_properties_union_rbi
+    assert_fixture("additional_properties_union", "rbi")
+  end
+
   def test_pattern_properties_plain_ruby
     assert_fixture("pattern_properties", "plain_ruby")
   end

@@ -1,0 +1,12 @@
+module M
+  class Schema
+    attr_accessor name: String?
+    attr_accessor code: String?
+
+    def initialize: (?name: String?, ?code: String?) -> void
+
+    def []: (Symbol) -> Float?
+
+    def []=: (Symbol, Float?) -> Float?
+  end
+end

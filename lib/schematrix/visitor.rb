@@ -724,11 +724,14 @@ module Schematrix
     # Union branches open the shape (D12): untyped wins, a closed
     # (false) branch contributes nothing because an instance from
     # another branch may still carry extra keys, and declared schemas
-    # union their types.
+    # union their types. A nil side loses to a declared schema (the
+    # closed branch's instances simply carry no extras); nil on both
+    # sides stays closed.
     def union_additional(own, other)
-      return Schema::Empty if untyped_schema?(own) || untyped_schema?(other)
       return other if own.nil?
       return own if other.nil?
+
+      return Schema::Empty if untyped_schema?(own) || untyped_schema?(other)
 
       own.with(
         type: own.type | other.type,

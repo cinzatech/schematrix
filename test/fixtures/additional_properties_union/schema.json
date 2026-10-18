@@ -1,0 +1,26 @@
+{
+  "title": "UnionCatchAll",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {
+        "type": "number"
+      }
+    }
+  ]
+}
