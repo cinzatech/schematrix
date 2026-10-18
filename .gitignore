@@ -57,3 +57,6 @@ Gemfile.lock
 
 # Ignore our own generated files
 generated/
+
+# Untracked working log
+WORKLOG.md
