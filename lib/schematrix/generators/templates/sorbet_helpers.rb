@@ -1,8 +1,12 @@
+require_relative "type_composer"
+
 module Schematrix
   module Generators
     module Templates
       # Common functions for producing Sorbet output
       module SorbetHelpers
+        include TypeComposer
+
         SORBET_TYPE_ANYTHING = "T.anything"
 
         # Maps JSON Schema scalar types to their Sorbet equivalents
@@ -16,106 +20,33 @@ module Schematrix
           TYPE_BOTTOM => "T.noreturn",
         }.freeze
 
-        def sorbet_type(path, name, schema)
-          return SORBET_TYPE_ANYTHING if schema.nil?
-          return "NilClass" if schema.type == Set[TYPE_NULL]
+        # Sorbet syntax hooks for TypeComposer
 
-          combined = bare_sorbet_type(path, name, schema)
-          return combined if combined == SORBET_TYPE_ANYTHING
-          return combined if schema&.strictly_required?
+        def untyped = SORBET_TYPE_ANYTHING
 
-          "T.nilable(#{combined})"
+        def scalar_type(type)
+          SORBET_SCALAR_TYPES.fetch(type, SORBET_TYPE_ANYTHING)
         end
 
-        # Returns the type for a schema as a union string, without
-        # nilability: the declared type set, the $ref target, and both
-        # variant lists folded in (D1), each variant a bare type too.
-        def bare_sorbet_type(path, name, schema)
-          return SORBET_TYPE_ANYTHING if schema.nil?
+        def array_of(element) = "T::Array[#{element}]"
 
-          base =
-            schema.type.flat_map do |type|
-              case type
-              when TYPE_OBJECT
-                [class_name_from_path(path, name)]
-              when TYPE_ARRAY
-                element = array_element_type(nested_locator(path, name), schema)
-                ["T::Array[#{element}]"]
-              when TYPE_NULL
-                []
-              else
-                [SORBET_SCALAR_TYPES.fetch(type, SORBET_TYPE_ANYTHING)]
-              end
-            end
+        def null_only_type = "NilClass"
 
-          # A conjoined schema (D5) may combine its own terms with a
-          # $ref; they intersect when the intersection flag is set,
-          # union otherwise
-          base << class_name_from_path(schema.ref) unless schema.ref.nil?
+        # Absence renders through T.nilable; union and intersection
+        # terms stay grouped by their constructors
+        def nilable_type(combined) = "T.nilable(#{combined})"
 
-          base.concat(variant_types(path, name, schema.any_of, "anyOf"))
-          base.concat(variant_types(path, name, schema.one_of, "oneOf"))
+        def element_union(combined, _terms) = combined
 
-          return intersect_types(base) if schema.intersection
+        def join_union(types) = "T.any(#{types.join(", ")})"
 
-          combine_types(base)
-        end
+        def join_intersection(types) = "T.all(#{types.join(", ")})"
 
-        # D13 element union: the union of prefix item types, plus the
-        # items type when present, plus T.anything whenever the tail
-        # is open (no items). items: false closes the tail and adds no
-        # term. Inline object prefix items fall back to untyped (no
-        # stable class name); $ref items keep their class.
-        def array_element_type(path, schema)
-          terms =
-            schema.prefix_items.map { |item| prefix_item_type(path, item) }.uniq
-          if schema.items.nil?
-            terms << SORBET_TYPE_ANYTHING
-          elsif !schema.items.type.include?(TYPE_BOTTOM)
-            terms << sorbet_type(path, "items", schema.items)
-          end
-
-          combine_types(terms)
-        end
-
-        def prefix_item_type(path, item)
-          return SORBET_TYPE_ANYTHING if item.type.include?(TYPE_OBJECT)
-
-          sorbet_type(path, "prefixItems", item)
-        end
-
-        # D5 conjoin: distinct declarations intersect syntactically as
-        # T.all(String, Integer), even if uninhabited. T.anything is
-        # the identity; an empty conjunction falls back to untyped.
-        def intersect_types(types)
-          terms = types.reject { |type| type == SORBET_TYPE_ANYTHING }
-          return SORBET_TYPE_ANYTHING if terms.empty?
-          return terms.first if terms.size == 1
-
-          "T.all(#{terms.join(", ")})"
-        end
-
-        # Computes the bare type of each variant branch under its
-        # positional path segment (anyOf_0, oneOf_1, ...).
-        def variant_types(path, name, variants, keyword)
-          variant_path = nested_locator(path, name)
-          variants.each_with_index.map do |variant, index|
-            bare_sorbet_type(variant_path, "#{keyword}_#{index}", variant)
-          end
-        end
-
-        def combine_types(types)
-          return SORBET_TYPE_ANYTHING if types.empty?
-          return SORBET_TYPE_ANYTHING if types.include?(SORBET_TYPE_ANYTHING)
-
-          return types.first if types.size == 1
-
-          "T.any(#{types.join(", ")})"
-        end
+        # Sorbet emitters
 
         def sorbet_additional_properties_type
           @sorbet_additional_properties_type ||=
-            sorbet_type(@path, "additional_properties", @additional_properties)
+            type_of(@path, "additional_properties", @additional_properties)
         end
 
         def sorbet_constructor_signature_params
@@ -124,7 +55,7 @@ module Schematrix
           params =
             @properties
               .map do |name, property|
-                "#{name}: #{sorbet_type(@path, name, property)}"
+                "#{name}: #{type_of(@path, name, property)}"
               end
               .join(", ")
 

@@ -13,7 +13,7 @@ module Schematrix
         private
 
         def sorbet_attr_accessor(path, name, property)
-          type = sorbet_type(path, name, property)
+          type = type_of(path, name, property)
           <<~RUBY
             sig { returns(#{type}) }
             def #{name}; end
