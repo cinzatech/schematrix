@@ -1,0 +1,19 @@
+module M
+  class Schema
+    attr_accessor meta: (bool | Schema::Defs::Meta)?
+    attr_accessor nullable: Schema::Defs::Nullable?
+
+    def initialize: (
+      ?meta: (bool | Schema::Defs::Meta)?,
+      ?nullable: Schema::Defs::Nullable?
+    ) -> void
+
+    def []: (String) -> top
+
+    def []=: (String, top) -> top
+
+    def self.from_h: (Hash[String, top] hash) -> Schema
+
+    def to_h: -> Hash[String, top]
+  end
+end

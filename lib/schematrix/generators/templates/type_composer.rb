@@ -18,7 +18,11 @@ module Schematrix
         # wrapped for absence wherever the property is optional.
         def type_of(path, name, schema)
           return untyped if schema.nil?
-          return null_only_type if schema.type == Set[TYPE_NULL]
+
+          # A null-only record is just nil, unless it carries more
+          # terms: a ref to a target typed ["object", "null"] keeps
+          # its class (gap 4) and renders nilable instead.
+          return null_only_type if null_only?(schema)
 
           combined = bare_type(path, name, schema)
           return combined if combined == untyped
@@ -33,6 +37,13 @@ module Schematrix
         # built from the property name alone would miss it and dangle.
         def property_type_of(path, name, schema)
           type_of(path, "properties/#{name}", schema)
+        end
+
+        # Whether the schema says null and nothing else: no ref, no
+        # variants.
+        def null_only?(schema)
+          schema.type == Set[TYPE_NULL] && schema.ref.nil? &&
+            schema.any_of.empty? && schema.one_of.empty?
         end
 
         # Returns the type for a schema as a union string, without

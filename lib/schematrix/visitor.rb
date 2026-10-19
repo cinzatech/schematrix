@@ -402,7 +402,7 @@ module Schematrix
         end
 
         @edges << locator
-        [node, locator, nil]
+        [with_ref_types(node, target), locator, nil]
       else
         # Inline the target's keywords, local siblings win over
         # them. Returns the target's document as the base for the
@@ -420,6 +420,20 @@ module Schematrix
     # the document never wrote (present_slots).
     def siblings_of(node)
       present_slots(node).except("$ref")
+    end
+
+    # Folds the $ref target's non-object type terms into the node
+    # (gap 4 of the bootstrap rounding): slots whose target is typed
+    # like ["object", "boolean"] render the honest union
+    # (Klass | bool) instead of lying with the class alone, which
+    # would under-accept the boolean/null instances the schema
+    # allows. A pure-object target contributes nothing.
+    def with_ref_types(node, target)
+      extra = Array(target["type"]) - [TYPE_OBJECT]
+      return node if extra.empty?
+
+      merged = present_slots(node).merge("type" => Array(node.type) | extra)
+      Schematrix::Meta::Schema.from_h(merged)
     end
 
     # Merges a raw $ref target with the referencing node's own

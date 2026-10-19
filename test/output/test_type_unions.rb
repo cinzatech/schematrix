@@ -66,4 +66,24 @@ class TestTypeUnions < Minitest::Test
   def test_union_array_items_rbi
     assert_fixture("union_array_items", "rbi")
   end
+
+  def test_ref_to_object_or_boolean_plain_ruby
+    assert_fixture("ref_to_object_or_boolean", "plain_ruby")
+    assert_fixture("ref_to_object_or_boolean", "plain_ruby", path: "meta")
+  end
+
+  def test_ref_to_object_or_boolean_rbs
+    assert_fixture("ref_to_object_or_boolean", "rbs")
+    assert_fixture("ref_to_object_or_boolean", "rbs", path: "meta")
+  end
+
+  def test_ref_to_object_or_boolean_sorbet_ruby
+    assert_fixture("ref_to_object_or_boolean", "sorbet_ruby")
+    assert_fixture("ref_to_object_or_boolean", "sorbet_ruby", path: "meta")
+  end
+
+  def test_ref_to_object_or_boolean_rbi
+    assert_fixture("ref_to_object_or_boolean", "rbi")
+    assert_fixture("ref_to_object_or_boolean", "rbi", path: "meta")
+  end
 end

@@ -1,0 +1,19 @@
+module M
+  class Schema
+    module Defs
+      class Meta
+        attr_accessor name: String?
+
+        def initialize: (?name: String?) -> void
+
+        def []: (String) -> top
+
+        def []=: (String, top) -> top
+
+        def self.from_h: (Hash[String, top] hash) -> Meta
+
+        def to_h: -> Hash[String, top]
+      end
+    end
+  end
+end
