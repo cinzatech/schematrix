@@ -74,8 +74,8 @@ module Schematrix
         File.join(@output_dir, filename)
       end
 
-      def write(path, object)
-        uri = URI(path)
+      def write(locator, object)
+        uri = URI(locator)
         class_name = class_name_from_path(uri)
         code = transform(uri, class_name, object)
 
