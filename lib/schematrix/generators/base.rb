@@ -146,11 +146,16 @@ module Schematrix
 
       # A property name safe to use as a Ruby identifier: snake-cased,
       # the leading "$" of core vocabulary keywords ($id, $ref, ...)
-      # stripped, and Ruby keywords suffixed with an underscore so
-      # generated accessors and keyword arguments stay parseable.
-      # Original keys stay reachable through the catch-all accessors.
+      # stripped, characters identifiers cannot carry replaced with
+      # underscores, a leading digit prefixed, and Ruby keywords
+      # suffixed with an underscore so generated accessors and keyword
+      # arguments stay parseable. Original keys stay reachable through
+      # the catch-all accessors.
       def property_name(key)
         name = underscore(key).delete_prefix("$")
+        name = name.gsub(/[^a-z0-9_]/, "_")
+        name = "_#{name}" if name.match?(/\A\d/)
+        name = "_" if name.empty?
         name = "#{name}_" if RUBY_KEYWORDS.include?(name)
         name
       end

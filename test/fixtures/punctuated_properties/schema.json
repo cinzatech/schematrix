@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "example.com": {
+      "type": "string"
+    },
+    "web.hook": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -83,6 +83,26 @@ class TestObjectStructure < Minitest::Test
     assert_fixture("multiline_description", "rbi")
   end
 
+  def test_punctuated_property_names_plain_ruby
+    assert_fixture("punctuated_properties", "plain_ruby")
+    assert_fixture("punctuated_properties", "plain_ruby", path: "web.hook")
+  end
+
+  def test_punctuated_property_names_rbs
+    assert_fixture("punctuated_properties", "rbs")
+    assert_fixture("punctuated_properties", "rbs", path: "web.hook")
+  end
+
+  def test_punctuated_property_names_sorbet_ruby
+    assert_fixture("punctuated_properties", "sorbet_ruby")
+    assert_fixture("punctuated_properties", "sorbet_ruby", path: "web.hook")
+  end
+
+  def test_punctuated_property_names_rbi
+    assert_fixture("punctuated_properties", "rbi")
+    assert_fixture("punctuated_properties", "rbi", path: "web.hook")
+  end
+
   def test_nested_object_plain_ruby
     assert_fixture("nested_object", "plain_ruby")
     assert_fixture("nested_object", "plain_ruby", path: "child")

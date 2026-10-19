@@ -12,7 +12,9 @@ module Schematrix
       # '$defs' container segment (but not a property named "$defs",
       # which only ever follows a 'properties' segment). "$" prefixes
       # (core vocabulary keywords like "$id") and mangling suffixes
-      # ("if_") are stripped so segments form valid constant names.
+      # ("if_") are stripped so segments form valid constant names,
+      # and characters constant names cannot carry fold to separators
+      # ("web.hook" -> "WebHook").
       def class_name_from_path(uri, name = nil)
         file = File.basename(uri.path).split(".").first
         segments = [file, *uri.fragment.split("/"), name].compact.reject(
@@ -26,7 +28,11 @@ module Schematrix
             container = defs_segment && previous != "properties"
             next if segment == "properties" || container
 
-            segment.delete("$").sub(/_+\z/, "")
+            clean = segment.delete("$").gsub(/[^a-zA-Z\d\s_-]/, " ")
+            clean = clean.strip.sub(/_+\z/, "")
+            next if clean.empty?
+
+            clean
           end
 
         pascal_case(meaningful.join("/"))

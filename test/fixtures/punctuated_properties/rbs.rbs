@@ -1,0 +1,12 @@
+module M
+  class Schema
+    attr_accessor example_com: String?
+    attr_accessor web_hook: Schema::WebHook?
+
+    def initialize: (?example_com: String?, ?web_hook: Schema::WebHook?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
+  end
+end
