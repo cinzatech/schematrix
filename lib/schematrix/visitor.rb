@@ -45,13 +45,15 @@ module Schematrix
       ref: nil,
       required: nil,
       title: nil,
-      type: Set.new,
+      # Frozen because this record is shared process-wide: a
+      # mutation anywhere would corrupt every later compilation.
+      type: Set.new.freeze,
     )
 
   # The "false" schema accepts no instance at all. It types as a
   # bottom type where the target language has one (T.noreturn in
   # Sorbet), untyped elsewhere.
-  Schema::Bottom = Schema::Empty.with(type: Set[TYPE_BOTTOM])
+  Schema::Bottom = Schema::Empty.with(type: Set[TYPE_BOTTOM].freeze)
 
   # The mergeable shape of an object schema: its own properties and
   # its normalized additionalProperties schema. The fold algebra
