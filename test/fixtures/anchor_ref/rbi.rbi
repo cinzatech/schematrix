@@ -2,15 +2,15 @@
 
 module M
   class Schema
-    sig { params(owner: T.nilable(Schema::Named)).void }
+    sig { params(owner: T.nilable(Schema::Defs::Named)).void }
     def initialize(owner: nil)
     end
 
-    sig { returns(T.nilable(Schema::Named)) }
+    sig { returns(T.nilable(Schema::Defs::Named)) }
     def owner
     end
 
-    sig { params(owner: T.nilable(Schema::Named)).void }
+    sig { params(owner: T.nilable(Schema::Defs::Named)).void }
     def owner=(owner)
     end
 

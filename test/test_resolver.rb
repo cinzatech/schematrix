@@ -13,43 +13,53 @@ class TestResolver < Minitest::Test
     uri
   end
 
-  def test_plain_property_segments_drop_the_container
+  def test_property_segments_encode_a_props_level
     name =
       resolver.class_name_from_path(
         locator_for("/schemas/order.json", "/properties/customer"),
       )
 
-    assert_equal "Order::Customer", name
+    assert_equal "Order::Props::Customer", name
   end
 
-  def test_defs_segments_drop_the_container_only
+  def test_defs_segments_encode_a_defs_level
     name =
       resolver.class_name_from_path(
         locator_for("/schemas/order.json", "/$defs/Address"),
       )
 
-    assert_equal "Order::Address", name
+    assert_equal "Order::Defs::Address", name
   end
 
-  def test_property_named_defs_is_kept
+  def test_property_and_defs_chains_never_fold
+    properties =
+      resolver.class_name_from_path(
+        locator_for("/schemas/order.json", "/properties/address"),
+      )
+    defs =
+      resolver.class_name_from_path(
+        locator_for("/schemas/order.json", "/$defs/address"),
+      )
+
+    refute_equal properties, defs
+  end
+
+  def test_property_named_defs_encodes_both_levels
     name =
       resolver.class_name_from_path(
         locator_for("/schemas/order.json", "/properties/$defs"),
       )
 
-    assert_equal "Order::Defs", name
+    assert_equal "Order::Props::Defs", name
   end
 
-  def test_defs_as_the_first_segment_cannot_wrap_around
-    # A schema file literally named $defs.json used to read the last
-    # segment through the index wraparound when checking for the
-    # container position.
+  def test_defs_as_the_first_segment_is_the_file_name
     name =
       resolver.class_name_from_path(
         locator_for("/schemas/$defs.json", "/properties/$defs"),
       )
 
-    assert_equal "Defs::Defs", name
+    assert_equal "Defs::Props::Defs", name
   end
 
   def test_dollar_prefixes_and_mangling_suffixes_strip
@@ -59,6 +69,6 @@ class TestResolver < Minitest::Test
         "if_",
       )
 
-    assert_equal "Meta::Id::If", name
+    assert_equal "Meta::Props::Id::If", name
   end
 end

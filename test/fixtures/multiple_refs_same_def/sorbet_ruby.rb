@@ -4,8 +4,8 @@ module M
   class Schema
     sig do
       params(
-        home: T.nilable(Schema::Address),
-        work: T.nilable(Schema::Address)
+        home: T.nilable(Schema::Defs::Address),
+        work: T.nilable(Schema::Defs::Address)
       ).void
     end
     def initialize(home: nil, work: nil)
@@ -15,10 +15,10 @@ module M
       @_extra = T.let({}, T::Hash[Symbol, T.anything])
     end
 
-    sig { returns(T.nilable(Schema::Address)) }
+    sig { returns(T.nilable(Schema::Defs::Address)) }
     attr_accessor :home
 
-    sig { returns(T.nilable(Schema::Address)) }
+    sig { returns(T.nilable(Schema::Defs::Address)) }
     attr_accessor :work
 
     sig { params(key: Symbol).returns(T.anything) }

@@ -2,14 +2,16 @@
 
 module M
   class Schema
-    sig { params(entries: T.nilable(T::Array[Schema::Entries::Items])).void }
+    sig do
+      params(entries: T.nilable(T::Array[Schema::Props::Entries::Items])).void
+    end
     def initialize(entries: nil)
       @entries = entries
 
       @_extra = T.let({}, T::Hash[Symbol, T.anything])
     end
 
-    sig { returns(T.nilable(T::Array[Schema::Entries::Items])) }
+    sig { returns(T.nilable(T::Array[Schema::Props::Entries::Items])) }
     attr_accessor :entries
 
     sig { params(key: Symbol).returns(T.anything) }

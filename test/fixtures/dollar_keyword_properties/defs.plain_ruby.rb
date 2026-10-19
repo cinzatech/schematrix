@@ -1,19 +1,23 @@
 module M
-  class Schema::Defs
-    def initialize(name: nil)
-      @name = name
+  module Schema
+    module Props
+      class Defs
+        def initialize(name: nil)
+          @name = name
 
-      @_extra = {}
-    end
+          @_extra = {}
+        end
 
-    attr_accessor :name
+        attr_accessor :name
 
-    def [](key)
-      @_extra[key]
-    end
+        def [](key)
+          @_extra[key]
+        end
 
-    def []=(key, value)
-      @_extra[key] = value
+        def []=(key, value)
+          @_extra[key] = value
+        end
+      end
     end
   end
 end

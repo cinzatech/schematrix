@@ -1,9 +1,12 @@
 module M
   class Schema
-    attr_accessor home: Schema::Address?
-    attr_accessor work: Schema::Address?
+    attr_accessor home: Schema::Defs::Address?
+    attr_accessor work: Schema::Defs::Address?
 
-    def initialize: (?home: Schema::Address?, ?work: Schema::Address?) -> void
+    def initialize: (
+      ?home: Schema::Defs::Address?,
+      ?work: Schema::Defs::Address?
+    ) -> void
 
     def []: (Symbol) -> untyped
 

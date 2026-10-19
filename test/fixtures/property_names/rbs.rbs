@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor vocab: Schema::Vocab?
+    attr_accessor vocab: Schema::Props::Vocab?
 
-    def initialize: (?vocab: Schema::Vocab?) -> void
+    def initialize: (?vocab: Schema::Props::Vocab?) -> void
 
     def []: (Symbol) -> untyped
 

@@ -1,11 +1,15 @@
 module M
-  class Schema::Defs
-    attr_accessor name: String?
+  module Schema
+    module Props
+      class Defs
+        attr_accessor name: String?
 
-    def initialize: (?name: String?) -> void
+        def initialize: (?name: String?) -> void
 
-    def []: (Symbol) -> untyped
+        def []: (Symbol) -> untyped
 
-    def []=: (Symbol, untyped) -> untyped
+        def []=: (Symbol, untyped) -> untyped
+      end
+    end
   end
 end

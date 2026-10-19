@@ -55,7 +55,7 @@ module Schematrix
           params =
             @properties
               .map do |name, property|
-                "#{name}: #{type_of(@path, name, property)}"
+                "#{name}: #{property_type_of(@path, name, property)}"
               end
               .join(", ")
 

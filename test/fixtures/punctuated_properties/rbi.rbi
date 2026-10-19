@@ -5,7 +5,7 @@ module M
     sig do
       params(
         example_com: T.nilable(String),
-        web_hook: T.nilable(Schema::WebHook)
+        web_hook: T.nilable(Schema::Props::WebHook)
       ).void
     end
     def initialize(example_com: nil, web_hook: nil)
@@ -19,11 +19,11 @@ module M
     def example_com=(example_com)
     end
 
-    sig { returns(T.nilable(Schema::WebHook)) }
+    sig { returns(T.nilable(Schema::Props::WebHook)) }
     def web_hook
     end
 
-    sig { params(web_hook: T.nilable(Schema::WebHook)).void }
+    sig { params(web_hook: T.nilable(Schema::Props::WebHook)).void }
     def web_hook=(web_hook)
     end
 

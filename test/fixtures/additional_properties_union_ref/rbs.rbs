@@ -4,8 +4,11 @@ module M
 
     def initialize: (?always: bool?) -> void
 
-    def []: (Symbol) -> (String | Schema::Thing)?
+    def []: (Symbol) -> (String | Schema::Defs::Thing)?
 
-    def []=: (Symbol, (String | Schema::Thing)?) -> (String | Schema::Thing)?
+    def []=: (
+      Symbol,
+      (String | Schema::Defs::Thing)?
+    ) -> (String | Schema::Defs::Thing)?
   end
 end

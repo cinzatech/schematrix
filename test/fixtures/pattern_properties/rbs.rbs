@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor config: Schema::Config?
+    attr_accessor config: Schema::Props::Config?
 
-    def initialize: (?config: Schema::Config?) -> void
+    def initialize: (?config: Schema::Props::Config?) -> void
 
     def []: (Symbol) -> untyped
 

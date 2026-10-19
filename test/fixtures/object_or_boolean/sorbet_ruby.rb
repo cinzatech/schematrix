@@ -2,14 +2,14 @@
 
 module M
   class Schema
-    sig { params(meta: T.nilable(T.any(Schema::Meta, T::Boolean))).void }
+    sig { params(meta: T.nilable(T.any(Schema::Props::Meta, T::Boolean))).void }
     def initialize(meta: nil)
       @meta = meta
 
       @_extra = T.let({}, T::Hash[Symbol, T.anything])
     end
 
-    sig { returns(T.nilable(T.any(Schema::Meta, T::Boolean))) }
+    sig { returns(T.nilable(T.any(Schema::Props::Meta, T::Boolean))) }
     attr_accessor :meta
 
     sig { params(key: Symbol).returns(T.anything) }

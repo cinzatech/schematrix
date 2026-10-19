@@ -1,0 +1,15 @@
+module M
+  module Schema
+    module Props
+      class Home
+        attr_accessor street: String?
+
+        def initialize: (?street: String?) -> void
+
+        def []: (Symbol) -> untyped
+
+        def []=: (Symbol, untyped) -> untyped
+      end
+    end
+  end
+end

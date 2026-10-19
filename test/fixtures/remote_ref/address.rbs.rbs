@@ -1,9 +1,9 @@
 module M
   class Address
     attr_accessor street: String?
-    attr_accessor zip: Address::Zip?
+    attr_accessor zip: Address::Props::Zip?
 
-    def initialize: (?street: String?, ?zip: Address::Zip?) -> void
+    def initialize: (?street: String?, ?zip: Address::Props::Zip?) -> void
 
     def []: (Symbol) -> untyped
 

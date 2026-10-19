@@ -2,15 +2,15 @@
 
 module M
   class Schema
-    sig { params(tags: T.nilable(Schema::Tags)).void }
+    sig { params(tags: T.nilable(Schema::Props::Tags)).void }
     def initialize(tags: nil)
     end
 
-    sig { returns(T.nilable(Schema::Tags)) }
+    sig { returns(T.nilable(Schema::Props::Tags)) }
     def tags
     end
 
-    sig { params(tags: T.nilable(Schema::Tags)).void }
+    sig { params(tags: T.nilable(Schema::Props::Tags)).void }
     def tags=(tags)
     end
 

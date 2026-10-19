@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor meta: (Schema::Meta | bool)?
+    attr_accessor meta: (Schema::Props::Meta | bool)?
 
-    def initialize: (?meta: (Schema::Meta | bool)?) -> void
+    def initialize: (?meta: (Schema::Props::Meta | bool)?) -> void
 
     def []: (Symbol) -> untyped
 

@@ -66,16 +66,24 @@ module Schematrix
         @format = format
       end
 
+      # The file this locator's class writes to, without writing it:
+      # callers that batch many schemas check every target up front.
+      def target_path(locator)
+        class_name = class_name_from_path(URI(locator))
+        filename = "#{underscore(class_name)}#{self.class.file_extension}"
+        File.join(@output_dir, filename)
+      end
+
       def write(path, object)
         uri = URI(path)
         class_name = class_name_from_path(uri)
         code = transform(uri, class_name, object)
 
-        filename = "#{underscore(class_name)}#{self.class.file_extension}"
-        file_path = File.join(@output_dir, filename)
+        file_path = target_path(uri)
         FileUtils.mkdir_p(File.dirname(file_path))
 
         File.write(file_path, code)
+        file_path
       end
 
       def transform(path, class_name, object)

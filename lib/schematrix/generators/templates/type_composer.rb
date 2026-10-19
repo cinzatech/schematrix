@@ -26,6 +26,14 @@ module Schematrix
           nilable_type(combined)
         end
 
+        # The type of a property schema, addressed the way its class
+        # registers: under a properties container segment. Class names
+        # encode that segment as the Props module level, so a reference
+        # built from the property name alone would miss it and dangle.
+        def property_type_of(path, name, schema)
+          type_of(path, "properties/#{name}", schema)
+        end
+
         # Returns the type for a schema as a union string, without
         # nilability: the declared type set, the $ref target, and both
         # variant lists folded in (D1), each variant a bare type too.

@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor value: (Schema::Named | String)?
+    attr_accessor value: (Schema::Defs::Named | String)?
 
-    def initialize: (?value: (Schema::Named | String)?) -> void
+    def initialize: (?value: (Schema::Defs::Named | String)?) -> void
 
     def []: (Symbol) -> untyped
 

@@ -2,15 +2,15 @@
 
 module M
   class Schema
-    sig { params(address: T.nilable(Schema::Address)).void }
+    sig { params(address: T.nilable(Schema::Defs::Address)).void }
     def initialize(address: nil)
     end
 
-    sig { returns(T.nilable(Schema::Address)) }
+    sig { returns(T.nilable(Schema::Defs::Address)) }
     def address
     end
 
-    sig { params(address: T.nilable(Schema::Address)).void }
+    sig { params(address: T.nilable(Schema::Defs::Address)).void }
     def address=(address)
     end
 

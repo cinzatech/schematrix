@@ -5,7 +5,7 @@ module M
     sig do
       params(
         example_com: T.nilable(String),
-        web_hook: T.nilable(Schema::WebHook)
+        web_hook: T.nilable(Schema::Props::WebHook)
       ).void
     end
     def initialize(example_com: nil, web_hook: nil)
@@ -18,7 +18,7 @@ module M
     sig { returns(T.nilable(String)) }
     attr_accessor :example_com
 
-    sig { returns(T.nilable(Schema::WebHook)) }
+    sig { returns(T.nilable(Schema::Props::WebHook)) }
     attr_accessor :web_hook
 
     sig { params(key: Symbol).returns(T.anything) }

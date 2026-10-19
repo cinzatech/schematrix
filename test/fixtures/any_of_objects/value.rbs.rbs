@@ -1,12 +1,16 @@
 module M
-  class Schema::Value
-    attr_accessor name: untyped
-    attr_accessor age: untyped
+  module Schema
+    module Props
+      class Value
+        attr_accessor name: untyped
+        attr_accessor age: untyped
 
-    def initialize: (?name: untyped, ?age: untyped) -> void
+        def initialize: (?name: untyped, ?age: untyped) -> void
 
-    def []: (Symbol) -> untyped
+        def []: (Symbol) -> untyped
 
-    def []=: (Symbol, untyped) -> untyped
+        def []=: (Symbol, untyped) -> untyped
+      end
+    end
   end
 end

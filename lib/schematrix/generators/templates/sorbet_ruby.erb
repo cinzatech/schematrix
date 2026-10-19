@@ -1,8 +1,7 @@
 # typed: strict
 
 module <%= @module_name %>
-  <%= @documentation_comment %>
-  class <%= @class_name %>
+<%= declaration_open %>
     sig { <%= sorbet_constructor_signature_params %>void }
     def initialize<%= constructor_arguments %>
       <%= constructor_assignments %>
@@ -24,5 +23,5 @@ module <%= @module_name %>
       @_extra[key] = value
     end
     <% end %>
-  end
+<%= declaration_close %>
 end

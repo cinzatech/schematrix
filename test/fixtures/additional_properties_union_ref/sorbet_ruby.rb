@@ -7,13 +7,18 @@ module M
       @always = always
 
       @_extra =
-        T.let({}, T::Hash[Symbol, T.nilable(T.any(String, Schema::Thing))])
+        T.let(
+          {},
+          T::Hash[Symbol, T.nilable(T.any(String, Schema::Defs::Thing))]
+        )
     end
 
     sig { returns(T.nilable(T::Boolean)) }
     attr_accessor :always
 
-    sig { params(key: Symbol).returns(T.nilable(T.any(String, Schema::Thing))) }
+    sig do
+      params(key: Symbol).returns(T.nilable(T.any(String, Schema::Defs::Thing)))
+    end
     def [](key)
       @_extra[key]
     end
@@ -21,8 +26,8 @@ module M
     sig do
       params(
         key: Symbol,
-        value: T.nilable(T.any(String, Schema::Thing))
-      ).returns(T.nilable(T.any(String, Schema::Thing)))
+        value: T.nilable(T.any(String, Schema::Defs::Thing))
+      ).returns(T.nilable(T.any(String, Schema::Defs::Thing)))
     end
     def []=(key, value)
       @_extra[key] = value

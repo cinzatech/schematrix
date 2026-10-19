@@ -1,11 +1,15 @@
 module M
-  class Schema::Named
-    attr_accessor tag: String?
+  module Schema
+    module Defs
+      class Named
+        attr_accessor tag: String?
 
-    def initialize: (?tag: String?) -> void
+        def initialize: (?tag: String?) -> void
 
-    def []: (Symbol) -> untyped
+        def []: (Symbol) -> untyped
 
-    def []=: (Symbol, untyped) -> untyped
+        def []=: (Symbol, untyped) -> untyped
+      end
+    end
   end
 end

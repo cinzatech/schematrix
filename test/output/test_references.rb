@@ -39,6 +39,30 @@ class TestReferences < Minitest::Test
     assert_fixture("ref_to_defs_object", "rbi", path: "Address")
   end
 
+  def test_container_namespaces_plain_ruby
+    assert_fixture("container_namespaces", "plain_ruby")
+    assert_fixture("container_namespaces", "plain_ruby", path: "home")
+    assert_fixture("container_namespaces", "plain_ruby", path: "address")
+  end
+
+  def test_container_namespaces_rbs
+    assert_fixture("container_namespaces", "rbs")
+    assert_fixture("container_namespaces", "rbs", path: "home")
+    assert_fixture("container_namespaces", "rbs", path: "address")
+  end
+
+  def test_container_namespaces_sorbet_ruby
+    assert_fixture("container_namespaces", "sorbet_ruby")
+    assert_fixture("container_namespaces", "sorbet_ruby", path: "home")
+    assert_fixture("container_namespaces", "sorbet_ruby", path: "address")
+  end
+
+  def test_container_namespaces_rbi
+    assert_fixture("container_namespaces", "rbi")
+    assert_fixture("container_namespaces", "rbi", path: "home")
+    assert_fixture("container_namespaces", "rbi", path: "address")
+  end
+
   def test_ref_to_nested_defs_field_plain_ruby
     assert_fixture("ref_to_nested_defs_field", "plain_ruby")
   end

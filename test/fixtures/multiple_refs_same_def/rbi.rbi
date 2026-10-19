@@ -4,26 +4,26 @@ module M
   class Schema
     sig do
       params(
-        home: T.nilable(Schema::Address),
-        work: T.nilable(Schema::Address)
+        home: T.nilable(Schema::Defs::Address),
+        work: T.nilable(Schema::Defs::Address)
       ).void
     end
     def initialize(home: nil, work: nil)
     end
 
-    sig { returns(T.nilable(Schema::Address)) }
+    sig { returns(T.nilable(Schema::Defs::Address)) }
     def home
     end
 
-    sig { params(home: T.nilable(Schema::Address)).void }
+    sig { params(home: T.nilable(Schema::Defs::Address)).void }
     def home=(home)
     end
 
-    sig { returns(T.nilable(Schema::Address)) }
+    sig { returns(T.nilable(Schema::Defs::Address)) }
     def work
     end
 
-    sig { params(work: T.nilable(Schema::Address)).void }
+    sig { params(work: T.nilable(Schema::Defs::Address)).void }
     def work=(work)
     end
 

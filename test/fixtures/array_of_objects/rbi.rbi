@@ -2,15 +2,19 @@
 
 module M
   class Schema
-    sig { params(entries: T.nilable(T::Array[Schema::Entries::Items])).void }
+    sig do
+      params(entries: T.nilable(T::Array[Schema::Props::Entries::Items])).void
+    end
     def initialize(entries: nil)
     end
 
-    sig { returns(T.nilable(T::Array[Schema::Entries::Items])) }
+    sig { returns(T.nilable(T::Array[Schema::Props::Entries::Items])) }
     def entries
     end
 
-    sig { params(entries: T.nilable(T::Array[Schema::Entries::Items])).void }
+    sig do
+      params(entries: T.nilable(T::Array[Schema::Props::Entries::Items])).void
+    end
     def entries=(entries)
     end
 

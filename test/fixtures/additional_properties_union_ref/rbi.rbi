@@ -14,15 +14,17 @@ module M
     def always=(always)
     end
 
-    sig { params(key: Symbol).returns(T.nilable(T.any(String, Schema::Thing))) }
+    sig do
+      params(key: Symbol).returns(T.nilable(T.any(String, Schema::Defs::Thing)))
+    end
     def [](key)
     end
 
     sig do
       params(
         key: Symbol,
-        value: T.nilable(T.any(String, Schema::Thing))
-      ).returns(T.nilable(T.any(String, Schema::Thing)))
+        value: T.nilable(T.any(String, Schema::Defs::Thing))
+      ).returns(T.nilable(T.any(String, Schema::Defs::Thing)))
     end
     def []=(key, value)
     end

@@ -1,0 +1,15 @@
+module M
+  class Schema
+    attr_accessor home: Schema::Props::Home?
+    attr_accessor alt: Schema::Defs::Address?
+
+    def initialize: (
+      ?home: Schema::Props::Home?,
+      ?alt: Schema::Defs::Address?
+    ) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
+  end
+end

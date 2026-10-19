@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor child: Schema::Child?
+    attr_accessor child: Schema::Props::Child?
 
-    def initialize: (?child: Schema::Child?) -> void
+    def initialize: (?child: Schema::Props::Child?) -> void
 
     def []: (Symbol) -> untyped
 

@@ -3,15 +3,15 @@ module M
     attr_accessor id: String?
     attr_accessor if_: String?
     attr_accessor then_: Integer?
-    attr_accessor defs: Schema::Defs?
-    attr_accessor named: Schema::Named?
+    attr_accessor defs: Schema::Props::Defs?
+    attr_accessor named: Schema::Defs::Named?
 
     def initialize: (
       ?id: String?,
       ?if_: String?,
       ?then_: Integer?,
-      ?defs: Schema::Defs?,
-      ?named: Schema::Named?
+      ?defs: Schema::Props::Defs?,
+      ?named: Schema::Defs::Named?
     ) -> void
 
     def []: (Symbol) -> untyped

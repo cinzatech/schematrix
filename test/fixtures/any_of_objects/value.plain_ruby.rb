@@ -1,20 +1,24 @@
 module M
-  class Schema::Value
-    def initialize(name: nil, age: nil)
-      @name = name
-      @age = age
+  module Schema
+    module Props
+      class Value
+        def initialize(name: nil, age: nil)
+          @name = name
+          @age = age
 
-      @_extra = {}
-    end
+          @_extra = {}
+        end
 
-    attr_accessor :name, :age
+        attr_accessor :name, :age
 
-    def [](key)
-      @_extra[key]
-    end
+        def [](key)
+          @_extra[key]
+        end
 
-    def []=(key, value)
-      @_extra[key] = value
+        def []=(key, value)
+          @_extra[key] = value
+        end
+      end
     end
   end
 end

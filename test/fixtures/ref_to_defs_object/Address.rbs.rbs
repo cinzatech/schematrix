@@ -1,11 +1,15 @@
 module M
-  class Schema::Address
-    attr_accessor city: String?
+  module Schema
+    module Defs
+      class Address
+        attr_accessor city: String?
 
-    def initialize: (?city: String?) -> void
+        def initialize: (?city: String?) -> void
 
-    def []: (Symbol) -> untyped
+        def []: (Symbol) -> untyped
 
-    def []=: (Symbol, untyped) -> untyped
+        def []=: (Symbol, untyped) -> untyped
+      end
+    end
   end
 end

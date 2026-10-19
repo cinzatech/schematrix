@@ -1,8 +1,7 @@
 # typed: strict
 
 module <%= @module_name %>
-  <%= @documentation_comment %>
-  class <%= @class_name %>
+<%= declaration_open %>
     sig { <%= sorbet_constructor_signature_params %>void }
     def initialize<%= constructor_arguments %>; end
 
@@ -15,5 +14,5 @@ module <%= @module_name %>
     sig { params(key: Symbol, value: <%= sorbet_additional_properties_type %>).returns(<%= sorbet_additional_properties_type %>) }
     def []=(key, value); end
     <% end %>
-  end
+<%= declaration_close %>
 end

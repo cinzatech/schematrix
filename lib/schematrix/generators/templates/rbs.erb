@@ -1,6 +1,5 @@
 module <%= @module_name %>
-  <%= @documentation_comment %>
-  class <%= @class_name %>
+<%= declaration_open %>
     <%= rbs_attr_accessors %>
 
     def initialize: (
@@ -12,5 +11,5 @@ module <%= @module_name %>
 
     def []=: (Symbol, <%= rbs_additional_properties_type %>) -> <%= rbs_additional_properties_type %>
     <% end %>
-  end
+<%= declaration_close %>
 end

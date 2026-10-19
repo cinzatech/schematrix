@@ -2,13 +2,13 @@ module M
   class Schema
     attr_accessor shipping_address: Address?
     attr_accessor billing_address: PostalAddress?
-    attr_accessor contact: Address::Zip?
+    attr_accessor contact: Address::Props::Zip?
     attr_accessor email: String?
 
     def initialize: (
       ?shipping_address: Address?,
       ?billing_address: PostalAddress?,
-      ?contact: Address::Zip?,
+      ?contact: Address::Props::Zip?,
       ?email: String?
     ) -> void
 

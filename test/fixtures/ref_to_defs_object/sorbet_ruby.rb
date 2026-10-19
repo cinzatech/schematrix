@@ -2,14 +2,14 @@
 
 module M
   class Schema
-    sig { params(address: T.nilable(Schema::Address)).void }
+    sig { params(address: T.nilable(Schema::Defs::Address)).void }
     def initialize(address: nil)
       @address = address
 
       @_extra = T.let({}, T::Hash[Symbol, T.anything])
     end
 
-    sig { returns(T.nilable(Schema::Address)) }
+    sig { returns(T.nilable(Schema::Defs::Address)) }
     attr_accessor :address
 
     sig { params(key: Symbol).returns(T.anything) }

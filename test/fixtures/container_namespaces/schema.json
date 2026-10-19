@@ -1,0 +1,21 @@
+{
+  "title": "Namespaces",
+  "type": "object",
+  "properties": {
+    "home": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" }
+      }
+    },
+    "alt": { "$ref": "#/$defs/address" }
+  },
+  "$defs": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "city": { "type": "string" }
+      }
+    }
+  }
+}

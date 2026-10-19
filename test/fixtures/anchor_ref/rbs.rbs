@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor owner: Schema::Named?
+    attr_accessor owner: Schema::Defs::Named?
 
-    def initialize: (?owner: Schema::Named?) -> void
+    def initialize: (?owner: Schema::Defs::Named?) -> void
 
     def []: (Symbol) -> untyped
 

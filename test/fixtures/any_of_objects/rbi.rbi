@@ -2,15 +2,15 @@
 
 module M
   class Schema
-    sig { params(value: T.nilable(T.any(Schema::Value, String))).void }
+    sig { params(value: T.nilable(T.any(Schema::Props::Value, String))).void }
     def initialize(value: nil)
     end
 
-    sig { returns(T.nilable(T.any(Schema::Value, String))) }
+    sig { returns(T.nilable(T.any(Schema::Props::Value, String))) }
     def value
     end
 
-    sig { params(value: T.nilable(T.any(Schema::Value, String))).void }
+    sig { params(value: T.nilable(T.any(Schema::Props::Value, String))).void }
     def value=(value)
     end
 

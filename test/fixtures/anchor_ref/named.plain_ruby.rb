@@ -1,19 +1,23 @@
 module M
-  class Schema::Named
-    def initialize(name: nil)
-      @name = name
+  module Schema
+    module Defs
+      class Named
+        def initialize(name: nil)
+          @name = name
 
-      @_extra = {}
-    end
+          @_extra = {}
+        end
 
-    attr_accessor :name
+        attr_accessor :name
 
-    def [](key)
-      @_extra[key]
-    end
+        def [](key)
+          @_extra[key]
+        end
 
-    def []=(key, value)
-      @_extra[key] = value
+        def []=(key, value)
+          @_extra[key] = value
+        end
+      end
     end
   end
 end

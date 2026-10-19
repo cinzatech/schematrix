@@ -2,15 +2,15 @@
 
 module M
   class Schema
-    sig { params(child: T.nilable(Schema::Child)).void }
+    sig { params(child: T.nilable(Schema::Props::Child)).void }
     def initialize(child: nil)
     end
 
-    sig { returns(T.nilable(Schema::Child)) }
+    sig { returns(T.nilable(Schema::Props::Child)) }
     def child
     end
 
-    sig { params(child: T.nilable(Schema::Child)).void }
+    sig { params(child: T.nilable(Schema::Props::Child)).void }
     def child=(child)
     end
 

@@ -1,19 +1,23 @@
 module M
-  class Schema::Address
-    def initialize(city: nil)
-      @city = city
+  module Schema
+    module Defs
+      class Address
+        def initialize(city: nil)
+          @city = city
 
-      @_extra = {}
-    end
+          @_extra = {}
+        end
 
-    attr_accessor :city
+        attr_accessor :city
 
-    def [](key)
-      @_extra[key]
-    end
+        def [](key)
+          @_extra[key]
+        end
 
-    def []=(key, value)
-      @_extra[key] = value
+        def []=(key, value)
+          @_extra[key] = value
+        end
+      end
     end
   end
 end

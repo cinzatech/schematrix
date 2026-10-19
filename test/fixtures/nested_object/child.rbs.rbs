@@ -1,11 +1,15 @@
 module M
-  class Schema::Child
-    attr_accessor value: String?
+  module Schema
+    module Props
+      class Child
+        attr_accessor value: String?
 
-    def initialize: (?value: String?) -> void
+        def initialize: (?value: String?) -> void
 
-    def []: (Symbol) -> untyped
+        def []: (Symbol) -> untyped
 
-    def []=: (Symbol, untyped) -> untyped
+        def []=: (Symbol, untyped) -> untyped
+      end
+    end
   end
 end

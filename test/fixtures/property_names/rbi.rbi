@@ -2,15 +2,15 @@
 
 module M
   class Schema
-    sig { params(vocab: T.nilable(Schema::Vocab)).void }
+    sig { params(vocab: T.nilable(Schema::Props::Vocab)).void }
     def initialize(vocab: nil)
     end
 
-    sig { returns(T.nilable(Schema::Vocab)) }
+    sig { returns(T.nilable(Schema::Props::Vocab)) }
     def vocab
     end
 
-    sig { params(vocab: T.nilable(Schema::Vocab)).void }
+    sig { params(vocab: T.nilable(Schema::Props::Vocab)).void }
     def vocab=(vocab)
     end
 

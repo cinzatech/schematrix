@@ -60,7 +60,9 @@ module Schematrix
 
           @properties
             .map do |name, prop_schema|
-              "attr_accessor #{name}: #{type_of(@path, name, prop_schema)}"
+              "attr_accessor #{name}: #{
+                property_type_of(@path, name, prop_schema)
+              }"
             end
             .join("\n")
         end
@@ -70,7 +72,7 @@ module Schematrix
 
           @properties
             .map do |name, schema|
-              type = type_of(@path, name, schema)
+              type = property_type_of(@path, name, schema)
               if schema&.strictly_required?
                 "#{name}: #{type}"
               else
