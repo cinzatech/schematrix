@@ -66,4 +66,20 @@ class TestBooleanSchemas < Minitest::Test
   def test_const_value_rbi
     assert_fixture("const_value", "rbi")
   end
+
+  def test_ref_to_boolean_plain_ruby
+    assert_fixture("ref_to_boolean", "plain_ruby")
+  end
+
+  def test_ref_to_boolean_rbs
+    assert_fixture("ref_to_boolean", "rbs")
+  end
+
+  def test_ref_to_boolean_sorbet_ruby
+    assert_fixture("ref_to_boolean", "sorbet_ruby")
+  end
+
+  def test_ref_to_boolean_rbi
+    assert_fixture("ref_to_boolean", "rbi")
+  end
 end

@@ -1,0 +1,13 @@
+{
+  "title": "RefToBoolean",
+  "type": "object",
+  "properties": {
+    "flag": { "$ref": "#/$defs/flag" },
+    "dead": { "$ref": "#/$defs/dead" },
+    "sibling": { "$ref": "#/$defs/flag", "type": "string" }
+  },
+  "$defs": {
+    "flag": true,
+    "dead": false
+  }
+}

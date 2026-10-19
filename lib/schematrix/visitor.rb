@@ -177,6 +177,9 @@ module Schematrix
       return Schema::Bottom if node.is_a?(FalseClass)
 
       node, ref, inline_base = resolve_reference(site, node)
+      # A reference that resolved to the "false" schema accepts
+      # nothing whichever siblings it had: the node is uninhabitable
+      return Schema::Bottom if node.is_a?(FalseClass)
 
       # Content inlined from another document compiles against that
       # document, so refs nested inside it resolve where they were
@@ -296,6 +299,17 @@ module Schematrix
 
       target, locator = final_target(ref_base, reference)
       return node, nil, nil if target.nil?
+
+      unless target.is_a?(Hash)
+        # Boolean targets: "true" accepts anything, so only the
+        # reference's own siblings remain (an empty node when the $ref
+        # stood alone, which types as untyped, same as "true");
+        # "false" accepts nothing, and visit_schema compiles the whole
+        # node to the bottom schema after resolution.
+        return node.except("$ref"), nil, nil if target == true
+
+        return target, nil, nil
+      end
 
       if Array(target["type"]).include?(TYPE_OBJECT)
         # 2020-12 semantics: a $ref applies alongside its siblings, so

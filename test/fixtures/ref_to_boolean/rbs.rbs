@@ -1,0 +1,13 @@
+module M
+  class Schema
+    attr_accessor flag: untyped
+    attr_accessor dead: untyped
+    attr_accessor sibling: String?
+
+    def initialize: (?flag: untyped, ?dead: untyped, ?sibling: String?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
+  end
+end
