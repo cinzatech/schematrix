@@ -8,8 +8,8 @@ module M
       ?alt: Schema::Defs::Address?
     ) -> void
 
-    def []: (Symbol) -> untyped
+    def []: (Symbol) -> top
 
-    def []=: (Symbol, untyped) -> untyped
+    def []=: (Symbol, top) -> top
   end
 end

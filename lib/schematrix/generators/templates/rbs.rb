@@ -8,11 +8,15 @@ module Schematrix
       class Rbs < Base
         include TypeComposer
 
-        RBS_TYPE_UNTYPED = "untyped"
+        # D25: RBS renders `top` where Sorbet renders T.anything. The
+        # untyped spelling is retired from generated output: top is
+        # the tracked top type, writes stay fully accepting but reads
+        # must be narrowed.
+        RBS_TYPE_TOP = "top"
 
         # Maps JSON Schema scalar types to their RBS equivalents
         RBS_SCALAR_TYPES = {
-          nil => RBS_TYPE_UNTYPED,
+          nil => RBS_TYPE_TOP,
           TYPE_STRING => "String",
           TYPE_INTEGER => "Integer",
           TYPE_NUMBER => "Float",
@@ -24,10 +28,10 @@ module Schematrix
 
         # RBS syntax hooks for TypeComposer
 
-        def untyped = RBS_TYPE_UNTYPED
+        def untyped = RBS_TYPE_TOP
 
         def scalar_type(type)
-          RBS_SCALAR_TYPES.fetch(type, RBS_TYPE_UNTYPED)
+          RBS_SCALAR_TYPES.fetch(type, RBS_TYPE_TOP)
         end
 
         def array_of(element) = "Array[#{element}]"
@@ -46,7 +50,7 @@ module Schematrix
         # Array element unions parenthesize when multiple terms remain,
         # keeping the union one element type inside Array[...]
         def element_union(combined, terms)
-          return combined if combined == RBS_TYPE_UNTYPED
+          return combined if combined == RBS_TYPE_TOP
 
           terms.size > 1 ? "(#{combined})" : combined
         end

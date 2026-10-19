@@ -1,12 +1,12 @@
 module M
   class Schema
     attr_accessor name: String?
-    attr_accessor legacy: untyped
+    attr_accessor legacy: top
 
-    def initialize: (?name: String?, ?legacy: untyped) -> void
+    def initialize: (?name: String?, ?legacy: top) -> void
 
-    def []: (Symbol) -> untyped
+    def []: (Symbol) -> top
 
-    def []=: (Symbol, untyped) -> untyped
+    def []=: (Symbol, top) -> top
   end
 end

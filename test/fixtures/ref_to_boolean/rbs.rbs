@@ -1,13 +1,13 @@
 module M
   class Schema
-    attr_accessor flag: untyped
-    attr_accessor dead: untyped
+    attr_accessor flag: top
+    attr_accessor dead: top
     attr_accessor sibling: String?
 
-    def initialize: (?flag: untyped, ?dead: untyped, ?sibling: String?) -> void
+    def initialize: (?flag: top, ?dead: top, ?sibling: String?) -> void
 
-    def []: (Symbol) -> untyped
+    def []: (Symbol) -> top
 
-    def []=: (Symbol, untyped) -> untyped
+    def []=: (Symbol, top) -> top
   end
 end

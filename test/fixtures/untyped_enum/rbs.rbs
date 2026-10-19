@@ -1,11 +1,11 @@
 module M
   class Schema
-    attr_accessor data: untyped
+    attr_accessor data: top
 
-    def initialize: (?data: untyped) -> void
+    def initialize: (?data: top) -> void
 
-    def []: (Symbol) -> untyped
+    def []: (Symbol) -> top
 
-    def []=: (Symbol, untyped) -> untyped
+    def []=: (Symbol, top) -> top
   end
 end

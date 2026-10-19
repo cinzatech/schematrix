@@ -8,8 +8,8 @@ module M
       ?web_hook: Schema::Props::WebHook?
     ) -> void
 
-    def []: (Symbol) -> untyped
+    def []: (Symbol) -> top
 
-    def []=: (Symbol, untyped) -> untyped
+    def []=: (Symbol, top) -> top
   end
 end

@@ -5,8 +5,8 @@ module M
 
     def initialize: (name: String, ?age: Integer?) -> void
 
-    def []: (Symbol) -> untyped
+    def []: (Symbol) -> top
 
-    def []=: (Symbol, untyped) -> untyped
+    def []=: (Symbol, top) -> top
   end
 end

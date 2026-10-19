@@ -6,9 +6,9 @@ module M
 
         def initialize: (?v: String?) -> void
 
-        def []: (Symbol) -> untyped
+        def []: (Symbol) -> top
 
-        def []=: (Symbol, untyped) -> untyped
+        def []=: (Symbol, top) -> top
       end
     end
   end
