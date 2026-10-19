@@ -166,4 +166,20 @@ class TestComposition < Minitest::Test
   def test_all_of_conflict_rbi
     assert_fixture("all_of_conflict", "rbi")
   end
+
+  def test_all_of_array_items_plain_ruby
+    assert_fixture("all_of_array_items", "plain_ruby")
+  end
+
+  def test_all_of_array_items_rbs
+    assert_fixture("all_of_array_items", "rbs")
+  end
+
+  def test_all_of_array_items_sorbet_ruby
+    assert_fixture("all_of_array_items", "sorbet_ruby")
+  end
+
+  def test_all_of_array_items_rbi
+    assert_fixture("all_of_array_items", "rbi")
+  end
 end

@@ -681,12 +681,27 @@ module Schematrix
 
       own.with(
         type: own.type | other.type,
+        items: conjoin_items(own, other),
         ref: own.ref || other.ref,
         any_of: own.any_of + other.any_of,
         one_of: own.one_of + other.one_of,
         required: own.required || other.required,
         intersection: true,
       )
+    end
+
+    # allOf element intersection: array declarations conjoin their
+    # items (an open tail is the identity, since it accepts any
+    # element); declarations that are not arrays say nothing about
+    # the element and leave it alone.
+    def conjoin_items(own, other)
+      unless own.type.include?(TYPE_ARRAY) && other.type.include?(TYPE_ARRAY)
+        return own.items
+      end
+      return other.items if own.items.nil?
+      return own.items if other.items.nil?
+
+      conjoin_schemas(own.items, other.items)
     end
 
     # Union of property contributions. :untyped marks a branch that

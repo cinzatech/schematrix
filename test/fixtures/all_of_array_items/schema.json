@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "values": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "allOf": [
+    {
+      "properties": {
+        "values": {
+          "type": "array",
+          "items": { "type": "integer" }
+        }
+      }
+    }
+  ]
+}
