@@ -214,7 +214,8 @@ module Schematrix
       tokens(uri.fragment).reduce(node) do |current, token|
         step(current, token)
       end
-    rescue IndexError, TypeError
+    rescue IndexError, TypeError, ArgumentError
+      # ArgumentError: a non-numeric token against an array node
       raise UnresolvableLocatorError, "Nothing found at #{uri}"
     end
 
