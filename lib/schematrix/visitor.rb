@@ -238,6 +238,14 @@ module Schematrix
           inferred = const_type(node.const)
           type = Set[inferred] unless inferred.nil?
         end
+        # an enum with no declared type infers the union of its
+        # values' clean classes, same rule as const; values that do
+        # not map cleanly contribute nothing (their alternatives'
+        # types still cover the enumerated scalars, over-accepting)
+        if type.empty? && !node.enum.nil?
+          inferred = node.enum.filter_map { |value| const_type(value) }.uniq
+          type = Set[*inferred] unless inferred.empty?
+        end
         enum = node.enum
         default = node.default
         title = node.title

@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor data: top
+    attr_accessor data: (Integer | bool | String)?
 
-    def initialize: (?data: top) -> void
+    def initialize: (?data: (Integer | bool | String)?) -> void
 
     def []: (String) -> top
 

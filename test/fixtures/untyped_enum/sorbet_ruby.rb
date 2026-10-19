@@ -4,14 +4,14 @@ module M
   class Schema
     ORIGINAL_KEYS = { "data" => :data }.freeze
 
-    sig { params(data: T.anything).void }
+    sig { params(data: T.nilable(T.any(Integer, T::Boolean, String))).void }
     def initialize(data: nil)
       @data = data
 
       @_extra = T.let({}, T::Hash[String, T.anything])
     end
 
-    sig { returns(T.anything) }
+    sig { returns(T.nilable(T.any(Integer, T::Boolean, String))) }
     attr_accessor :data
 
     sig { params(key: String).returns(T.anything) }
