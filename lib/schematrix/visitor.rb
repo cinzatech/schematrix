@@ -446,7 +446,7 @@ module Schematrix
     # name; they fall back to untyped in the element union), while $ref
     # entries keep their target's class through the recorded edge.
     def visit_prefix_items(path, node)
-      node["prefixItems"]&.filter_map do |item|
+      node["prefixItems"]&.map do |item|
         visit_schema(path, "prefixItems", item, register_object: false)
       end || []
     end
