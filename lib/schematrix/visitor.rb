@@ -692,22 +692,56 @@ module Schematrix
     # Union of property contributions. :untyped marks a branch that
     # does not constrain the property (D12); it swallows the whole
     # union, because any value is then acceptable for some branch.
+    # A bottom (false) contribution accepts nothing, so it
+    # contributes nothing; every-bottom is bottom.
     def union_schemas(contribs, parent: nil)
       required = parent&.required || false
       has_untyped = contribs.include?(:untyped)
       has_untyped ||= contribs.any? { |c| c.is_a?(Schema) && c.untyped? }
       return Schema::Empty.with(required:) if has_untyped
 
-      schemas = contribs
+      schemas = contribs.reject { |schema| schema.type == Set[TYPE_BOTTOM] }
+      return contribs.first if schemas.empty?
       return schemas.first if schemas.size == 1
 
       schemas.first.with(
         type: schemas.reduce(Set.new) { |set, schema| set | schema.type },
+        items: union_items(schemas),
+        prefix_items: union_prefix_items(schemas),
         ref: schemas.filter_map(&:ref).first,
         any_of: schemas.flat_map(&:any_of),
         one_of: schemas.flat_map(&:one_of),
         required:,
       )
+    end
+
+    # Element terms of the union: array-typed contributions merge
+    # their items instead of letting the first one win silently (an
+    # instance from a later branch would then miss its declared
+    # type); an open tail (items nil) accepts any element and widens
+    # the element union to untyped.
+    def union_items(schemas)
+      arrays = schemas.select { |schema| schema.type.include?(TYPE_ARRAY) }
+      return arrays.first&.items if arrays.size <= 1
+      return nil if arrays.any? { |schema| schema.items.nil? }
+
+      # Element schemas are never absent (only the catch-all schema
+      # visits with required: false), so the merged element keeps the
+      # required-ness every contribution was visited with instead of
+      # the pool default, which would nilable-wrap the element.
+      union_schemas(arrays.filter_map(&:items)).with(required: true)
+    end
+
+    # Tuple terms of the union: prefix items of distinct array
+    # contributions have no positional merge, so differing tuples
+    # widen to no tuple constraint and the items union alone speaks
+    # for the element.
+    def union_prefix_items(schemas)
+      arrays = schemas.select { |schema| schema.type.include?(TYPE_ARRAY) }
+      return arrays.first&.prefix_items if arrays.size <= 1
+      return [] if arrays.map(&:prefix_items).uniq.size > 1
+
+      arrays.first.prefix_items
     end
 
     # allOf intersects additionalProperties (D12): any false closes

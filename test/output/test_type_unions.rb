@@ -50,4 +50,20 @@ class TestTypeUnions < Minitest::Test
   def test_object_or_boolean_rbi
     assert_fixture("object_or_boolean", "rbi")
   end
+
+  def test_union_array_items_plain_ruby
+    assert_fixture("union_array_items", "plain_ruby")
+  end
+
+  def test_union_array_items_rbs
+    assert_fixture("union_array_items", "rbs")
+  end
+
+  def test_union_array_items_sorbet_ruby
+    assert_fixture("union_array_items", "sorbet_ruby")
+  end
+
+  def test_union_array_items_rbi
+    assert_fixture("union_array_items", "rbi")
+  end
 end
