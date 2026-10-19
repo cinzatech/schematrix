@@ -4,8 +4,6 @@ module M
       @_extra = {}
     end
 
-    attr_accessor
-
     def [](key)
       @_extra[key]
     end

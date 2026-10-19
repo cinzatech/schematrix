@@ -10,10 +10,14 @@ module Schematrix
 
         private
 
-        def plain_attr_accessor_list
-          return "" if @properties.nil?
+        # The whole attr_accessor line, or nothing when the schema
+        # declares no properties: bare attr_accessor is a load-time
+        # ArgumentError.
+        def plain_attr_accessor_line
+          return "" if @properties.nil? || @properties.empty?
 
-          @properties.keys.map { |key| key.to_sym.inspect }.join(", ")
+          names = @properties.keys.map { |key| key.to_sym.inspect }.join(", ")
+          "attr_accessor #{names}"
         end
       end
     end

@@ -35,6 +35,22 @@ class TestAdvancedObjects < Minitest::Test
     assert_fixture("additional_properties_false", "rbi")
   end
 
+  def test_catch_all_only_plain_ruby
+    assert_fixture("catch_all_only", "plain_ruby")
+  end
+
+  def test_catch_all_only_rbs
+    assert_fixture("catch_all_only", "rbs")
+  end
+
+  def test_catch_all_only_sorbet_ruby
+    assert_fixture("catch_all_only", "sorbet_ruby")
+  end
+
+  def test_catch_all_only_rbi
+    assert_fixture("catch_all_only", "rbi")
+  end
+
   def test_additional_properties_schema_plain_ruby
     assert_fixture("additional_properties_schema", "plain_ruby")
     assert_fixture("additional_properties_schema", "plain_ruby", path: "tags")
