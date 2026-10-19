@@ -6,6 +6,17 @@ module Schematrix
   class UnresolvableLocatorError < StandardError
   end
 
+  # Raised when a loaded document cannot be a JSON Schema at all:
+  # anything but an object or a boolean
+  class InvalidSchemaError < StandardError
+  end
+
+  # Raised when a document's $schema header names a dialect other
+  # than the one schematrix targets; the compiler approximates
+  # 2020-12 semantics only
+  class UnsupportedDialectError < StandardError
+  end
+
   # Loads and caches schema documents, and resolves locator URIs to the
   # node they point at. Each file is read and parsed at most once.
   # Fragments that are plain names (no leading slash) resolve through
@@ -18,6 +29,16 @@ module Schematrix
     # File extensions probed for a mapped remote URI, in order: the
     # exact mirrored path first, then common schema file extensions.
     REMOTE_EXTENSIONS = ["", ".json", ".yaml", ".yml"].freeze
+
+    # Ruby classes a parsed document may have to be a schema at all
+    SCHEMA_CLASSES = [Hash, TrueClass, FalseClass].freeze
+
+    # Dialects this tool targets: the 2020-12 core metaschema, http
+    # and https spellings, with or without a trailing empty fragment.
+    SUPPORTED_DIALECTS = %w[
+      https://json-schema.org/draft/2020-12/schema
+      http://json-schema.org/draft/2020-12/schema
+    ].freeze
 
     def initialize(schema_dirs: [])
       @schema_dirs = schema_dirs.map { |dir| File.expand_path(dir) }
@@ -139,16 +160,45 @@ module Schematrix
     end
 
     # Reads and parses a document: local files directly, remote
-    # locators through the schema directory mapping (D16).
+    # locators through the schema directory mapping (D16). Every
+    # document is validated on first load (see validate_document).
     def read_document(uri)
-      case uri.scheme
-      when "file"
-        YAML.safe_load_file(uri.path)
-      when "http", "https"
-        YAML.safe_load_file(map_remote(uri))
-      else
-        raise UnresolvableLocatorError, "Unsupported scheme in #{uri}"
+      document =
+        case uri.scheme
+        when "file"
+          YAML.safe_load_file(uri.path)
+        when "http", "https"
+          YAML.safe_load_file(map_remote(uri))
+        else
+          raise UnresolvableLocatorError, "Unsupported scheme in #{uri}"
+        end
+
+      validate_document(document, uri)
+      document
+    end
+
+    # Early refusal at load time (the D11 adoption scope): a document
+    # that cannot be a schema (anything but an object or a boolean)
+    # fails loudly instead of crashing later on keyword reads, and a
+    # $schema header naming a dialect other than 2020-12 is rejected
+    # up front rather than silently approximated. Documents without
+    # a header are read as 2020-12.
+    def validate_document(document, uri)
+      unless SCHEMA_CLASSES.any? { |type| document.is_a?(type) }
+        raise InvalidSchemaError,
+              "#{uri} is not a schema document: expected an object " \
+                "or a boolean, got #{document.class}"
       end
+
+      dialect = document["$schema"] if document.is_a?(Hash)
+      return if dialect.nil?
+
+      normalized = dialect.to_s.chomp("#")
+      return if SUPPORTED_DIALECTS.include?(normalized)
+
+      raise UnsupportedDialectError,
+            "#{uri} declares dialect #{dialect}, schematrix supports " \
+              "#{SUPPORTED_DIALECTS.first}"
     end
 
     # D16 mapping: a remote locator resolves to the first existing
