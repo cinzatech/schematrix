@@ -107,6 +107,14 @@ module Schematrix
   # their classes get generated. It never visits ref targets itself: the
   # caller (see Compiler) decides when and whether to do that.
   #
+  # Nodes are consumed as instances of the metaschema model
+  # (Schematrix::Meta::Schema, D22): compile converts raw store
+  # documents at its boundary, and from_h coerces nested schema
+  # slots on the way in, so reads are typed throughout. The $ref
+  # rewrite algebra (except/merge in resolve_reference) stays on raw
+  # String-keyed hashes: to_h dumps a node, the algebra merges, and
+  # from_h loads the result back (see present_slots).
+  #
   # Positions inside the document are threaded down as explicit path
   # segments (leading empty segment for the document root, e.g.
   # ["", "properties", "tags"]); every locator the visitor derives is a
@@ -147,6 +155,11 @@ module Schematrix
       dependentSchemas
     ].freeze
 
+    # The model materializes the metaschema's constructor defaults for
+    # keys a document left absent (properties: {}, required: [], ...).
+    # to_h of a fresh instance is exactly that default set.
+    MODEL_DEFAULTS = Schematrix::Meta::Schema.new.to_h.freeze
+
     # The findings of a visit: the object schemas the subtree contains
     # by locator, and edges to object schemas living elsewhere that it
     # references.
@@ -165,6 +178,9 @@ module Schematrix
       # Seed the path from the locator's fragment: a visitor may start
       # at the document root ("/" seeds the nameless [""] site) or at
       # an interior locator the compiler discovered through an edge.
+      # The store hands out raw parsed documents; the model boundary
+      # conversion happens here (D22).
+      node = Schematrix::Meta::Schema.from_h(node) if node.is_a?(Hash)
       path = @locator.fragment.split("/")
       name = path.pop || "" # document root is nameless
       visit_schema(path, name, node, required: false)
@@ -173,6 +189,17 @@ module Schematrix
     end
 
     private
+
+    # The document's own keys, as a String-keyed hash: the node's
+    # to_h with the slots the document left absent (which from_h
+    # filled with the metaschema's defaults) stripped again. A key
+    # explicitly carrying exactly its default value is
+    # indistinguishable from an absent one and stays stripped; both
+    # spellings compile identically. This is what the $ref rewrite
+    # algebra merges with.
+    def present_slots(node)
+      node.to_h.reject { |key, value| value == MODEL_DEFAULTS[key] }
+    end
 
     # Compiles the schema at `path + [name]`. The path segments name
     # the containing chain (properties, $defs, anyOf_0, ...); an
@@ -201,18 +228,21 @@ module Schematrix
       with_ref_base(inline_base) do
         IGNORED_KEYWORDS.each { |keyword| ignore_keyword(site, node, keyword) }
 
-        type = Set.new(Array(node["type"]))
+        type = Set.new(Array(node.type))
         # a const with no declared type infers from the value's
-        # Ruby class; values that do not map cleanly fall back to untyped
-        if type.empty? && node.key?("const")
-          inferred = const_type(node["const"])
+        # Ruby class; values that do not map cleanly fall back to
+        # untyped. A const of explicit null is indistinguishable
+        # from an absent const on the model and stays untyped
+        # (over-accepting).
+        if type.empty? && !node.const.nil?
+          inferred = const_type(node.const)
           type = Set[inferred] unless inferred.nil?
         end
-        enum = node["enum"]
-        default = node["default"]
-        title = node["title"]
-        description = node["description"]
-        items = visit_subtree(site, "items", node)
+        enum = node.enum
+        default = node.default
+        title = node.title
+        description = node.description
+        items = visit_subtree(site, "items", node.items)
         prefix_items = visit_prefix_items(site, node)
 
         # Composition context (D2): a node that is the document root or
@@ -274,9 +304,11 @@ module Schematrix
 
     # Notes a keyword without codegen representation on the
     # document's registry; the store logs it the first time it is
-    # seen in this document.
+    # seen in this document. Presence reads through the model: a
+    # keyword the document never wrote stays absent after the
+    # default-stripping of present_slots.
     def ignore_keyword(site, node, keyword)
-      return unless node.is_a?(Hash) && node.key?(keyword)
+      return unless present_slots(node).key?(keyword)
 
       # ref_base, not @locator: content inlined from another document
       # belongs to that document (see with_ref_base)
@@ -288,7 +320,9 @@ module Schematrix
     end
 
     # Resolves a $ref, if present, by following the chain of references
-    # to its final target node:
+    # to its final target node (targets come back raw from the store;
+    # the rewrite algebra merges raw hashes and from_h loads the
+    # result back into the model):
     # - object target: keep the node as-is and return the target's locator
     #   as ref, recording the edge so its class is generated; shape-
     #   applying siblings rewrite the node into the allOf-equivalent
@@ -297,9 +331,9 @@ module Schematrix
     #   information is compiled in place of the reference, and no ref.
     # A $dynamicRef resolves through the D9 static approximation first.
     def resolve_reference(site, node)
-      reference = node["$ref"]
-      if reference.nil? && node["$dynamicRef"]
-        dynamic_ref = node["$dynamicRef"]
+      reference = node.ref
+      if reference.nil? && node.dynamic_ref
+        dynamic_ref = node.dynamic_ref
         reference = dynamic_anchor_locator(site, dynamic_ref)
         if reference.nil?
           Schematrix.logger&.debug(
@@ -320,7 +354,9 @@ module Schematrix
         # stood alone, which types as untyped, same as "true");
         # "false" accepts nothing, and visit_schema compiles the whole
         # node to the bottom schema after resolution.
-        return node.except("$ref"), nil, nil if target == true
+        if target == true
+          return Schematrix::Meta::Schema.from_h(siblings_of(node)), nil, nil
+        end
 
         return target, nil, nil
       end
@@ -335,14 +371,14 @@ module Schematrix
         # Annotation-only siblings (title, description, default, ...)
         # and scalar constraints without codegen stay on the pure-ref
         # path, where the edge and the target's class remain.
-        siblings = node.except("$ref")
+        siblings = siblings_of(node)
         if SHAPE_SIBLINGS.any? { |keyword| siblings.key?(keyword) }
           rewritten =
             siblings.merge(
               "type" => Array(siblings["type"]) | [TYPE_OBJECT],
               "allOf" => [{ "$ref" => reference }, *Array(siblings["allOf"])],
             )
-          return rewritten, nil, nil
+          return Schematrix::Meta::Schema.from_h(rewritten), nil, nil
         end
 
         # D23: a target whose whole shape is a catch-all is a plain
@@ -354,7 +390,7 @@ module Schematrix
         if map_target?(target)
           base = document_base(locator)
           base = nil if same_document?(base, ref_base)
-          return target.merge(node.except("$ref")), nil, base
+          return inline_model(target, node), nil, base
         end
 
         @edges << locator
@@ -367,8 +403,22 @@ module Schematrix
         # their own document.
         base = document_base(locator)
         base = nil if same_document?(base, ref_base)
-        [target.merge(node.except("$ref")), nil, base]
+        [inline_model(target, node), nil, base]
       end
+    end
+
+    # The node's own keys beside the reference, ready for the raw
+    # merge algebra: the model's to_h minus the $ref and the slots
+    # the document never wrote (present_slots).
+    def siblings_of(node)
+      present_slots(node).except("$ref")
+    end
+
+    # Merges a raw $ref target with the referencing node's own
+    # siblings (locals win) and loads the result back into the
+    # model for the rest of the visit.
+    def inline_model(target, node)
+      Schematrix::Meta::Schema.from_h(target.merge(siblings_of(node)))
     end
 
     # Raw-node form of the D23 map rule, applied to $ref targets
@@ -505,9 +555,9 @@ module Schematrix
     # Visit subtrees (other than properties), like items or
     # additionalProperties, that contain nested schema definition. It
     # will store object definitions on a nested path by the name of the
-    # branch being visited.
-    def visit_subtree(path, branch_name, node)
-      branch = node[branch_name]
+    # branch being visited. The branch comes from a model slot: a
+    # model instance or a boolean schema.
+    def visit_subtree(path, branch_name, branch)
       return nil if branch.nil?
 
       visit_schema(path, branch_name, branch)
@@ -519,7 +569,7 @@ module Schematrix
     # name; they fall back to untyped in the element union), while $ref
     # entries keep their target's class through the recorded edge.
     def visit_prefix_items(path, node)
-      node["prefixItems"]&.map do |item|
+      node.prefix_items&.map do |item|
         visit_schema(path, "prefixItems", item, register_object: false)
       end || []
     end
@@ -548,7 +598,7 @@ module Schematrix
     # "no catch-all" to the templates) survives only for false, or
     # for absence when closed_shapes was requested.
     def visit_additional_properties(path, node)
-      branch = node["additionalProperties"]
+      branch = node.additional_properties
       return nil if branch.is_a?(FalseClass)
       return nil if branch.nil? && @closed_shapes
       return Schema::Empty if branch.nil?
@@ -581,13 +631,13 @@ module Schematrix
     # branches to objects (their target keeps its own class via the
     # recorded edge).
     def split_value_branches(node)
-      any_branches = Array(node["anyOf"])
+      any_branches = Array(node.any_of)
       mergeable, any_variants =
         any_branches.partition do |branch|
-          branch.is_a?(Hash) && branch["$ref"].nil? &&
-            Array(branch["type"]).include?(TYPE_OBJECT)
+          branch.is_a?(Schematrix::Meta::Schema) && branch.ref.nil? &&
+            Array(branch.type).include?(TYPE_OBJECT)
         end
-      { mergeable:, any_of: any_variants, one_of: Array(node["oneOf"]) }
+      { mergeable:, any_of: any_variants, one_of: Array(node.one_of) }
     end
 
     # Object-context composition (Phase 3): merge the branch
@@ -600,12 +650,12 @@ module Schematrix
     # a condition and is ignored.
     def compile_object(path, node)
       body = node_body(path, node)
-      Array(node["allOf"]).each { |raw| body = conjoin_body(path, body, raw) }
-      body = union_list_body(path, body, node["anyOf"])
-      body = union_list_body(path, body, node["oneOf"])
-      body = union_body(path, body, node["then"])
-      body = union_body(path, body, node["else"])
-      node["dependentSchemas"].to_a.each do |_key, raw|
+      Array(node.all_of).each { |raw| body = conjoin_body(path, body, raw) }
+      body = union_list_body(path, body, node.any_of)
+      body = union_list_body(path, body, node.one_of)
+      body = union_body(path, body, node.then_)
+      body = union_body(path, body, node.else_)
+      node.dependent_schemas.to_a.each do |_key, raw|
         body = union_body(path, body, raw)
       end
       body
@@ -633,24 +683,36 @@ module Schematrix
     # inside its properties still record their edges, because those
     # classes are referenced from the merged result. The branch's
     # content compiles against the target's document, so nested
-    # relative refs resolve where they were written.
+    # relative refs resolve where they were written. Boolean targets
+    # contribute an open body (true) or nothing at all (false,
+    # uninhabitable, over-accepting like every skipped false branch).
     def branch_body(path, raw)
-      return node_body(path, raw) unless raw.is_a?(Hash) && !raw["$ref"].nil?
+      unless raw.is_a?(Schematrix::Meta::Schema) && !raw.ref.nil?
+        return node_body(path, raw)
+      end
 
-      target, locator = final_target(ref_base, raw["$ref"])
+      target, locator = final_target(ref_base, raw.ref)
       return node_body(path, raw) if target.nil?
 
-      with_ref_base(document_base(locator)) { node_body(path, target) }
+      if target == true
+        Body.new(properties: {}, additional_properties: Schema::Empty)
+      elsif target == false
+        nil
+      else
+        with_ref_base(document_base(locator)) do
+          node_body(path, Schematrix::Meta::Schema.from_h(target))
+        end
+      end
     end
 
     # Visits a node's own properties at the given path. Shared by
     # the node itself and by merged branches, so nested classes of a
     # merged branch land under the merging node's locator.
     def compile_properties(path, node)
-      required_props = Set.new(node["required"])
+      required_props = Set.new(node.required)
       properties_path = path + ["properties"]
       pairs =
-        node["properties"]&.filter_map do |prop_name, body|
+        node.properties.filter_map do |prop_name, body|
           schema =
             visit_schema(
               properties_path,
@@ -668,9 +730,11 @@ module Schematrix
     # a `false` branch would make the schema uninhabitable and is
     # skipped (approximation: over-accepting, never under-accepting).
     def conjoin_body(path, acc, raw)
-      return acc unless raw.is_a?(Hash)
+      return acc unless raw.is_a?(Schematrix::Meta::Schema)
 
       branch = branch_body(path, raw)
+      return acc if branch.nil?
+
       properties =
         acc
           .properties
@@ -700,7 +764,7 @@ module Schematrix
           if raw == true
             next Body.new(properties: {}, additional_properties: Schema::Empty)
           end
-          next nil if raw == false || !raw.is_a?(Hash)
+          next nil if raw == false || !raw.is_a?(Schematrix::Meta::Schema)
 
           branch_body(path, raw)
         end
@@ -726,7 +790,10 @@ module Schematrix
     # siblings (each keyword entry is one schema, not a list of
     # alternatives).
     def union_body(path, acc, raw)
-      return acc unless raw.is_a?(Hash)
+      return acc unless raw.is_a?(Schematrix::Meta::Schema)
+
+      branch = branch_body(path, raw)
+      return acc if branch.nil?
 
       branch = branch_body(path, raw)
       properties =
