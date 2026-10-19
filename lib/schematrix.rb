@@ -1,6 +1,7 @@
 require "tty-logger"
 
 require_relative "schematrix/version"
+require_relative "schematrix/meta"
 require_relative "schematrix/compiler"
 
 # Generates Ruby code and RBS signatures from JSON Schema definition

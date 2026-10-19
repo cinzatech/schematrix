@@ -1,2 +1,3 @@
 --plugins=plugin/trailing_comma
 --ignore=test/fixtures/**/*
+--ignore=lib/schematrix/meta/**/*

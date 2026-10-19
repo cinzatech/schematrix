@@ -1,8 +1,10 @@
 #!/bin/bash
 # Pre-commit: the repo must be stree- and rubocop-clean before committing.
 # stree owns layout and formatting, rubocop owns everything else (see
-# .streerc and .rubocop.yml). Fixtures are golden files of generated code
-# and are excluded from both via .streerc / .rubocop.yml.
+# .streerc and .rubocop.yml). Fixtures and the generated meta model are
+# golden files of generated code and are excluded from both (the stree
+# ignore in .streerc only applies to implicit discovery, so explicit
+# file lists filter them here too).
 
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
@@ -12,15 +14,12 @@ if ! command -v bundle >/dev/null 2>&1; then
   exit 1
 fi
 
-shopt -s globstar
-
 echo "pre-commit: stree check"
-bundle exec stree check \
-  lib/**/*.rb \
-  exe/*.rb \
-  test/**/*.rb \
-  scripts/*.rb \
-  Rakefile
+stree_files=$( {
+  git ls-files "lib/*.rb" "lib/**/*.rb" "exe/*.rb" "test/*.rb" \
+    "test/**/*.rb" "scripts/*.rb" "Rakefile"
+} | grep -v "^lib/schematrix/meta/" )
+bundle exec stree check $stree_files
 
 echo "pre-commit: rubocop"
 bundle exec rubocop
