@@ -175,7 +175,7 @@ running from the repository root.
 
 Produces mutable Ruby classes. For each `object` type encountered in the schema (including nested objects), the generator:
 
-1. Derives a **class name** from the schema file name (up to the first period) and the path to the object within the document, converted to PascalCase.
+1. Derives a **class name** from the schema file name (up to the first period) and the path to the object within the document, converted to PascalCase. Container provenance always encodes: classes from properties nest under a `Props` module level, classes from `$defs` under a `Defs` module level, so the two can never collide.
 2. Converts all **property names** from camelCase to snake_case.
 3. Emits a class with a **keyword-argument constructor** (`def initialize(prop_a:, prop_b:)`) and an `attr_accessor` for every property.
 4. Writes one **file per object** into the output directory, with snake_case filenames.
@@ -206,7 +206,7 @@ For a schema like `complex-object.schema.json`:
 The generator produces two files:
 
 - `complex_object.rb` — the root class with `name` and `address` properties.
-- `complex_object/address.rb` — a standalone `ComplexObject::Address` class.
+- `complex_object/props/address.rb` — a standalone `ComplexObject::Props::Address` class, nested in module declarations so every file loads in any order.
 
 ---
 
