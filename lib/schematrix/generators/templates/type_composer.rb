@@ -110,12 +110,20 @@ module Schematrix
         # D13 element union: the union of prefix item types, plus the
         # items type when present, plus untyped whenever the tail is
         # open (no items). items: false closes the tail and adds no
-        # term. Inline object prefix items fall back to untyped (no
-        # stable class name); $ref items keep their class; map-shaped
-        # items are plain Hashes (D23).
+        # term, and a false prefix item accepts nothing and likewise
+        # contributes no term. Inline object prefix items fall back to
+        # untyped (no stable class name); $ref items keep their class;
+        # map-shaped items are plain Hashes (D23).
         def array_element_type(path, schema)
           terms =
-            schema.prefix_items.map { |item| prefix_item_type(path, item) }.uniq
+            schema
+              .prefix_items
+              .filter_map do |item|
+                next if item.type.include?(TYPE_BOTTOM)
+
+                prefix_item_type(path, item)
+              end
+              .uniq
           if schema.items.nil?
             terms << untyped
           elsif !schema.items.type.include?(TYPE_BOTTOM)

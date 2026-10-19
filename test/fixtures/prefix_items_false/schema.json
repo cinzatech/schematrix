@@ -1,0 +1,14 @@
+{
+  "title": "TupleWithFalse",
+  "type": "object",
+  "properties": {
+    "flags": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "string" },
+        false
+      ],
+      "items": false
+    }
+  }
+}

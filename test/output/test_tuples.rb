@@ -50,4 +50,20 @@ class TestTuples < Minitest::Test
   def test_prefix_items_closed_rbi
     assert_fixture("prefix_items_closed", "rbi")
   end
+
+  def test_prefix_items_false_plain_ruby
+    assert_fixture("prefix_items_false", "plain_ruby")
+  end
+
+  def test_prefix_items_false_rbs
+    assert_fixture("prefix_items_false", "rbs")
+  end
+
+  def test_prefix_items_false_sorbet_ruby
+    assert_fixture("prefix_items_false", "sorbet_ruby")
+  end
+
+  def test_prefix_items_false_rbi
+    assert_fixture("prefix_items_false", "rbi")
+  end
 end
