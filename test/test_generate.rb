@@ -54,6 +54,24 @@ class TestGenerate < Minitest::Test
     end
   end
 
+  def test_paths_with_spaces_compile_and_generate
+    Dir.mktmpdir do |dir|
+      schema = write_schema(File.join(dir, "with space", "my doc.json"))
+
+      output = File.join(dir, "out")
+      Schematrix.generate(
+        generators: [
+          Schematrix::Generators::PlainRuby.new(output, MODULE_NAME),
+        ],
+        input_files: [schema],
+      )
+
+      generated = File.read(File.join(output, "my_doc.rb"))
+      assert_match(/class MyDoc/, generated)
+      assert_match(/def initialize\(id:/, generated)
+    end
+  end
+
   def test_same_basename_inputs_raise_before_writing
     Dir.mktmpdir do |dir|
       one = write_schema(File.join(dir, "one", "order.json"))

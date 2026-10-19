@@ -17,7 +17,8 @@ module Schematrix
       # constant names, and characters constant names cannot carry
       # fold to separators ("web.hook" -> "WebHook").
       def class_name_from_path(uri, name = nil)
-        file = File.basename(uri.path).split(".").first
+        file =
+          File.basename(URI::RFC2396_PARSER.unescape(uri.path)).split(".").first
         segments = [
           file,
           *uri.fragment.split("/"),

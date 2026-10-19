@@ -155,6 +155,10 @@ module Schematrix
       token.to_s.gsub("~", "~0").gsub("/", "~1")
     end
 
+    def unescape_path(path)
+      URI::RFC2396_PARSER.unescape(path)
+    end
+
     def document(uri)
       @documents[document_key(uri)] ||= read_document(uri)
     end
@@ -166,7 +170,7 @@ module Schematrix
       document =
         case uri.scheme
         when "file"
-          YAML.safe_load_file(uri.path)
+          YAML.safe_load_file(unescape_path(uri.path))
         when "http", "https"
           YAML.safe_load_file(map_remote(uri))
         else
