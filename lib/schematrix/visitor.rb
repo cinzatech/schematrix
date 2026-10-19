@@ -162,16 +162,11 @@ module Schematrix
     def visit_schema(path, name, node, required: true, register_object: true)
       site = path + [name]
 
-      # JSON Schema allows "true" as a catch-all. A class emitted from
-      # a true schema is open: its catch-all accepts anything (D12).
-      if node.is_a? TrueClass
-        if register_object
-          @objects[current_locator(site)] = Schema::Empty.with(
-            additional_properties: Schema::Empty,
-          )
-        end
-        return Schema::Empty
-      end
+      # JSON Schema allows "true" as a catch-all. It types as
+      # untyped and creates no class (D24): a class would force object
+      # shape on values that may be scalars, so no slot type may ever
+      # point at one. A document that is just true produces no output.
+      return Schema::Empty if node.is_a?(TrueClass)
 
       # JSON Schema "false" accepts nothing: no class, bottom type
       return Schema::Bottom if node.is_a?(FalseClass)

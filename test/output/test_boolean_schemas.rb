@@ -1,5 +1,7 @@
 require_relative "../test_helper"
 
+require "tmpdir"
+
 class TestBooleanSchemas < Minitest::Test
   include SchematrixTestHelper
 
@@ -81,5 +83,22 @@ class TestBooleanSchemas < Minitest::Test
 
   def test_ref_to_boolean_rbi
     assert_fixture("ref_to_boolean", "rbi")
+  end
+
+  def test_document_that_is_just_true_produces_no_output
+    Dir.mktmpdir do |dir|
+      schema = File.join(dir, "true.json")
+      File.write(schema, "true")
+      output = File.join(dir, "out")
+
+      Schematrix.generate(
+        generators: [
+          Schematrix::Generators::PlainRuby.new(output, MODULE_NAME),
+        ],
+        input_files: [schema],
+      )
+
+      assert_empty Dir.glob("#{output}/**/*")
+    end
   end
 end
