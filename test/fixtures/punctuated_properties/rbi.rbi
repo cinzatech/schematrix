@@ -2,6 +2,11 @@
 
 module M
   class Schema
+    ORIGINAL_KEYS = {
+      "example.com" => :example_com,
+      "web.hook" => :web_hook
+    }.freeze
+
     sig do
       params(
         example_com: T.nilable(String),
@@ -27,12 +32,24 @@ module M
     def web_hook=(web_hook)
     end
 
-    sig { params(key: Symbol).returns(T.anything) }
+    sig { params(key: String).returns(T.anything) }
     def [](key)
     end
 
-    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    sig { params(key: String, value: T.anything).returns(T.anything) }
     def []=(key, value)
+    end
+
+    sig { params(value: T.anything).returns(T.anything) }
+    def self.coerce_web_hook(value)
+    end
+
+    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    def self.from_h(hash)
+    end
+
+    sig { returns(T::Hash[String, T.anything]) }
+    def to_h
     end
   end
 end

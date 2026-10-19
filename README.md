@@ -64,16 +64,65 @@ This produces `app/generated/person.rb`:
 ```ruby
 module MyApp
   class Person
+    ORIGINAL_KEYS = {
+      "firstName" => :first_name,
+      "lastName" => :last_name,
+      "age" => :age
+    }.freeze
+
     def initialize(first_name:, last_name:, age: nil)
       @first_name = first_name
       @last_name = last_name
       @age = age
+
+      @_extra = {}
     end
 
     attr_accessor :first_name, :last_name, :age
+
+    def [](key)
+      @_extra[key]
+    end
+
+    def []=(key, value)
+      @_extra[key] = value
+    end
+
+    def self.from_h(hash)
+      instance =
+        new(
+          first_name: hash["firstName"],
+          last_name: hash["lastName"],
+          age: hash["age"]
+        )
+
+      hash.each do |key, value|
+        next if ORIGINAL_KEYS.key?(key)
+
+        instance[key] = value
+      end
+      instance
+    end
+
+    def to_h
+      result = {}
+      result["firstName"] = @first_name unless @first_name.nil?
+      result["lastName"] = @last_name unless @last_name.nil?
+      result["age"] = @age unless @age.nil?
+      @_extra.each { |key, value| result[key] = value }
+      result
+    end
   end
 end
 ```
+
+Every generated class carries `ORIGINAL_KEYS`, the map from the
+schema's property names to the generated accessor symbols, plus a
+`from_h`/`to_h` pair that loads and dumps documents under those
+original names: nested object schemas load through their own
+`from_h`, unknown keys ride the catch-all (`[]`/`[]=`) with their
+original String keys, and absent keys keep their constructor
+defaults.
 
 > Note: YAML is supported as well for schema definitions
 

@@ -1,29 +1,51 @@
 # typed: strict
 
 module M
-  module Schema
+  class Schema
     module Props
-      module L1
+      class L1
         module Props
           class L2
+            ORIGINAL_KEYS = { "val" => :val }.freeze
+
             sig { params(val: T.nilable(String)).void }
             def initialize(val: nil)
               @val = val
 
-              @_extra = T.let({}, T::Hash[Symbol, T.anything])
+              @_extra = T.let({}, T::Hash[String, T.anything])
             end
 
             sig { returns(T.nilable(String)) }
             attr_accessor :val
 
-            sig { params(key: Symbol).returns(T.anything) }
+            sig { params(key: String).returns(T.anything) }
             def [](key)
               @_extra[key]
             end
 
-            sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+            sig { params(key: String, value: T.anything).returns(T.anything) }
             def []=(key, value)
               @_extra[key] = value
+            end
+
+            sig { params(hash: T::Hash[String, T.anything]).returns(L2) }
+            def self.from_h(hash)
+              instance = new(val: hash["val"])
+
+              hash.each do |key, value|
+                next if ORIGINAL_KEYS.key?(key)
+
+                instance[key] = value
+              end
+              instance
+            end
+
+            sig { returns(T::Hash[String, T.anything]) }
+            def to_h
+              result = {}
+              result["val"] = @val unless @val.nil?
+              @_extra.each { |key, value| result[key] = value }
+              result
             end
           end
         end

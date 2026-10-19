@@ -6,8 +6,12 @@ module M
 
     def initialize: (?name: String?, ?age: Integer?, ?active: bool?) -> void
 
-    def []: (Symbol) -> top
+    def []: (String) -> top
 
-    def []=: (Symbol, top) -> top
+    def []=: (String, top) -> top
+
+    def self.from_h: (Hash[String, top] hash) -> Schema
+
+    def to_h: -> Hash[String, top]
   end
 end

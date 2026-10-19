@@ -2,26 +2,41 @@
 
 module <%= @module_name %>
 <%= declaration_open %>
-    sig { <%= sorbet_constructor_signature_params %>void }
+    <% unless @property_keys.empty? %>
+    <%= original_keys_constant %>
+
+    <% end %>    sig { <%= sorbet_constructor_signature_params %>void }
     def initialize<%= constructor_arguments %>
       <%= constructor_assignments %>
       <% unless @additional_properties.nil? %>
-      @_extra = T.let({}, T::Hash[Symbol, <%= sorbet_additional_properties_type %>])
+      @_extra = T.let({}, T::Hash[String, <%= sorbet_additional_properties_type %>])
       <% end %>
     end
 
     <%= sorbet_attr_accessors %>
     <% unless @additional_properties.nil? %>
 
-    sig { params(key: Symbol).returns(<%= sorbet_additional_properties_type %>) }
+    sig { params(key: String).returns(<%= sorbet_additional_properties_type %>) }
     def [](key)
       @_extra[key]
     end
 
-    sig { params(key: Symbol, value: <%= sorbet_additional_properties_type %>).returns(<%= sorbet_additional_properties_type %>) }
+    sig { params(key: String, value: <%= sorbet_additional_properties_type %>).returns(<%= sorbet_additional_properties_type %>) }
     def []=(key, value)
       @_extra[key] = value
     end
     <% end %>
+<% property_coercions.each do |name, plan| %>
+<% next if plan.nil? %>
+
+    <%= sorbet_coercion_signature %>
+    <%= coercion_method_body(name, plan) %>
+<% end %>
+
+    <%= sorbet_from_h_signature %>
+    <%= from_h_method %>
+
+    <%= sorbet_to_h_signature %>
+    <%= to_h_method %>
 <%= declaration_close %>
 end

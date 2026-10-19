@@ -1,14 +1,18 @@
 module M
-  module Schema
+  class Schema
     module Props
       class WebHook
         attr_accessor url: String?
 
         def initialize: (?url: String?) -> void
 
-        def []: (Symbol) -> top
+        def []: (String) -> top
 
-        def []=: (Symbol, top) -> top
+        def []=: (String, top) -> top
+
+        def self.from_h: (Hash[String, top] hash) -> WebHook
+
+        def to_h: -> Hash[String, top]
       end
     end
   end

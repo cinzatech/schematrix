@@ -2,6 +2,11 @@
 
 module M
   class Schema
+    ORIGINAL_KEYS = {
+      "firstName" => :first_name,
+      "lastName" => :last_name
+    }.freeze
+
     sig do
       params(first_name: T.nilable(String), last_name: T.nilable(String)).void
     end
@@ -24,12 +29,20 @@ module M
     def last_name=(last_name)
     end
 
-    sig { params(key: Symbol).returns(T.anything) }
+    sig { params(key: String).returns(T.anything) }
     def [](key)
     end
 
-    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    sig { params(key: String, value: T.anything).returns(T.anything) }
     def []=(key, value)
+    end
+
+    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    def self.from_h(hash)
+    end
+
+    sig { returns(T::Hash[String, T.anything]) }
+    def to_h
     end
   end
 end

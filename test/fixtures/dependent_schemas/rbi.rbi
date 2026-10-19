@@ -2,6 +2,12 @@
 
 module M
   class Schema
+    ORIGINAL_KEYS = {
+      "name" => :name,
+      "credit_card" => :credit_card,
+      "billing_address" => :billing_address
+    }.freeze
+
     sig do
       params(
         name: T.nilable(String),
@@ -36,12 +42,20 @@ module M
     def billing_address=(billing_address)
     end
 
-    sig { params(key: Symbol).returns(T.anything) }
+    sig { params(key: String).returns(T.anything) }
     def [](key)
     end
 
-    sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+    sig { params(key: String, value: T.anything).returns(T.anything) }
     def []=(key, value)
+    end
+
+    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    def self.from_h(hash)
+    end
+
+    sig { returns(T::Hash[String, T.anything]) }
+    def to_h
     end
   end
 end

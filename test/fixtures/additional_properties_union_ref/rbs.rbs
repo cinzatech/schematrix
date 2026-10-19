@@ -4,11 +4,15 @@ module M
 
     def initialize: (?always: bool?) -> void
 
-    def []: (Symbol) -> (String | Schema::Defs::Thing)?
+    def []: (String) -> (String | Schema::Defs::Thing)?
 
     def []=: (
-      Symbol,
+      String,
       (String | Schema::Defs::Thing)?
     ) -> (String | Schema::Defs::Thing)?
+
+    def self.from_h: (Hash[String, top] hash) -> Schema
+
+    def to_h: -> Hash[String, top]
   end
 end

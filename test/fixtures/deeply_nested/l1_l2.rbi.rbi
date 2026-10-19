@@ -1,11 +1,13 @@
 # typed: strict
 
 module M
-  module Schema
+  class Schema
     module Props
-      module L1
+      class L1
         module Props
           class L2
+            ORIGINAL_KEYS = { "val" => :val }.freeze
+
             sig { params(val: T.nilable(String)).void }
             def initialize(val: nil)
             end
@@ -18,12 +20,20 @@ module M
             def val=(val)
             end
 
-            sig { params(key: Symbol).returns(T.anything) }
+            sig { params(key: String).returns(T.anything) }
             def [](key)
             end
 
-            sig { params(key: Symbol, value: T.anything).returns(T.anything) }
+            sig { params(key: String, value: T.anything).returns(T.anything) }
             def []=(key, value)
+            end
+
+            sig { params(hash: T::Hash[String, T.anything]).returns(L2) }
+            def self.from_h(hash)
+            end
+
+            sig { returns(T::Hash[String, T.anything]) }
+            def to_h
             end
           end
         end

@@ -1,6 +1,9 @@
 module <%= @module_name %>
 <%= declaration_open %>
-    def initialize<%= constructor_arguments %>
+    <% unless @property_keys.empty? %>
+    <%= original_keys_constant %>
+
+    <% end %>    def initialize<%= constructor_arguments %>
       <%= constructor_assignments %>
       <% unless @additional_properties.nil? %>
       @_extra = {}
@@ -18,5 +21,14 @@ module <%= @module_name %>
       @_extra[key] = value
     end
     <% end %>
+<% property_coercions.each do |name, plan| %>
+<% next if plan.nil? %>
+
+    <%= coercion_method_body(name, plan) %>
+<% end %>
+
+    <%= from_h_method %>
+
+    <%= to_h_method %>
 <%= declaration_close %>
 end

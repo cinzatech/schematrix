@@ -51,6 +51,25 @@ module Schematrix
             type_of(@path, "additional_properties", @additional_properties)
         end
 
+        def sorbet_coercion_signature
+          "sig { params(value: #{SORBET_TYPE_ANYTHING}).returns(#{
+            SORBET_TYPE_ANYTHING
+          }) }"
+        end
+
+        def sorbet_from_h_signature
+          [
+            "sig do",
+            "  params(hash: T::Hash[String, #{SORBET_TYPE_ANYTHING}])",
+            "    .returns(#{own_class_name})",
+            "end",
+          ].join("\n")
+        end
+
+        def sorbet_to_h_signature
+          "sig { returns(T::Hash[String, #{SORBET_TYPE_ANYTHING}]) }"
+        end
+
         def sorbet_constructor_signature_params
           return "" if @properties.nil? || @properties.empty?
 

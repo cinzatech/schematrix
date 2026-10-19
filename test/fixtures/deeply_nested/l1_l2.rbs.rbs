@@ -1,16 +1,20 @@
 module M
-  module Schema
+  class Schema
     module Props
-      module L1
+      class L1
         module Props
           class L2
             attr_accessor val: String?
 
             def initialize: (?val: String?) -> void
 
-            def []: (Symbol) -> top
+            def []: (String) -> top
 
-            def []=: (Symbol, top) -> top
+            def []=: (String, top) -> top
+
+            def self.from_h: (Hash[String, top] hash) -> L2
+
+            def to_h: -> Hash[String, top]
           end
         end
       end

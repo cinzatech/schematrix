@@ -116,12 +116,13 @@ module Schematrix
       private
 
       def template(path, class_name, object)
+        properties = object&.properties
         self.class.template_class.new(
           module_name: @module_name,
           path:,
           class_name: class_name,
-          properties:
-            object&.properties&.transform_keys { |key| property_name(key) },
+          properties: properties&.transform_keys { |key| property_name(key) },
+          property_keys: original_key_map(properties),
           additional_properties: object.additional_properties,
           documentation_comment: documentation_comment(object),
         )
@@ -166,6 +167,16 @@ module Schematrix
         name = "_" if name.empty?
         name = "#{name}_" if RUBY_KEYWORDS.include?(name)
         name
+      end
+
+      # The original-name key map (D21): original String property
+      # name to mangled accessor symbol, the inverse of property_name
+      # ($id -> id, if -> if_). Generated classes carry it as the
+      # ORIGINAL_KEYS constant so round-tripping inverts the
+      # mangling, and from_h uses it to tell known keys from
+      # catch-all riders.
+      def original_key_map(properties)
+        properties&.keys&.map { |key| [key, property_name(key).to_sym] } || []
       end
     end
 

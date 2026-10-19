@@ -1,5 +1,5 @@
 module M
-  module Schema
+  class Schema
     module Props
       class Value
         attr_accessor name: top
@@ -7,9 +7,13 @@ module M
 
         def initialize: (?name: top, ?age: top) -> void
 
-        def []: (Symbol) -> top
+        def []: (String) -> top
 
-        def []=: (Symbol, top) -> top
+        def []=: (String, top) -> top
+
+        def self.from_h: (Hash[String, top] hash) -> Value
+
+        def to_h: -> Hash[String, top]
       end
     end
   end

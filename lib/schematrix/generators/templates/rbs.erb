@@ -7,9 +7,13 @@ module <%= @module_name %>
     ) -> void
     <% unless @additional_properties.nil? %>
 
-    def []: (Symbol) -> <%= rbs_additional_properties_type %>
+    def []: (String) -> <%= rbs_additional_properties_type %>
 
-    def []=: (Symbol, <%= rbs_additional_properties_type %>) -> <%= rbs_additional_properties_type %>
+    def []=: (String, <%= rbs_additional_properties_type %>) -> <%= rbs_additional_properties_type %>
     <% end %>
+
+    def self.from_h: (Hash[String, <%= untyped %>] hash) -> <%= own_class_name %>
+
+    def to_h: () -> Hash[String, <%= untyped %>]
 <%= declaration_close %>
 end
