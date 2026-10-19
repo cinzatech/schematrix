@@ -245,7 +245,7 @@ module Schematrix
           .path
           .delete_prefix("/")
           .split("/")
-          .map { |segment| URI::DEFAULT_PARSER.unescape(segment) },
+          .map { |segment| URI::RFC2396_PARSER.unescape(segment) },
       )
       if segments.intersect?(%w[.. .])
         raise UnresolvableLocatorError,
