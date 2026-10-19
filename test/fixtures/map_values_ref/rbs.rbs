@@ -1,0 +1,11 @@
+module M
+  class Schema
+    attr_accessor vars: Hash[String, Schema::Defs::Value]?
+
+    def initialize: (?vars: Hash[String, Schema::Defs::Value]?) -> void
+
+    def []: (Symbol) -> untyped
+
+    def []=: (Symbol, untyped) -> untyped
+  end
+end

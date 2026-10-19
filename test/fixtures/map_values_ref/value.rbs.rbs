@@ -1,0 +1,15 @@
+module M
+  module Schema
+    module Defs
+      class Value
+        attr_accessor v: String?
+
+        def initialize: (?v: String?) -> void
+
+        def []: (Symbol) -> untyped
+
+        def []=: (Symbol, untyped) -> untyped
+      end
+    end
+  end
+end

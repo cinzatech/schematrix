@@ -2,15 +2,15 @@
 
 module M
   class Schema
-    sig { params(config: T.nilable(Schema::Props::Config)).void }
+    sig { params(config: T.nilable(T::Hash[String, T.anything])).void }
     def initialize(config: nil)
     end
 
-    sig { returns(T.nilable(Schema::Props::Config)) }
+    sig { returns(T.nilable(T::Hash[String, T.anything])) }
     def config
     end
 
-    sig { params(config: T.nilable(Schema::Props::Config)).void }
+    sig { params(config: T.nilable(T::Hash[String, T.anything])).void }
     def config=(config)
     end
 

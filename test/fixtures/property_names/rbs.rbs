@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor vocab: Schema::Props::Vocab?
+    attr_accessor vocab: Hash[String, bool]?
 
-    def initialize: (?vocab: Schema::Props::Vocab?) -> void
+    def initialize: (?vocab: Hash[String, bool]?) -> void
 
     def []: (Symbol) -> untyped
 

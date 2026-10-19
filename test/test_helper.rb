@@ -92,6 +92,16 @@ module SchematrixTestHelper
     !schema.dig("$defs", name).nil?
   end
 
+  # Compiles a fixture schema and returns the whole objects hash, for
+  # assertions about which classes exist (or do not).
+  def compile_fixture(fixture_name, closed_shapes: false, schema_dirs: [])
+    schema_file = File.join(FIXTURES_DIR, fixture_name, "schema.json")
+    Schematrix::Compiler.new(
+      store: Schematrix::DocumentStore.new(schema_dirs:),
+      closed_shapes:,
+    ).compile([schema_file])
+  end
+
   def expected_path(fixture_name, generator_name, path)
     ext = GENERATOR_EXTENSIONS.fetch(generator_name)
     if path.empty?

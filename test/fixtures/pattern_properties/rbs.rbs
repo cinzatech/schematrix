@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor config: Schema::Props::Config?
+    attr_accessor config: Hash[String, untyped]?
 
-    def initialize: (?config: Schema::Props::Config?) -> void
+    def initialize: (?config: Hash[String, untyped]?) -> void
 
     def []: (Symbol) -> untyped
 

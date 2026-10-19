@@ -30,6 +30,8 @@ module Schematrix
 
         def array_of(element) = "T::Array[#{element}]"
 
+        def string_keyed_hash(value) = "T::Hash[String, #{value}]"
+
         def null_only_type = "NilClass"
 
         # Absence renders through T.nilable; union and intersection

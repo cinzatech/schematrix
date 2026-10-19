@@ -1,10 +1,14 @@
 module M
   module Schema
-    module Props
-      class Tags
-        def initialize
+    module Defs
+      class Value
+        def initialize(v: nil)
+          @v = v
+
           @_extra = {}
         end
+
+        attr_accessor :v
 
         def [](key)
           @_extra[key]

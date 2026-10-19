@@ -2,14 +2,14 @@
 
 module M
   class Schema
-    sig { params(config: T.nilable(Schema::Props::Config)).void }
+    sig { params(config: T.nilable(T::Hash[String, T.anything])).void }
     def initialize(config: nil)
       @config = config
 
       @_extra = T.let({}, T::Hash[Symbol, T.anything])
     end
 
-    sig { returns(T.nilable(Schema::Props::Config)) }
+    sig { returns(T.nilable(T::Hash[String, T.anything])) }
     attr_accessor :config
 
     sig { params(key: Symbol).returns(T.anything) }

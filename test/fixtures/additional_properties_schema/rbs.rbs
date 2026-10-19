@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor tags: Schema::Props::Tags?
+    attr_accessor tags: Hash[String, String]?
 
-    def initialize: (?tags: Schema::Props::Tags?) -> void
+    def initialize: (?tags: Hash[String, String]?) -> void
 
     def []: (Symbol) -> untyped
 

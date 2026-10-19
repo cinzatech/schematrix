@@ -32,6 +32,8 @@ module Schematrix
 
         def array_of(element) = "Array[#{element}]"
 
+        def string_keyed_hash(value) = "Hash[String, #{value}]"
+
         def null_only_type = "nil"
 
         # Absence renders as a nilable union; multi-term unions

@@ -1,8 +1,12 @@
 module M
   class Schema
-    def initialize
+    def initialize(vars: nil)
+      @vars = vars
+
       @_extra = {}
     end
+
+    attr_accessor :vars
 
     def [](key)
       @_extra[key]

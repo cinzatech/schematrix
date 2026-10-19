@@ -81,6 +81,24 @@ module Schematrix
 
       true
     end
+
+    # D23: a schema whose whole shape is a catch-all (an object with
+    # no own properties, no ref, no variants, and a non-closed
+    # additionalProperties) is a plain Hash, not a class. It types as
+    # Hash[String, <catch-all value type>] and generates nothing: a
+    # class would only wrap a map and could not be iterated. A closed
+    # shape (catch-all nil) is an empty object, not a map, and keeps
+    # its class.
+    def map_shaped?
+      return false unless type.include?(TYPE_OBJECT)
+      return false unless (type - [TYPE_OBJECT, TYPE_NULL]).empty?
+      return false unless ref.nil?
+      return false if intersection
+      return false unless any_of.empty? && one_of.empty?
+      return false if additional_properties.nil?
+
+      properties.nil? || properties.empty?
+    end
   end
 
   # Visits a single schema subtree rooted at the given locator. When it
@@ -245,7 +263,8 @@ module Schematrix
             type:,
           )
 
-        if register_object && ref.nil? && type.include?(TYPE_OBJECT)
+        own_class = ref.nil? && type.include?(TYPE_OBJECT)
+        if register_object && own_class && !schema.map_shaped?
           @objects[current_locator(site)] = schema
         end
       end
@@ -326,6 +345,18 @@ module Schematrix
           return rewritten, nil, nil
         end
 
+        # D23: a target whose whole shape is a catch-all is a plain
+        # Hash, not a class. Inline its content at this site (the
+        # slot's own record is then map-shaped and renders as a Hash)
+        # so no class is generated for the target and no edge is
+        # recorded; the local siblings win over the target, as on the
+        # scalar inline path.
+        if map_target?(target)
+          base = document_base(locator)
+          base = nil if same_document?(base, ref_base)
+          return target.merge(node.except("$ref")), nil, base
+        end
+
         @edges << locator
         [node, locator, nil]
       else
@@ -337,6 +368,36 @@ module Schematrix
         base = document_base(locator)
         base = nil if same_document?(base, ref_base)
         [target.merge(node.except("$ref")), nil, base]
+      end
+    end
+
+    # Raw-node form of the D23 map rule, applied to $ref targets
+    # before they compile: the type stays within {object, null} and
+    # includes object, there are no own properties, no composition
+    # keyword could conjure properties back (those targets keep the
+    # ref path and their class), and the catch-all is not closed.
+    # Absent additionalProperties is the spec's untyped catch-all
+    # unless closed_shapes was requested (D12).
+    def map_target?(target)
+      types = Set.new(Array(target["type"]))
+      own_properties = target["properties"]
+      catch_all = target["additionalProperties"]
+      return false unless types.include?(TYPE_OBJECT)
+      return false unless (types - [TYPE_OBJECT, TYPE_NULL]).empty?
+      return false unless own_properties.nil? || own_properties.empty?
+      return false if composes?(target)
+      return false if catch_all.is_a?(FalseClass)
+      return false if catch_all.nil? && @closed_shapes
+
+      true
+    end
+
+    # Whether the node carries any composition keyword that merges
+    # other schemas into itself (allOf branches, union keywords,
+    # single-branch conditionals, dependent schemas).
+    def composes?(target)
+      %w[allOf anyOf oneOf then else dependentSchemas].any? do |keyword|
+        !target[keyword].nil?
       end
     end
 

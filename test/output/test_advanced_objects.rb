@@ -35,40 +35,24 @@ class TestAdvancedObjects < Minitest::Test
     assert_fixture("additional_properties_false", "rbi")
   end
 
-  def test_catch_all_only_plain_ruby
-    assert_fixture("catch_all_only", "plain_ruby")
-  end
-
-  def test_catch_all_only_rbs
-    assert_fixture("catch_all_only", "rbs")
-  end
-
-  def test_catch_all_only_sorbet_ruby
-    assert_fixture("catch_all_only", "sorbet_ruby")
-  end
-
-  def test_catch_all_only_rbi
-    assert_fixture("catch_all_only", "rbi")
+  def test_catch_all_only_schema_produces_no_class
+    assert_empty compile_fixture("catch_all_only")
   end
 
   def test_additional_properties_schema_plain_ruby
     assert_fixture("additional_properties_schema", "plain_ruby")
-    assert_fixture("additional_properties_schema", "plain_ruby", path: "tags")
   end
 
   def test_additional_properties_schema_rbs
     assert_fixture("additional_properties_schema", "rbs")
-    assert_fixture("additional_properties_schema", "rbs", path: "tags")
   end
 
   def test_additional_properties_schema_sorbet_ruby
     assert_fixture("additional_properties_schema", "sorbet_ruby")
-    assert_fixture("additional_properties_schema", "sorbet_ruby", path: "tags")
   end
 
   def test_additional_properties_schema_rbi
     assert_fixture("additional_properties_schema", "rbi")
-    assert_fixture("additional_properties_schema", "rbi", path: "tags")
   end
 
   def test_additional_properties_union_plain_ruby
@@ -133,22 +117,18 @@ class TestAdvancedObjects < Minitest::Test
 
   def test_property_names_plain_ruby
     assert_fixture("property_names", "plain_ruby")
-    assert_fixture("property_names", "plain_ruby", path: "vocab")
   end
 
   def test_property_names_rbs
     assert_fixture("property_names", "rbs")
-    assert_fixture("property_names", "rbs", path: "vocab")
   end
 
   def test_property_names_sorbet_ruby
     assert_fixture("property_names", "sorbet_ruby")
-    assert_fixture("property_names", "sorbet_ruby", path: "vocab")
   end
 
   def test_property_names_rbi
     assert_fixture("property_names", "rbi")
-    assert_fixture("property_names", "rbi", path: "vocab")
   end
 
   def test_dependent_schemas_plain_ruby
@@ -181,5 +161,25 @@ class TestAdvancedObjects < Minitest::Test
 
   def test_object_constraints_rbi
     assert_fixture("object_constraints", "rbi")
+  end
+
+  def test_map_values_ref_plain_ruby
+    assert_fixture("map_values_ref", "plain_ruby")
+    assert_fixture("map_values_ref", "plain_ruby", path: "value")
+  end
+
+  def test_map_values_ref_rbs
+    assert_fixture("map_values_ref", "rbs")
+    assert_fixture("map_values_ref", "rbs", path: "value")
+  end
+
+  def test_map_values_ref_sorbet_ruby
+    assert_fixture("map_values_ref", "sorbet_ruby")
+    assert_fixture("map_values_ref", "sorbet_ruby", path: "value")
+  end
+
+  def test_map_values_ref_rbi
+    assert_fixture("map_values_ref", "rbi")
+    assert_fixture("map_values_ref", "rbi", path: "value")
   end
 end

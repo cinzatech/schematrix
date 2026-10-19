@@ -1,0 +1,18 @@
+{
+  "title": "EnvVars",
+  "type": "object",
+  "properties": {
+    "vars": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/value" }
+    }
+  },
+  "$defs": {
+    "value": {
+      "type": "object",
+      "properties": {
+        "v": { "type": "string" }
+      }
+    }
+  }
+}
