@@ -60,3 +60,6 @@ generated/
 
 # Untracked working log
 WORKLOG.md
+# Editor config
+.vscode/
+.pi/
