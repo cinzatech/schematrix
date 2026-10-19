@@ -84,8 +84,8 @@ module Schematrix
     def run
       Schematrix.logger =
         TTY::Logger.new do |config|
-          log_level = [params[:verbose].count(&:itself), 3].min
-          config.level = %i[error warn info debug][log_level]
+          verbosity = [params[:verbose].count(&:itself), 2].min
+          config.level = %i[warn info debug][verbosity]
         end
 
       if params[:help]

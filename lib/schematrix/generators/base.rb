@@ -117,12 +117,14 @@ module Schematrix
 
       def template(path, class_name, object)
         properties = object&.properties
+        property_keys = original_key_map(properties)
+        warn_mangled_collisions(class_name, path, property_keys)
         self.class.template_class.new(
           module_name: @module_name,
           path:,
           class_name: class_name,
           properties: properties&.transform_keys { |key| property_name(key) },
-          property_keys: original_key_map(properties),
+          property_keys:,
           additional_properties: object.additional_properties,
           documentation_comment: documentation_comment(object),
         )
@@ -177,6 +179,27 @@ module Schematrix
       # catch-all riders.
       def original_key_map(properties)
         properties&.keys&.map { |key| [key, property_name(key).to_sym] } || []
+      end
+
+      # Mangling is not injective: sibling property names can fold to
+      # one accessor (foo-bar and foo_bar), where transform_keys keeps
+      # the last declaration's schema while ORIGINAL_KEYS, from_h and
+      # to_h keep the first original's key. The class still compiles,
+      # so the collision warns with the kept key instead of staying
+      # silent.
+      def warn_mangled_collisions(class_name, path, property_keys)
+        property_keys
+          .group_by { |_original, mangled| mangled }
+          .each do |mangled, pairs|
+            next if pairs.size == 1
+
+            originals = pairs.map(&:first)
+            Schematrix.logger&.warn(
+              "#{class_name}: properties #{originals.inspect} collapse " \
+                "onto the accessor #{mangled}; from_h and to_h keep " \
+                "#{originals.first.inspect} (#{path})",
+            )
+          end
       end
     end
 

@@ -72,6 +72,42 @@ class TestGenerate < Minitest::Test
     end
   end
 
+  MANGLED_COLLISION_SCHEMA = <<~JSON
+    {
+      "type": "object",
+      "properties": {
+        "foo-bar": { "type": "string" },
+        "foo_bar": { "type": "string" }
+      }
+    }
+  JSON
+
+  def test_colliding_property_names_warn_with_the_kept_key
+    recorder = WarningRecorder.new
+    Schematrix.logger = recorder
+    Dir.mktmpdir do |dir|
+      schema = File.join(dir, "collide.json")
+      File.write(schema, MANGLED_COLLISION_SCHEMA)
+
+      Schematrix.generate(
+        generators: [
+          Schematrix::Generators::PlainRuby.new(
+            File.join(dir, "out"),
+            MODULE_NAME,
+          ),
+        ],
+        input_files: [schema],
+      )
+
+      warning = recorder.messages.find { |message| message.include?("foo_bar") }
+      assert_includes warning, %("foo-bar", "foo_bar")
+      assert_includes warning, "collapse onto the accessor foo_bar"
+      assert_includes warning, %(from_h and to_h keep "foo-bar")
+    end
+  ensure
+    Schematrix.logger = nil
+  end
+
   def test_same_basename_inputs_raise_before_writing
     Dir.mktmpdir do |dir|
       one = write_schema(File.join(dir, "one", "order.json"))
@@ -125,4 +161,20 @@ class TestGenerate < Minitest::Test
     JSON
     path
   end
+end
+
+class WarningRecorder
+  attr_reader :messages
+
+  def initialize
+    @messages = []
+  end
+
+  def warn(message)
+    @messages << message
+  end
+
+  def debug(*) = nil
+
+  def info(*) = nil
 end
