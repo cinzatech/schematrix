@@ -125,11 +125,13 @@ module Schematrix
         code
       end
 
+      # One comment line per description line: raw newlines inside a
+      # description would leak the remaining lines as code.
       def documentation_comment(schema)
         description = schema.description
         return "" if description.nil?
 
-        "# #{description}"
+        description.lines.map { |line| "# #{line.chomp}".rstrip }.join("\n")
       end
 
       def underscore(string)

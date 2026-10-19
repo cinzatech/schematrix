@@ -1,0 +1,10 @@
+{
+  "title": "Multi",
+  "type": "object",
+  "description": "First line\nsecond line",
+  "properties": {
+    "name": {
+      "type": "string"
+    }
+  }
+}

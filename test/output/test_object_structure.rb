@@ -67,6 +67,22 @@ class TestObjectStructure < Minitest::Test
     assert_fixture("description_comment", "rbi")
   end
 
+  def test_multiline_description_comment_plain_ruby
+    assert_fixture("multiline_description", "plain_ruby")
+  end
+
+  def test_multiline_description_comment_rbs
+    assert_fixture("multiline_description", "rbs")
+  end
+
+  def test_multiline_description_comment_sorbet_ruby
+    assert_fixture("multiline_description", "sorbet_ruby")
+  end
+
+  def test_multiline_description_comment_rbi
+    assert_fixture("multiline_description", "rbi")
+  end
+
   def test_nested_object_plain_ruby
     assert_fixture("nested_object", "plain_ruby")
     assert_fixture("nested_object", "plain_ruby", path: "child")
