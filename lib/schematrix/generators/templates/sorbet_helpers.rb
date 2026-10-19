@@ -14,7 +14,7 @@ module Schematrix
           nil => SORBET_TYPE_ANYTHING,
           TYPE_STRING => "String",
           TYPE_INTEGER => "Integer",
-          TYPE_NUMBER => "Float",
+          TYPE_NUMBER => "Numeric",
           TYPE_BOOLEAN => "T::Boolean",
           TYPE_NULL => "NilClass",
           TYPE_BOTTOM => "T.noreturn",

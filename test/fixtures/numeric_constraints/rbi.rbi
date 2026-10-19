@@ -4,15 +4,15 @@ module M
   class Schema
     ORIGINAL_KEYS = { "score" => :score }.freeze
 
-    sig { params(score: T.nilable(Float)).void }
+    sig { params(score: T.nilable(Numeric)).void }
     def initialize(score: nil)
     end
 
-    sig { returns(T.nilable(Float)) }
+    sig { returns(T.nilable(Numeric)) }
     def score
     end
 
-    sig { params(score: T.nilable(Float)).void }
+    sig { params(score: T.nilable(Numeric)).void }
     def score=(score)
     end
 

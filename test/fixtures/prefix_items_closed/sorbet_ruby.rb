@@ -4,14 +4,14 @@ module M
   class Schema
     ORIGINAL_KEYS = { "point" => :point }.freeze
 
-    sig { params(point: T.nilable(T::Array[Float])).void }
+    sig { params(point: T.nilable(T::Array[Numeric])).void }
     def initialize(point: nil)
       @point = point
 
       @_extra = T.let({}, T::Hash[String, T.anything])
     end
 
-    sig { returns(T.nilable(T::Array[Float])) }
+    sig { returns(T.nilable(T::Array[Numeric])) }
     attr_accessor :point
 
     sig { params(key: String).returns(T.anything) }

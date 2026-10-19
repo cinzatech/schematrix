@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor point: Array[Float]?
+    attr_accessor point: Array[Numeric]?
 
-    def initialize: (?point: Array[Float]?) -> void
+    def initialize: (?point: Array[Numeric]?) -> void
 
     def []: (String) -> top
 

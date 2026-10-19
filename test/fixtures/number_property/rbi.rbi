@@ -4,15 +4,15 @@ module M
   class Schema
     ORIGINAL_KEYS = { "value" => :value }.freeze
 
-    sig { params(value: T.nilable(Float)).void }
+    sig { params(value: T.nilable(Numeric)).void }
     def initialize(value: nil)
     end
 
-    sig { returns(T.nilable(Float)) }
+    sig { returns(T.nilable(Numeric)) }
     def value
     end
 
-    sig { params(value: T.nilable(Float)).void }
+    sig { params(value: T.nilable(Numeric)).void }
     def value=(value)
     end
 

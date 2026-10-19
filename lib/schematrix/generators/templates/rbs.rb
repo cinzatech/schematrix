@@ -19,7 +19,7 @@ module Schematrix
           nil => RBS_TYPE_TOP,
           TYPE_STRING => "String",
           TYPE_INTEGER => "Integer",
-          TYPE_NUMBER => "Float",
+          TYPE_NUMBER => "Numeric",
           TYPE_BOOLEAN => "bool",
           TYPE_NULL => "nil",
         }.freeze

@@ -9,7 +9,7 @@ module M
       @name = name
       @code = code
 
-      @_extra = T.let({}, T::Hash[String, T.nilable(Float)])
+      @_extra = T.let({}, T::Hash[String, T.nilable(Numeric)])
     end
 
     sig { returns(T.nilable(String)) }
@@ -18,13 +18,13 @@ module M
     sig { returns(T.nilable(String)) }
     attr_accessor :code
 
-    sig { params(key: String).returns(T.nilable(Float)) }
+    sig { params(key: String).returns(T.nilable(Numeric)) }
     def [](key)
       @_extra[key]
     end
 
     sig do
-      params(key: String, value: T.nilable(Float)).returns(T.nilable(Float))
+      params(key: String, value: T.nilable(Numeric)).returns(T.nilable(Numeric))
     end
     def []=(key, value)
       @_extra[key] = value

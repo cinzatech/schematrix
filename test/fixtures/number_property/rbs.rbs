@@ -1,8 +1,8 @@
 module M
   class Schema
-    attr_accessor value: Float?
+    attr_accessor value: Numeric?
 
-    def initialize: (?value: Float?) -> void
+    def initialize: (?value: Numeric?) -> void
 
     def []: (String) -> top
 

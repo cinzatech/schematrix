@@ -4,15 +4,15 @@ module M
   class Schema
     ORIGINAL_KEYS = { "point" => :point }.freeze
 
-    sig { params(point: T.nilable(T::Array[Float])).void }
+    sig { params(point: T.nilable(T::Array[Numeric])).void }
     def initialize(point: nil)
     end
 
-    sig { returns(T.nilable(T::Array[Float])) }
+    sig { returns(T.nilable(T::Array[Numeric])) }
     def point
     end
 
-    sig { params(point: T.nilable(T::Array[Float])).void }
+    sig { params(point: T.nilable(T::Array[Numeric])).void }
     def point=(point)
     end
 

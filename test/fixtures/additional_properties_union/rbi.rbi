@@ -24,12 +24,12 @@ module M
     def code=(code)
     end
 
-    sig { params(key: String).returns(T.nilable(Float)) }
+    sig { params(key: String).returns(T.nilable(Numeric)) }
     def [](key)
     end
 
     sig do
-      params(key: String, value: T.nilable(Float)).returns(T.nilable(Float))
+      params(key: String, value: T.nilable(Numeric)).returns(T.nilable(Numeric))
     end
     def []=(key, value)
     end
