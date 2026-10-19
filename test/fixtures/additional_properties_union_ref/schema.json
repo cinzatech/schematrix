@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "additionalProperties": { "type": "string" },
+  "anyOf": [
+    {
+      "properties": {
+        "always": { "type": "boolean" }
+      },
+      "additionalProperties": { "$ref": "#/$defs/Thing" }
+    }
+  ],
+  "$defs": {
+    "Thing": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" }
+      }
+    }
+  }
+}

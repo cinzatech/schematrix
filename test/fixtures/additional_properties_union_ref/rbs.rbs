@@ -1,0 +1,11 @@
+module M
+  class Schema
+    attr_accessor always: bool?
+
+    def initialize: (?always: bool?) -> void
+
+    def []: (Symbol) -> (String | Schema::Thing)?
+
+    def []=: (Symbol, (String | Schema::Thing)?) -> (String | Schema::Thing)?
+  end
+end
