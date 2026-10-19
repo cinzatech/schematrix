@@ -19,6 +19,22 @@ class TestDynamicRefs < Minitest::Test
     assert_fixture("dynamic_anchor_and_ref", "rbi")
   end
 
+  def test_cross_document_dynamic_ref_plain_ruby
+    assert_fixture("cross_document_dynamic_ref", "plain_ruby")
+  end
+
+  def test_cross_document_dynamic_ref_rbs
+    assert_fixture("cross_document_dynamic_ref", "rbs")
+  end
+
+  def test_cross_document_dynamic_ref_sorbet_ruby
+    assert_fixture("cross_document_dynamic_ref", "sorbet_ruby")
+  end
+
+  def test_cross_document_dynamic_ref_rbi
+    assert_fixture("cross_document_dynamic_ref", "rbi")
+  end
+
   def test_anchor_ref_plain_ruby
     assert_fixture("anchor_ref", "plain_ruby")
     assert_fixture("anchor_ref", "plain_ruby", path: "named")

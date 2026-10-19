@@ -365,15 +365,16 @@ module Schematrix
     end
 
     # D9 static approximation for $dynamicRef: assume the dynamic
-    # scope equals this document. Walk up the containment chain from
-    # the ref site to the document root and take the nearest
-    # $dynamicAnchor with the referenced name; fall back to the last
-    # matching anchor in document order; then unresolvable (untyped +
-    # debug log). The name may be empty ("#" in the metaschemas).
-    # Chain links that do not exist in this document are skipped:
-    # inside merged cross-document branches the chain mixes segments
-    # from both documents and can point at nodes that do not exist
-    # here.
+    # scope equals the ref base document (the document of the nearest
+    # dereferenced inline target, else this visitor's document). Walk
+    # up the containment chain from the ref site to the root and take
+    # the nearest $dynamicAnchor with the referenced name; fall back
+    # to the last matching anchor in document order; then
+    # unresolvable (untyped + debug log). The name may be empty ("#"
+    # in the metaschemas). Chain links that do not exist in the
+    # current document are skipped: inside merged cross-document
+    # branches the chain mixes segments from both documents and can
+    # point at nodes that do not exist here.
     def dynamic_anchor_locator(site, reference)
       name = reference.delete_prefix("#")
       chain = site[0...-1] # the ref site itself is not its own ancestor
@@ -387,7 +388,7 @@ module Schematrix
         chain = chain[0...-1]
       end
 
-      pointer = @store.last_dynamic_anchor_locator(@locator, name)
+      pointer = @store.last_dynamic_anchor_locator(ref_base, name)
       pointer&.to_s
     end
 

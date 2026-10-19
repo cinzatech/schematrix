@@ -1,0 +1,9 @@
+$defs:
+  Ext:
+    type: object
+    properties:
+      code:
+        $dynamicRef: "#code"
+  Code:
+    type: string
+    $dynamicAnchor: code
