@@ -99,11 +99,6 @@ module Schematrix
         input_files = Array(params[:input])
         module_name = params[:module]
 
-        # vendor/schemas is searched unless the user points elsewhere;
-        # explicit directories replace the default, never stack with it
-        schema_dirs = Array(params[:schema_dir])
-        schema_dirs = %w[vendor/schemas] if schema_dirs.empty?
-
         generator_names = Array(params[:generators]).uniq
 
         unknown = generator_names - GENERATORS.keys
@@ -143,12 +138,23 @@ module Schematrix
           input_files:,
           generators:,
           closed_shapes: params[:closed_shapes],
-          schema_dirs:,
+          schema_dirs: resolved_schema_dirs,
         )
       end
     rescue StandardError => e
       Schematrix.logger&.fatal "Error: ", e
       exit 1
+    end
+
+    private
+
+    # vendor/schemas is searched unless the user points elsewhere;
+    # explicit directories replace the default, never stack with it
+    def resolved_schema_dirs
+      schema_dirs = Array(params[:schema_dir])
+      schema_dirs = %w[vendor/schemas] if schema_dirs.empty?
+
+      schema_dirs
     end
   end
 end
