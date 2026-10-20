@@ -29,7 +29,11 @@ namespace :meta do
     FileUtils.rm_rf(output)
     Schematrix.generate(
       generators: [
-        Schematrix::Generators::PlainRuby.new(output, "Schematrix::Meta"),
+        Schematrix::Generators::PlainRuby.new(
+          output,
+          "Schematrix::Meta",
+          command: "rake meta:generate",
+        ),
       ],
       input_files: [metaschema],
     )

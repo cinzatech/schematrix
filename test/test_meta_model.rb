@@ -19,7 +19,11 @@ class TestMetaModel < Minitest::Test
     Dir.mktmpdir do |dir|
       Schematrix.generate(
         generators: [
-          Schematrix::Generators::PlainRuby.new(dir, "Schematrix::Meta"),
+          Schematrix::Generators::PlainRuby.new(
+            dir,
+            "Schematrix::Meta",
+            command: "rake meta:generate",
+          ),
         ],
         input_files: [METASCHEMA],
       )

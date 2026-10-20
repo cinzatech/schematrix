@@ -139,7 +139,12 @@ module Schematrix
           output_dirs
             .zip(generator_names)
             .map do |(output_dir, name)|
-              GENERATORS.fetch(name).new(output_dir, module_name, format: true)
+              GENERATORS.fetch(name).new(
+                output_dir,
+                module_name,
+                format: true,
+                command: "schematrix",
+              )
             end
 
         Schematrix.generate(

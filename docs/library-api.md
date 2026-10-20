@@ -81,6 +81,9 @@ generator.write(locator, node) # renders, formats, writes, returns the path
 - `node` is the `Schematrix::Schema` record for that locator.
 - Pass `format: false` to skip SyntaxTree formatting and receive the
   template output as-is.
+- `write` prefixes the file with a `DO NOT EDIT MANUALLY` banner. Pass
+  `command:` to name the regenerating command in its last line; the
+  CLI passes `schematrix`, the rake task `rake meta:generate`.
 
 The four generator classes are `PlainRuby`, `SorbetRuby`, `Rbi`, and
 `Rbs`. They share the rendering described in
