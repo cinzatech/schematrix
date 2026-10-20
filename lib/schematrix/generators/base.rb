@@ -83,8 +83,7 @@ module Schematrix
       # callers that batch many schemas check every target up front.
       def target_path(locator)
         class_name = class_name_from_path(URI(locator))
-        filename = "#{underscore(class_name)}#{self.class.file_extension}"
-        File.join(@output_dir, filename)
+        File.join(@output_dir, target_filename(class_name))
       end
 
       # Renders, formats, and writes the file for this locator's
@@ -95,7 +94,7 @@ module Schematrix
         class_name = class_name_from_path(uri)
         code = transform(uri, class_name, object)
 
-        file_path = target_path(uri)
+        file_path = File.join(@output_dir, target_filename(class_name))
         FileUtils.mkdir_p(File.dirname(file_path))
 
         File.write(file_path, code)
@@ -146,13 +145,16 @@ module Schematrix
       # class name. Mangled-name collisions are warned from here.
       def template(path, class_name, object)
         properties = object&.properties
-        property_keys = original_key_map(properties)
+        mangled_names = mangled_property_names(properties)
+        property_keys =
+          mangled_names.map { |original, name| [original, name.to_sym] }
         warn_mangled_collisions(class_name, path, property_keys)
         self.class.template_class.new(
           module_name: @module_name,
           path:,
           class_name: class_name,
-          properties: properties&.transform_keys { |key| property_name(key) },
+          properties:
+            properties&.transform_keys { |key| mangled_names.fetch(key) },
           property_keys:,
           additional_properties: object.additional_properties,
           documentation_comment: documentation_comment(object),
@@ -174,6 +176,12 @@ module Schematrix
         return "" if description.nil?
 
         description.lines.map { |line| "# #{line.chomp}".rstrip }.join("\n")
+      end
+
+      # The file name for a resolved class name: snake-cased name plus
+      # the generator's extension.
+      def target_filename(class_name)
+        "#{underscore(class_name)}#{self.class.file_extension}"
       end
 
       def underscore(string)
@@ -202,14 +210,17 @@ module Schematrix
         name
       end
 
-      # The original-name key map: original String property
-      # name to mangled accessor symbol, the inverse of property_name
-      # ($id -> id, if -> if_). Generated classes carry it as the
-      # ORIGINAL_KEYS constant so round-tripping inverts the
-      # mangling, and from_h uses it to tell known keys from
+      # Mangles every property key exactly once: original String name
+      # to mangled name, the inverse of property_name ($id -> id,
+      # if -> if_). The mangled properties hash and the ORIGINAL_KEYS
+      # pairs both derive from this pass; generated classes carry the
+      # pairs as the ORIGINAL_KEYS constant so round-tripping inverts
+      # the mangling, and from_h uses it to tell known keys from
       # catch-all riders.
-      def original_key_map(properties)
-        properties&.keys&.map { |key| [key, property_name(key).to_sym] } || []
+      def mangled_property_names(properties)
+        return {} if properties.nil?
+
+        properties.keys.to_h { |key| [key, property_name(key)] }
       end
 
       # Mangling is not injective: sibling property names can fold to
