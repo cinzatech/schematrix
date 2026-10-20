@@ -7,6 +7,13 @@ end
 
 task default: :test
 
+require "rdoc/task"
+RDoc::Task.new do |rdoc|
+  rdoc.main = "README.md"
+  rdoc.rdoc_dir = "doc"
+  rdoc.rdoc_files.include("README.md", "lib/**/*.{rb,erb}")
+end
+
 namespace :meta do
   desc "Regenerate lib/schematrix/meta from the vendored 2020-12 metaschema"
   task :generate do

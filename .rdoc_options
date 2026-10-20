@@ -1,0 +1,8 @@
+---
+encoding: UTF-8
+markup: markdown
+title: schematrix
+main_page: README.md
+exclude:
+  - "lib/schematrix/meta"
+  - "test"

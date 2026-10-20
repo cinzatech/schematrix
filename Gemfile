@@ -5,6 +5,7 @@ gemspec
 group :development do
   gem "minitest", "~> 6.0"
   gem "rake", "~> 13.0"
+  gem "rdoc", "~> 8.0"
   gem "rubocop", "~> 1.88"
   gem "rubocop-performance", "~> 1.26"
 end
