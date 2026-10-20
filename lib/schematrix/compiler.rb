@@ -47,7 +47,7 @@ module Schematrix
     def root_locator(input_file)
       # Paths may carry characters a URI cannot (spaces), so the
       # expanded path is percent-escaped; readers unescape it back.
-      path = URI::DEFAULT_PARSER.escape(File.expand_path(input_file))
+      path = URI::RFC2396_PARSER.escape(File.expand_path(input_file))
       URI("file://#{path}#/")
     end
   end
