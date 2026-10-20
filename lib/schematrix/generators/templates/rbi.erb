@@ -17,6 +17,17 @@ module <%= @module_name %>
     sig { params(key: String, value: <%= sorbet_additional_properties_type %>).returns(<%= sorbet_additional_properties_type %>) }
     def []=(key, value); end
     <% end %>
+<% unless coercion_helpers.empty? %>
+
+    <%= sorbet_coercion_helper_signature %>
+    def self.coerce_class_slot(value, klass); end
+
+    <%= sorbet_coercion_helper_signature %>
+    def self.coerce_array_slot(value, klass); end
+
+    <%= sorbet_coercion_helper_signature %>
+    def self.coerce_map_slot(value, klass); end
+<% end %>
 <% property_coercions.each do |name, plan| %>
 <% next if plan.nil? %>
 

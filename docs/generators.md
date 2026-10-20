@@ -26,7 +26,10 @@ For each object schema the compiler found, one file per class:
 - One accessor per property, plus its entry in `ORIGINAL_KEYS`.
 - Catch-all accessors `[]` and `[]=` when the class accepts extra keys.
 - `from_h` and `to_h` for loading and dumping, with one `coerce_` method
-  per property whose values carry a nested class.
+  per property whose values carry a nested class. Each delegates to one
+  of three shared slot helpers (`coerce_class_slot`, `coerce_array_slot`,
+  `coerce_map_slot`) that carry the symmetric load/dump dispatch once
+  per shape.
 
 The details live in [Generated code](generated-code.md).
 

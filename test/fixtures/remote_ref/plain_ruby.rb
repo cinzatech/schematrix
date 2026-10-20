@@ -31,34 +31,38 @@ module M
       @_extra[key] = value
     end
 
-    def self.coerce_shipping_address(value)
-      if value.is_a?(M::Address)
+    def self.coerce_class_slot(value, klass)
+      if value.is_a?(klass)
         value.to_h
       elsif value.is_a?(Hash)
-        M::Address.from_h(value)
+        klass.from_h(value)
       else
         value
       end
+    end
+
+    def self.coerce_array_slot(value, klass)
+      return value unless value.is_a?(Array)
+
+      value.map { |element| coerce_class_slot(element, klass) }
+    end
+
+    def self.coerce_map_slot(value, klass)
+      return value unless value.is_a?(Hash)
+
+      value.transform_values { |entry| coerce_class_slot(entry, klass) }
+    end
+
+    def self.coerce_shipping_address(value)
+      coerce_class_slot(value, M::Address)
     end
 
     def self.coerce_billing_address(value)
-      if value.is_a?(M::PostalAddress)
-        value.to_h
-      elsif value.is_a?(Hash)
-        M::PostalAddress.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, M::PostalAddress)
     end
 
     def self.coerce_contact(value)
-      if value.is_a?(M::Address::Props::Zip)
-        value.to_h
-      elsif value.is_a?(Hash)
-        M::Address::Props::Zip.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, M::Address::Props::Zip)
     end
 
     def self.from_h(hash)

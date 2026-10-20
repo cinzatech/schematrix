@@ -23,6 +23,12 @@ module Schematrix
   class OutputCollisionError < StandardError
   end
 
+  # Raised while rendering a class whose coerced property names fold
+  # onto the shared coercion helpers: the delegating property methods
+  # would override the helpers they call.
+  class CoercionHelperCollisionError < StandardError
+  end
+
   # Compiles every schema reachable from `input_files` and writes one
   # file per compiled object schema per generator.
   #
@@ -46,9 +52,11 @@ module Schematrix
   # schema, Schematrix::UnsupportedDialectError when a `$schema` header
   # names a dialect other than draft 2020-12,
   # Schematrix::UnresolvableLocatorError when a reference cannot be
-  # resolved, and Schematrix::OutputCollisionError when two outputs
-  # would share one file. Collisions are detected before the first
-  # write, so a failed run leaves no partial output.
+  # resolved, Schematrix::OutputCollisionError when two outputs would
+  # share one file, and Schematrix::CoercionHelperCollisionError when
+  # a property name would override a generated coercion helper.
+  # Output collisions are detected before the first write, so such
+  # failures leave no partial output.
   def self.generate(
     generators:,
     input_files:,

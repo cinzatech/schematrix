@@ -108,6 +108,67 @@ class TestGenerate < Minitest::Test
     Schematrix.logger = nil
   end
 
+  HELPER_COLLISION_SCHEMA = <<~JSON
+    {
+      "type": "object",
+      "properties": {
+        "class_slot": {
+          "type": "object",
+          "properties": { "value": { "type": "string" } }
+        }
+      }
+    }
+  JSON
+
+  def test_coerced_helper_named_property_raises
+    Dir.mktmpdir do |dir|
+      schema = File.join(dir, "clash.json")
+      File.write(schema, HELPER_COLLISION_SCHEMA)
+
+      error =
+        assert_raises(Schematrix::CoercionHelperCollisionError) do
+          Schematrix.generate(
+            generators: [
+              Schematrix::Generators::PlainRuby.new(
+                File.join(dir, "out"),
+                MODULE_NAME,
+              ),
+            ],
+            input_files: [schema],
+          )
+        end
+
+      assert_includes error.message, "class_slot"
+    end
+  end
+
+  SCALAR_HELPER_SCHEMA = <<~JSON
+    {
+      "type": "object",
+      "properties": { "class_slot": { "type": "string" } }
+    }
+  JSON
+
+  def test_scalar_helper_named_property_generates
+    Dir.mktmpdir do |dir|
+      schema = File.join(dir, "clash.json")
+      File.write(schema, SCALAR_HELPER_SCHEMA)
+      output = File.join(dir, "out")
+
+      Schematrix.generate(
+        generators: [
+          Schematrix::Generators::PlainRuby.new(output, MODULE_NAME),
+        ],
+        input_files: [schema],
+      )
+
+      assert_match(
+        /attr_accessor :class_slot/,
+        File.read(File.join(output, "clash.rb")),
+      )
+    end
+  end
+
   def test_same_basename_inputs_raise_before_writing
     Dir.mktmpdir do |dir|
       one = write_schema(File.join(dir, "one", "order.json"))

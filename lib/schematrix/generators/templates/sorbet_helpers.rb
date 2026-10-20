@@ -55,6 +55,14 @@ module Schematrix
           }) }"
         end
 
+        # Signature of the shared coercion helpers, which also carry
+        # the slot's target class.
+        def sorbet_coercion_helper_signature
+          "sig { params(value: #{SORBET_TYPE_ANYTHING}, klass: #{
+            SORBET_TYPE_ANYTHING
+          }).returns(#{SORBET_TYPE_ANYTHING}) }"
+        end
+
         def sorbet_from_h_signature
           [
             "sig do",

@@ -266,254 +266,110 @@ module Schematrix::Meta
       @_extra[key] = value
     end
 
-    def self.coerce_definitions(value)
+    def self.coerce_class_slot(value, klass)
+      if value.is_a?(klass)
+        value.to_h
+      elsif value.is_a?(Hash)
+        klass.from_h(value)
+      else
+        value
+      end
+    end
+
+    def self.coerce_array_slot(value, klass)
+      return value unless value.is_a?(Array)
+
+      value.map { |element| coerce_class_slot(element, klass) }
+    end
+
+    def self.coerce_map_slot(value, klass)
       return value unless value.is_a?(Hash)
 
-      value.transform_values do |entry|
-        if entry.is_a?(Schematrix::Meta::Schema)
-          entry.to_h
-        elsif entry.is_a?(Hash)
-          Schematrix::Meta::Schema.from_h(entry)
-        else
-          entry
-        end
-      end
+      value.transform_values { |entry| coerce_class_slot(entry, klass) }
+    end
+
+    def self.coerce_definitions(value)
+      coerce_map_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_dependencies(value)
-      return value unless value.is_a?(Hash)
-
-      value.transform_values do |entry|
-        if entry.is_a?(Schematrix::Meta::Schema)
-          entry.to_h
-        elsif entry.is_a?(Hash)
-          Schematrix::Meta::Schema.from_h(entry)
-        else
-          entry
-        end
-      end
+      coerce_map_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_defs(value)
-      return value unless value.is_a?(Hash)
-
-      value.transform_values do |entry|
-        if entry.is_a?(Schematrix::Meta::Schema)
-          entry.to_h
-        elsif entry.is_a?(Hash)
-          Schematrix::Meta::Schema.from_h(entry)
-        else
-          entry
-        end
-      end
+      coerce_map_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_prefix_items(value)
-      return value unless value.is_a?(Array)
-
-      value.map do |element|
-        if element.is_a?(Schematrix::Meta::Schema)
-          element.to_h
-        elsif element.is_a?(Hash)
-          Schematrix::Meta::Schema.from_h(element)
-        else
-          element
-        end
-      end
+      coerce_array_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_items(value)
-      if value.is_a?(Schematrix::Meta::Schema)
-        value.to_h
-      elsif value.is_a?(Hash)
-        Schematrix::Meta::Schema.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_contains(value)
-      if value.is_a?(Schematrix::Meta::Schema)
-        value.to_h
-      elsif value.is_a?(Hash)
-        Schematrix::Meta::Schema.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_additional_properties(value)
-      if value.is_a?(Schematrix::Meta::Schema)
-        value.to_h
-      elsif value.is_a?(Hash)
-        Schematrix::Meta::Schema.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_properties(value)
-      return value unless value.is_a?(Hash)
-
-      value.transform_values do |entry|
-        if entry.is_a?(Schematrix::Meta::Schema)
-          entry.to_h
-        elsif entry.is_a?(Hash)
-          Schematrix::Meta::Schema.from_h(entry)
-        else
-          entry
-        end
-      end
+      coerce_map_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_pattern_properties(value)
-      return value unless value.is_a?(Hash)
-
-      value.transform_values do |entry|
-        if entry.is_a?(Schematrix::Meta::Schema)
-          entry.to_h
-        elsif entry.is_a?(Hash)
-          Schematrix::Meta::Schema.from_h(entry)
-        else
-          entry
-        end
-      end
+      coerce_map_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_dependent_schemas(value)
-      return value unless value.is_a?(Hash)
-
-      value.transform_values do |entry|
-        if entry.is_a?(Schematrix::Meta::Schema)
-          entry.to_h
-        elsif entry.is_a?(Hash)
-          Schematrix::Meta::Schema.from_h(entry)
-        else
-          entry
-        end
-      end
+      coerce_map_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_property_names(value)
-      if value.is_a?(Schematrix::Meta::Schema)
-        value.to_h
-      elsif value.is_a?(Hash)
-        Schematrix::Meta::Schema.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_if_(value)
-      if value.is_a?(Schematrix::Meta::Schema)
-        value.to_h
-      elsif value.is_a?(Hash)
-        Schematrix::Meta::Schema.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_then_(value)
-      if value.is_a?(Schematrix::Meta::Schema)
-        value.to_h
-      elsif value.is_a?(Hash)
-        Schematrix::Meta::Schema.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_else_(value)
-      if value.is_a?(Schematrix::Meta::Schema)
-        value.to_h
-      elsif value.is_a?(Hash)
-        Schematrix::Meta::Schema.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_all_of(value)
-      return value unless value.is_a?(Array)
-
-      value.map do |element|
-        if element.is_a?(Schematrix::Meta::Schema)
-          element.to_h
-        elsif element.is_a?(Hash)
-          Schematrix::Meta::Schema.from_h(element)
-        else
-          element
-        end
-      end
+      coerce_array_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_any_of(value)
-      return value unless value.is_a?(Array)
-
-      value.map do |element|
-        if element.is_a?(Schematrix::Meta::Schema)
-          element.to_h
-        elsif element.is_a?(Hash)
-          Schematrix::Meta::Schema.from_h(element)
-        else
-          element
-        end
-      end
+      coerce_array_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_one_of(value)
-      return value unless value.is_a?(Array)
-
-      value.map do |element|
-        if element.is_a?(Schematrix::Meta::Schema)
-          element.to_h
-        elsif element.is_a?(Hash)
-          Schematrix::Meta::Schema.from_h(element)
-        else
-          element
-        end
-      end
+      coerce_array_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_not_(value)
-      if value.is_a?(Schematrix::Meta::Schema)
-        value.to_h
-      elsif value.is_a?(Hash)
-        Schematrix::Meta::Schema.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_unevaluated_items(value)
-      if value.is_a?(Schematrix::Meta::Schema)
-        value.to_h
-      elsif value.is_a?(Hash)
-        Schematrix::Meta::Schema.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_unevaluated_properties(value)
-      if value.is_a?(Schematrix::Meta::Schema)
-        value.to_h
-      elsif value.is_a?(Hash)
-        Schematrix::Meta::Schema.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.coerce_content_schema(value)
-      if value.is_a?(Schematrix::Meta::Schema)
-        value.to_h
-      elsif value.is_a?(Hash)
-        Schematrix::Meta::Schema.from_h(value)
-      else
-        value
-      end
+      coerce_class_slot(value, Schematrix::Meta::Schema)
     end
 
     def self.from_h(hash)

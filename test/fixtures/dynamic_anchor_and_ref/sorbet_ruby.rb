@@ -33,19 +33,34 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(value: T.anything).returns(T.anything) }
-    def self.coerce_children(value)
+    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
+    def self.coerce_class_slot(value, klass)
+      if value.is_a?(klass)
+        value.to_h
+      elsif value.is_a?(Hash)
+        klass.from_h(value)
+      else
+        value
+      end
+    end
+
+    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
+    def self.coerce_array_slot(value, klass)
       return value unless value.is_a?(Array)
 
-      value.map do |element|
-        if element.is_a?(M::Schema)
-          element.to_h
-        elsif element.is_a?(Hash)
-          M::Schema.from_h(element)
-        else
-          element
-        end
-      end
+      value.map { |element| coerce_class_slot(element, klass) }
+    end
+
+    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
+    def self.coerce_map_slot(value, klass)
+      return value unless value.is_a?(Hash)
+
+      value.transform_values { |entry| coerce_class_slot(entry, klass) }
+    end
+
+    sig { params(value: T.anything).returns(T.anything) }
+    def self.coerce_children(value)
+      coerce_array_slot(value, M::Schema)
     end
 
     sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }

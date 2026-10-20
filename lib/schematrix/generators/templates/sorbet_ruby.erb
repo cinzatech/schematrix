@@ -26,11 +26,15 @@ module <%= @module_name %>
       @_extra[key] = value
     end
     <% end %>
+<% unless coercion_helpers.empty? %>
+
+    <%= coercion_helpers(sorbet_coercion_helper_signature) %>
+<% end %>
 <% property_coercions.each do |name, plan| %>
 <% next if plan.nil? %>
 
     <%= sorbet_coercion_signature %>
-    <%= coercion_method_body(name, plan) %>
+    <%= coercion_delegation(name, plan) %>
 <% end %>
 
     <%= sorbet_from_h_signature %>

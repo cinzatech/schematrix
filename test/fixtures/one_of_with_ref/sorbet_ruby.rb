@@ -24,15 +24,34 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(value: T.anything).returns(T.anything) }
-    def self.coerce_value(value)
-      if value.is_a?(M::Schema::Defs::Named)
+    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
+    def self.coerce_class_slot(value, klass)
+      if value.is_a?(klass)
         value.to_h
       elsif value.is_a?(Hash)
-        M::Schema::Defs::Named.from_h(value)
+        klass.from_h(value)
       else
         value
       end
+    end
+
+    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
+    def self.coerce_array_slot(value, klass)
+      return value unless value.is_a?(Array)
+
+      value.map { |element| coerce_class_slot(element, klass) }
+    end
+
+    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
+    def self.coerce_map_slot(value, klass)
+      return value unless value.is_a?(Hash)
+
+      value.transform_values { |entry| coerce_class_slot(entry, klass) }
+    end
+
+    sig { params(value: T.anything).returns(T.anything) }
+    def self.coerce_value(value)
+      coerce_class_slot(value, M::Schema::Defs::Named)
     end
 
     sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }

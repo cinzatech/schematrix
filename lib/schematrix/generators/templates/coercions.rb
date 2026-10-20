@@ -3,16 +3,23 @@ require_relative "../resolver"
 module Schematrix
   module Generators
     module Templates
-      # Computes and renders the from_h/to_h round-trip machinery of a
-      # generated class. One symmetric class method per property
-      # that carries a class-shaped term dispatches on the value's own
-      # class: a Hash loads through the target class's from_h, an
-      # instance dumps through its to_h, everything else (booleans,
-      # scalars, already-raw values) passes through unchanged. The
-      # same rule covers plain-Hash map slots (values coerce
-      # from the declared catch-all schema) and array elements.
+      # Computes and renders the from_h/to_h round-trip machinery of
+      # a generated class. The symmetric dispatch (a Hash loads
+      # through the target class's from_h, an instance dumps through
+      # its to_h, everything else such as booleans and scalars passes
+      # through unchanged) is emitted once per slot shape as a shared
+      # class helper taking the target class, and one delegating
+      # class method per class-shaped property pins its own target.
+      # Map slots coerce their values, array slots their elements.
       module Coercions
         include Resolver
+
+        # The helper a plan's kind delegates to.
+        SLOT_HELPERS = {
+          class: "class_slot",
+          array_of: "array_slot",
+          map_of: "map_slot",
+        }.freeze
 
         # The coercion plan of every property, as [mangled name,
         # plan] pairs. A plan is [kind, class name] with kind one of
@@ -20,9 +27,26 @@ module Schematrix
         # values never need conversion.
         def property_coercions
           @property_coercions ||=
-            @properties.to_h.map do |name, schema|
-              [name, coercion_plan(@path, "properties/#{name}", schema)]
-            end
+            coercion_plans.tap { |plans| assert_helper_names_free(plans) }
+        end
+
+        def coercion_plans
+          @properties.to_h.map do |name, schema|
+            [name, coercion_plan(@path, "properties/#{name}", schema)]
+          end
+        end
+
+        # Property methods and helpers share the coerce_ namespace: a
+        # property whose mangled name is a helper name would override
+        # the helper it and its siblings delegate to.
+        def assert_helper_names_free(plans)
+          coerced = plans.select { |_name, plan| plan }.map(&:first)
+          clash = coerced & SLOT_HELPERS.values
+          return if clash.empty?
+
+          raise CoercionHelperCollisionError,
+                "#{@path}: properties #{clash.inspect} would override " \
+                  "generated coercion helpers; rename them in the schema"
         end
 
         # The first class-shaped term of the schema, mirroring the
@@ -103,57 +127,68 @@ module Schematrix
           "#{@module_name}::#{plan.last}"
         end
 
-        # The body of one symmetric coercion method. The dispatch
-        # reads the value's own class, so the same method serves
-        # loading (Hash in) and dumping (instance in); `subject` names
-        # the value under dispatch (the element inside arrays, the
-        # entry inside maps).
-        def coercion_method_body(name, plan)
-          klass = coercion_class(plan)
-          dispatch =
-            lambda do |subject|
-              [
-                "if #{subject}.is_a?(#{klass})",
-                "  #{subject}.to_h",
-                "elsif #{subject}.is_a?(Hash)",
-                "  #{klass}.from_h(#{subject})",
-                "else",
-                "  #{subject}",
-                "end",
-              ].join("\n")
-            end
+        # The shared coercion machinery, emitted once per class: one
+        # symmetric helper per slot shape. The dispatch reads the
+        # value's own class, so the same helper serves loading (Hash
+        # in) and dumping (instance in). `sig` prefixes each helper
+        # when the output format annotates signatures. Classes with
+        # no coerced properties emit nothing.
+        def coercion_helpers(sig = nil)
+          return "" unless property_coercions.any? { |_name, plan| plan }
 
-          body =
-            case plan.first
-            when :class
-              dispatch.call("value")
-            when :array_of
-              [
-                "return value unless value.is_a?(Array)",
-                "",
-                "value.map do |element|",
-                indented(dispatch.call("element"), 2),
-                "end",
-              ].join("\n")
-            when :map_of
-              [
-                "return value unless value.is_a?(Hash)",
-                "",
-                "value.transform_values do |entry|",
-                indented(dispatch.call("entry"), 2),
-                "end",
-              ].join("\n")
-            end
-
-          "def self.coerce_#{name}(value)\n#{indented(body, 1)}\nend"
+          prefix = sig ? "#{sig}\n" : ""
+          helper_bodies.map { |body| "#{prefix}#{body}" }.join("\n\n")
         end
 
-        # All coercion methods of the class, blank-line separated.
-        def coercion_methods
-          property_coercions
-            .filter_map { |name, plan| coercion_method_body(name, plan) }
-            .join("\n\n")
+        def helper_bodies
+          [class_slot_body, array_slot_body, map_slot_body]
         end
+
+        def class_slot_body
+          <<~RUBY.rstrip
+            def self.coerce_class_slot(value, klass)
+              if value.is_a?(klass)
+                value.to_h
+              elsif value.is_a?(Hash)
+                klass.from_h(value)
+              else
+                value
+              end
+            end
+          RUBY
+        end
+
+        def array_slot_body
+          <<~RUBY.rstrip
+            def self.coerce_array_slot(value, klass)
+              return value unless value.is_a?(Array)
+
+              value.map { |element| coerce_class_slot(element, klass) }
+            end
+          RUBY
+        end
+
+        def map_slot_body
+          <<~RUBY.rstrip
+            def self.coerce_map_slot(value, klass)
+              return value unless value.is_a?(Hash)
+
+              value.transform_values { |entry| coerce_class_slot(entry, klass) }
+            end
+          RUBY
+        end
+
+        # The delegation of one property to its slot's helper.
+        def coercion_delegation(name, plan)
+          <<~RUBY.rstrip
+            def self.coerce_#{name}(value)
+              coerce_#{slot_helper(plan)}(value, #{coercion_class(plan)})
+            end
+          RUBY
+        end
+
+        # The helper implementing a plan's slot shape.
+        def slot_helper(plan) = SLOT_HELPERS.fetch(plan.first)
 
         def indented(code, levels)
           code
