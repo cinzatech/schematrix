@@ -10,6 +10,10 @@ module Schematrix
         # class file.
         CONTAINER_SEGMENTS = %w[Props Defs].freeze
 
+        # Holds everything an ERB template reads: the module
+        # namespace, the schema path, the class name, the properties
+        # keyed by mangled name, the original-name key map, the
+        # catch-all schema, and the description comment.
         def initialize(
           module_name:,
           path:,
@@ -28,6 +32,8 @@ module Schematrix
           @documentation_comment = documentation_comment
         end
 
+        # Evaluates the ERB with this template's binding: the template
+        # calls the helper methods below and in the included modules.
         def render(erb)
           erb.result(binding)
         end
@@ -66,10 +72,13 @@ module Schematrix
           lines.map { |line| "  #{line}" }.join("\n")
         end
 
+        # Whether a name segment is a container level (Props/Defs)
+        # and therefore opens as a module.
         def container_segment?(segment)
           CONTAINER_SEGMENTS.include?(segment)
         end
 
+        # One `end` per nesting level of the class declaration.
         def declaration_close
           Array.new(@class_name.split("::").size) { "  end" }.join("\n")
         end

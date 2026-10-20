@@ -8,7 +8,8 @@ Gem::Specification.new do |s|
                   "from JSON Schema definition"
   s.authors     = ["Cinza"]
   s.email       = "cinza@lostrego.org"
-  s.files = Dir["lib/**/*.{rb,erb}", "exe/**/*", "README.md", "LICENSE"]
+  s.files = Dir["lib/**/*.{rb,erb}", "exe/**/*", "docs/**/*.md",
+                "README.md", "LICENSE"]
   s.homepage =
     "https://github.com/cinzatech/schematrix"
   s.license = "AGPL-3.0-or-later"

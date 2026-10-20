@@ -7,8 +7,11 @@ module Schematrix
       module SorbetHelpers
         include TypeComposer
 
+        # Sorbet's spelling of the unconstrained type.
         SORBET_TYPE_ANYTHING = "T.anything"
 
+        # Sorbet spelling per JSON Schema type name; unknown names fall
+        # back to T.anything.
         SORBET_SCALAR_TYPES = {
           nil => SORBET_TYPE_ANYTHING,
           TYPE_STRING => "String",

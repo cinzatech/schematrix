@@ -8,12 +8,14 @@ module Schematrix
       class Rbs < Base
         include TypeComposer
 
-        # D25: RBS renders `top` where Sorbet renders T.anything. The
+        # RBS renders `top` where Sorbet renders T.anything. The
         # untyped spelling is retired from generated output: top is
         # the tracked top type, writes stay fully accepting but reads
         # must be narrowed.
         RBS_TYPE_TOP = "top"
 
+        # RBS spelling per JSON Schema type name; unknown names fall
+        # back to top.
         RBS_SCALAR_TYPES = {
           nil => RBS_TYPE_TOP,
           TYPE_STRING => "String",

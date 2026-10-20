@@ -2,44 +2,52 @@ require "uri"
 require "yaml"
 
 module Schematrix
-  # Raised when a locator points at a node that doesn't exist
+  # Raised when a locator points at a node that does not exist: a bad
+  # JSON pointer, an unknown `$anchor`, an unmapped remote URI, or an
+  # unsupported URI scheme.
   class UnresolvableLocatorError < StandardError
   end
 
   # Raised when a loaded document cannot be a JSON Schema at all:
-  # anything but an object or a boolean
+  # anything but an object or a boolean.
   class InvalidSchemaError < StandardError
   end
 
-  # Raised when a document's $schema header names a dialect other
-  # than the one schematrix targets; the compiler approximates
-  # 2020-12 semantics only
+  # Raised when a document's `$schema` header names a dialect other
+  # than the one schematrix targets. The compiler reads 2020-12
+  # semantics only and refuses the document instead of guessing.
   class UnsupportedDialectError < StandardError
   end
 
   # Loads and caches schema documents, and resolves locator URIs to the
   # node they point at. Each file is read and parsed at most once.
   # Fragments that are plain names (no leading slash) resolve through
-  # the document's $anchor index instead of the JSON pointer walk.
-  # Remote http(s) locators never touch the network: they resolve
-  # through the configured schema directories (D16), which mirror the
-  # URI as host/path below the directory, optionally carrying one of
-  # the known file extensions.
+  # the document's `$anchor` index instead of the JSON pointer walk.
+  # Remote `http(s)` locators never touch the network: they resolve
+  # through the configured schema directories, which mirror the URI as
+  # host/path below the directory, optionally carrying one of the
+  # known file extensions.
   class DocumentStore
     # File extensions probed for a mapped remote URI, in order: the
     # exact mirrored path first, then common schema file extensions.
     REMOTE_EXTENSIONS = ["", ".json", ".yaml", ".yml"].freeze
 
-    # Ruby classes a parsed document may have to be a schema at all
+    # Ruby classes a parsed document may have to be a schema at all.
     SCHEMA_CLASSES = [Hash, TrueClass, FalseClass].freeze
 
     # Dialects this tool targets: the 2020-12 core metaschema, http
     # and https spellings, with or without a trailing empty fragment.
+    # A document naming any other dialect raises
+    # UnsupportedDialectError at load time; a document without a
+    # header is read as 2020-12.
     SUPPORTED_DIALECTS = %w[
       https://json-schema.org/draft/2020-12/schema
       http://json-schema.org/draft/2020-12/schema
     ].freeze
 
+    # `schema_dirs` lists the directories remote URIs resolve through,
+    # in search order. An empty list means remote references fail
+    # loudly instead of resolving.
     def initialize(schema_dirs: [])
       @schema_dirs = schema_dirs.map { |dir| File.expand_path(dir) }
       @documents = {}
@@ -47,16 +55,19 @@ module Schematrix
       @ignored = {}
     end
 
-    # Returns the schema node the given URI points at, walking the
-    # JSON pointer in the URI fragment.
+    # Returns the schema node the given URI points at: the document is
+    # loaded (and validated) on first access, the `$anchor` form of
+    # the fragment is rewritten to its pointer, and the JSON pointer
+    # is walked. Raises UnresolvableLocatorError when the pointer
+    # names nothing.
     def node_at(uri)
       uri = canonicalize(uri)
       walk_pointer(document(uri), uri)
     end
 
-    # Ignore bookkeeping: keywords with no codegen representation
-    # are skipped; each one is logged once per document at debug
-    # level. The key identifies a document (see document_key).
+    # Registry hook for keywords with no codegen representation: each
+    # one is logged once per document, at debug level. The key
+    # identifies a document (see document_key).
     def note_ignored(key, keyword, locator)
       seen = (@ignored[key] ||= Set.new)
       return unless seen.add?(keyword)
@@ -77,9 +88,10 @@ module Schematrix
     end
 
     # Rewrites plain-name fragments (no leading slash) to the JSON
-    # pointer of the schema carrying that $anchor, so every consumer
+    # pointer of the schema carrying that `$anchor`, so every consumer
     # of the locator (class names, edges, cycle guards) sees the
-    # pointer form. Pointer fragments pass through unchanged.
+    # pointer form. Pointer fragments pass through unchanged. Raises
+    # UnresolvableLocatorError when the document names no such anchor.
     def canonicalize(uri)
       return uri unless anchor_name?(uri)
 
@@ -94,9 +106,10 @@ module Schematrix
       rewritten
     end
 
-    # D9 helper: the locator of the last schema carrying a
-    # $dynamicAnchor with the given name, in document order. nil when
-    # the document names no such anchor.
+    # The locator of the last schema carrying a `$dynamicAnchor` with
+    # the given name, in document order. nil when the document names
+    # no such anchor. This is the fallback resolution for
+    # `$dynamicRef` (the static approximation lives in Visitor).
     def last_dynamic_anchor_locator(uri, name)
       segments = nil
       each_node(document(uri)) do |node, path|
@@ -111,6 +124,8 @@ module Schematrix
 
     private
 
+    # Whether the fragment names an $anchor: a plain name with no
+    # leading slash and not empty.
     def anchor_name?(uri)
       !uri.fragment.nil? && !uri.fragment.empty? &&
         !uri.fragment.start_with?("/")
@@ -151,21 +166,26 @@ module Schematrix
       end
     end
 
+    # Escapes one JSON pointer token: ~ becomes ~0, / becomes ~1.
     def escape(token)
       token.to_s.gsub("~", "~0").gsub("/", "~1")
     end
 
+    # Undoes the percent-escaping Compiler#root_locator applied to a
+    # file path.
     def unescape_path(path)
       URI::RFC2396_PARSER.unescape(path)
     end
 
+    # The parsed document a locator belongs to, read and parsed on
+    # first access and cached per document key.
     def document(uri)
       @documents[document_key(uri)] ||= read_document(uri)
     end
 
     # Reads and parses a document: local files directly, remote
-    # locators through the schema directory mapping (D16). Every
-    # document is validated on first load (see validate_document).
+    # locators through the schema directory mapping. Every document is
+    # validated on first load (see validate_document).
     def read_document(uri)
       document =
         case uri.scheme
@@ -181,12 +201,12 @@ module Schematrix
       document
     end
 
-    # Early refusal at load time (the D11 adoption scope): a document
-    # that cannot be a schema (anything but an object or a boolean)
-    # fails loudly instead of crashing later on keyword reads, and a
-    # $schema header naming a dialect other than 2020-12 is rejected
-    # up front rather than silently approximated. Documents without
-    # a header are read as 2020-12.
+    # Load-time validation. A document that cannot be a schema
+    # (anything but an object or a boolean) raises InvalidSchemaError
+    # instead of crashing later on keyword reads, and a `$schema`
+    # header naming a dialect other than 2020-12 raises
+    # UnsupportedDialectError instead of being read with the wrong
+    # semantics. Documents without a header are read as 2020-12.
     def validate_document(document, uri)
       unless SCHEMA_CLASSES.any? { |type| document.is_a?(type) }
         raise InvalidSchemaError,
@@ -205,9 +225,9 @@ module Schematrix
               "#{SUPPORTED_DIALECTS.first}"
     end
 
-    # D16 mapping: a remote locator resolves to the first existing
-    # local file among the schema directories. Raises when the URI
-    # cannot be mapped (query string) or nothing is found.
+    # Maps a remote locator to the first existing local file among the
+    # schema directories. Raises when the URI cannot be mapped (query
+    # string) or nothing is found (every candidate is listed).
     def map_remote(uri)
       if uri.query
         raise UnresolvableLocatorError,
@@ -264,6 +284,8 @@ module Schematrix
       end
     end
 
+    # Walks the fragment's pointer from the document root, one step
+    # per token. Raises UnresolvableLocatorError when any step fails.
     def walk_pointer(node, uri)
       tokens(uri.fragment).reduce(node) do |current, token|
         step(current, token)
@@ -273,6 +295,8 @@ module Schematrix
       raise UnresolvableLocatorError, "Nothing found at #{uri}"
     end
 
+    # Splits a fragment into JSON pointer tokens: the leading empty
+    # segment is dropped and ~1 / ~0 are unescaped.
     def tokens(fragment)
       return [] if fragment.nil? || fragment.empty? || fragment == "/"
 
@@ -282,6 +306,8 @@ module Schematrix
         .map { |token| token.gsub("~1", "/").gsub("~0", "~") }
     end
 
+    # One pointer step: array nodes index numerically, hash nodes
+    # fetch by key.
     def step(node, token)
       case node
       when Array

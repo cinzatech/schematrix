@@ -2,7 +2,8 @@ require "uri"
 
 module Schematrix
   module Generators
-    # Common functions for Ruby class name and file handling
+    # Common functions for Ruby class name and file handling: how a
+    # schema locator becomes a class name, and how names nest.
     module Resolver
       # Returns the qualified class name for a locator and, optionally,
       # one nested schema name (a property, an items branch, a variant
@@ -42,6 +43,8 @@ module Schematrix
 
       private
 
+      # Folds a /-separated segment chain into one PascalCase constant
+      # name with :: separators.
       def pascal_case(string)
         string
           .to_s

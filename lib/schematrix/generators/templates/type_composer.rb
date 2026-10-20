@@ -3,8 +3,8 @@ require_relative "base"
 module Schematrix
   module Generators
     module Templates
-      # The bare-type algebra shared by every type-emitting format
-      # (D7): computing the type of a schema, its variants, array
+      # The bare-type algebra shared by every type-emitting format:
+      # computing the type of a schema, its variants, array
       # elements and intersections is one algorithm; only the syntax
       # of the target notation differs. Formats including this module
       # supply that syntax through the hook methods below:
@@ -14,14 +14,14 @@ module Schematrix
       module TypeComposer
         include Resolver
 
-        # The full type of a schema: the bare type underneath (D7),
+        # The full type of a schema: the bare type underneath,
         # wrapped for absence wherever the property is optional.
         def type_of(path, name, schema)
           return untyped if schema.nil?
 
           # A null-only record is just nil, unless it carries more
           # terms: a ref to a target typed ["object", "null"] keeps
-          # its class (gap 4) and renders nilable instead.
+          # its class and renders nilable instead.
           return null_only_type if null_only?(schema)
 
           combined = bare_type(path, name, schema)
@@ -48,9 +48,9 @@ module Schematrix
 
         # Returns the type for a schema as a union string, without
         # nilability: the declared type set, the $ref target, and both
-        # variant lists folded in (D1), each variant a bare type too.
+        # variant lists folded in, each variant a bare type too.
         # A schema whose whole shape is a catch-all renders as a plain
-        # String-keyed Hash instead of a class (D23).
+        # String-keyed Hash instead of a class.
         def bare_type(path, name, schema)
           return untyped if schema.nil?
 
@@ -73,7 +73,7 @@ module Schematrix
               end
             end
 
-          # A conjoined schema (D5) may combine its own terms with a
+          # A conjoined schema may combine its own terms with a
           # $ref; they intersect when the intersection flag is set,
           # union otherwise
           base << class_name_from_path(schema.ref) unless schema.ref.nil?
@@ -86,9 +86,9 @@ module Schematrix
           union(base)
         end
 
-        # D23: a catch-all-only schema types as a plain Hash keyed by
+        # A catch-all-only schema types as a plain Hash keyed by
         # the original String property names; the values carry the
-        # catch-all's own type (and coerce from it in loading, D21).
+        # catch-all's own type (and coerce from it in loading).
         def map_type(path, name, schema)
           slot = nested_locator(path, name)
           string_keyed_hash(map_value_type(slot, schema.additional_properties))
@@ -107,13 +107,13 @@ module Schematrix
           union(terms)
         end
 
-        # D13 element union: the union of prefix item types, plus the
+        # Element union: the union of prefix item types, plus the
         # items type when present, plus untyped whenever the tail is
         # open (no items). items: false closes the tail and adds no
         # term, and a false prefix item accepts nothing and likewise
         # contributes no term. Inline object prefix items fall back to
         # untyped (no stable class name); $ref items keep their class;
-        # map-shaped items are plain Hashes (D23).
+        # map-shaped items are plain Hashes.
         def array_element_type(path, schema)
           terms =
             schema
@@ -139,7 +139,7 @@ module Schematrix
           type_of(path, "prefixItems", item)
         end
 
-        # D5 conjoin: distinct declarations intersect syntactically,
+        # Conjoin: distinct declarations intersect syntactically,
         # even if uninhabited. untyped is the identity; an empty
         # conjunction falls back to untyped.
         def intersection(types)

@@ -4,6 +4,8 @@
 
 `schematrix` is a Ruby gem and CLI tool that reads [JSON Schema](https://json-schema.org/) files and produces idiomatic Ruby source code. Point it at a schema, choose a generator, and get ready-to-use Ruby classes and type signatures written into your project.
 
+Four output formats share one compiler: plain Ruby classes, Ruby classes with inline Sorbet signatures, Sorbet RBI files, and RBS signature files.
+
 ---
 
 ## Requirements
@@ -122,15 +124,16 @@ schema's property names to the generated accessor symbols, plus a
 original names: nested object schemas load through their own
 `from_h`, unknown keys ride the catch-all (`[]`/`[]=`) with their
 original String keys, and absent keys keep their constructor
-defaults.
+defaults. See the [generated code guide](docs/generated-code.md).
 
-> Note: YAML is supported as well for schema definitions
+Schema documents in YAML work the same way; JSON is a subset of YAML
+and both load.
 
 ---
 
 ## CLI Reference
 
-```
+```text
 Usage: schematrix [OPTIONS] INPUT [INPUT...]
 
 Generate code matching a JSON Schema
@@ -148,9 +151,15 @@ Options:
                            vendor/schemas
   -v, --verbose            Each additional occurrence lowers logger level,
                            -vvv for the minimum
+
+Examples:
+  Produce plain Ruby code for the given schema
+    $ schematrix -g plain_ruby -m MyModule -o /output/dir my-json-schema.json
 ```
 
-The options list above mirrors `schematrix --help`.
+The options list above mirrors `schematrix --help`. The full option
+reference, including output directory pairing and exit behavior, lives
+in the [command line manual](docs/cli.md).
 
 ### Example usages
 
@@ -220,6 +229,19 @@ running from the repository root.
 
 ## Generators
 
+All four generators walk the same compiled records and write one file
+per object schema. They differ only in notation:
+
+| Name          | Writes                                                          |
+| ------------- | --------------------------------------------------------------- |
+| `plain_ruby`  | Mutable Ruby classes, no annotations                            |
+| `sorbet_ruby` | Mutable Ruby classes with inline Sorbet `sig` blocks            |
+| `rbi`         | Sorbet signature files: signatures only, empty bodies           |
+| `rbs`         | RBS signature files                                             |
+
+See the [generator guide](docs/generators.md) for sample output and the
+type mapping tables per notation.
+
 ### `plain_ruby`
 
 Produces mutable Ruby classes. For each `object` type encountered in the schema (including nested objects), the generator:
@@ -254,8 +276,33 @@ For a schema like `complex-object.schema.json`:
 
 The generator produces two files:
 
-- `complex_object.rb` — the root class with `name` and `address` properties.
-- `complex_object/props/address.rb` — a standalone `ComplexObject::Props::Address` class, nested in module declarations so every file loads in any order.
+- `complex_object.rb`: the root class with `name` and `address` properties.
+- `complex_object/props/address.rb`: a standalone `ComplexObject::Props::Address` class, nested in module declarations so every file loads in any order.
+
+---
+
+## Library usage
+
+The CLI wraps one method. Require the gem, build generator instances,
+and call `Schematrix.generate`:
+
+```ruby
+require "schematrix"
+require "schematrix/generators/base"
+
+Schematrix.generate(
+  generators: [
+    Schematrix::Generators::PlainRuby.new("generated", "MyApp"),
+    Schematrix::Generators::Rbs.new("sig", "MyApp"),
+  ],
+  input_files: ["person.schema.json"],
+)
+```
+
+Collisions (two classes on one file) are detected before the first
+write, and the compile raises instead of producing partial output. See
+the [library manual](docs/library-api.md) for the parameters, the error
+types, and logging.
 
 ---
 
@@ -270,12 +317,30 @@ flowchart LR
 
 The core components are:
 
-- **`Schematrix::Compiler`** — drives compilation: starting from the input files, it turns every reachable object schema into an internal representation.
-- **`Schematrix::DocumentStore`** — loads and caches schema documents, and looks up the nodes they contain.
-- **`Schematrix::Visitor`** — walks a schema subtree depth-first, resolving `required` fields and dispatching on `type`.
-- **`Schematrix::Schema`** — the internal representation of a schema node.
-- **`Schematrix::Generators::*`** — the code generators; handle source code production, formatting, and file I/O.
-- **`Schematrix::CLI`** — the command-line interface, built on [`tty-option`](https://github.com/piotrmurach/tty-option).
+- **`Schematrix::Compiler`**: drives compilation. Starting from the input files, it turns every reachable object schema into an internal representation.
+- **`Schematrix::DocumentStore`**: loads and caches schema documents, and looks up the nodes they contain.
+- **`Schematrix::Visitor`**: walks a schema subtree depth-first, resolving `required` fields and dispatching on `type`.
+- **`Schematrix::Schema`**: the internal representation of a schema node.
+- **`Schematrix::Generators::*`**: the code generators; they handle source code production, formatting, and file I/O.
+- **`Schematrix::CLI`**: the command-line interface, built on [`tty-option`](https://github.com/piotrmurach/tty-option).
+
+---
+
+## Documentation
+
+The complete manual lives in [`docs/`](docs/manual.md):
+
+- [Getting started](docs/getting-started.md)
+- [Command line reference](docs/cli.md)
+- [Library API](docs/library-api.md)
+- [Generators](docs/generators.md)
+- [Generated code](docs/generated-code.md)
+- [Schema features](docs/schema-features.md)
+- [Names and files](docs/naming.md)
+- [Limits and approximations](docs/limits.md)
+
+The API reference is generated with RDoc: run `bundle exec rake rdoc`
+and open `doc/index.html`.
 
 ---
 
@@ -295,9 +360,16 @@ Run the CLI from the project root:
 bundle exec exe/schematrix -g plain_ruby -m Test -o /tmp/generated examples/basic.schema.json
 ```
 
-Lint with RuboCop:
+Run the test suite:
 
 ```sh
+bundle exec rake test
+```
+
+Format and lint:
+
+```sh
+bundle exec stree check lib test exe Rakefile
 bundle exec rubocop
 ```
 

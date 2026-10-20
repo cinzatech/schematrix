@@ -33,7 +33,7 @@ module Schematrix
           @properties.map { |name, _schema| "@#{name} = #{name}" }.join("\n")
         end
 
-        # The original-name key map the class carries (D21): known
+        # The original-name key map the class carries: known
         # keys in their document spelling. Absent when the schema
         # declares no properties.
         def original_keys_constant
@@ -46,7 +46,7 @@ module Schematrix
           "ORIGINAL_KEYS = {\n#{pairs.join(",\n")}\n}.freeze"
         end
 
-        # from_h (D21): builds an instance from a String-keyed hash
+        # from_h: builds an instance from a String-keyed hash
         # as parsed from a document. Known keys land in their slots
         # (original spelling, values coerced when they carry a class);
         # absent defaulted keys stay absent so constructor defaults
@@ -132,7 +132,7 @@ module Schematrix
             .to_set
         end
 
-        # to_h (D21): the inverse of from_h. Original key names,
+        # to_h: the inverse of from_h. Original key names,
         # nested instances dumped through their own to_h, absent
         # slots omitted, catch-all riders merged under their original
         # String keys.

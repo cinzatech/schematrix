@@ -4,22 +4,51 @@ require_relative "schematrix/version"
 require_relative "schematrix/meta"
 require_relative "schematrix/compiler"
 
-# Generates Ruby code and RBS signatures from JSON Schema definition
+# Compiles JSON Schema documents and generates Ruby source and type
+# signatures from them. The CLI (Schematrix::CLI) and the library entry
+# point (Schematrix.generate) share this pipeline.
 module Schematrix
   class << self
+    # The pipeline logs through this object when one is set. `nil` by
+    # default, so library runs are silent. The CLI assigns a
+    # TTY::Logger; anything answering `debug`, `info`, `warn` and
+    # `fatal` works.
     attr_accessor :logger
   end
 
-  # Raised when two schemas, or two generators sharing a file
-  # extension in one directory, map to the same output file.
-  # Refusing beats silently overwriting one class with another.
+  # Raised before any file is written, when two outputs would land on
+  # the same path: two input files with the same basename, two
+  # generators sharing a file extension in one output directory, or
+  # names whose folding collides.
   class OutputCollisionError < StandardError
   end
 
-  # closed_shapes: true makes absent additionalProperties behave as
-  # false (closed classes) instead of the spec default (D12).
-  # schema_dirs: directories that remote schema URIs resolve through
-  # (D16), searched in order.
+  # Compiles every schema reachable from `input_files` and writes one
+  # file per compiled object schema per generator.
+  #
+  # - `generators`: generator instances, one per output format. Each
+  #   receives a `write(locator, node)` call per compiled class.
+  # - `input_files`: paths to JSON or YAML schema documents. Each is a
+  #   compilation root; `$ref` edges reachable from it are followed.
+  # - `closed_shapes`: when true, an absent `additionalProperties`
+  #   behaves as `false` (closed classes, no catch-all). The spec
+  #   default is the open catch-all.
+  # - `schema_dirs`: directories that remote `http(s)` schema URIs
+  #   resolve through, in search order. Nothing is ever fetched over
+  #   the network.
+  #
+  # Returns the compiled records as a hash keyed by schema locator
+  # (a URI string such as
+  # `file:///path/person.schema.json#/properties/address`), with
+  # Schematrix::Schema values.
+  #
+  # Raises Schematrix::InvalidSchemaError when a document cannot be a
+  # schema, Schematrix::UnsupportedDialectError when a `$schema` header
+  # names a dialect other than draft 2020-12,
+  # Schematrix::UnresolvableLocatorError when a reference cannot be
+  # resolved, and Schematrix::OutputCollisionError when two outputs
+  # would share one file. Collisions are detected before the first
+  # write, so a failed run leaves no partial output.
   def self.generate(
     generators:,
     input_files:,
@@ -37,13 +66,14 @@ module Schematrix
     end
   end
 
-  # Every generator and locator must land on its own file. Container
-  # provenance is encoded in class names (Props/Defs module levels),
-  # so distinct locators almost always map to distinct files; this
-  # catches what folding cannot (two input files with the same
-  # basename, property names that normalize to the same identifier,
-  # two same-extension generators into one directory) before any
-  # file is written.
+  # Checks that every generator writing every compiled locator lands on
+  # a distinct file, and raises Schematrix::OutputCollisionError when
+  # two outputs share a path. Container provenance is part of every
+  # class name, so distinct locators almost always map to distinct
+  # files; this check catches what name folding cannot express (two
+  # input files with the same basename, property names that normalize
+  # to one identifier, two same-extension generators in one directory)
+  # before any file is written.
   def self.assert_distinct_targets(generators, objects)
     claimed = {}
     generators.each do |generator|

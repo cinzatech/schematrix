@@ -1,17 +1,43 @@
 require "uri"
 
 module Schematrix
+  # The JSON Schema type names the compiler tracks, shared by the
+  # visitor and the notation hooks. TYPE_BOTTOM is not a schema type
+  # name: it marks the "false" schema (no valid instance) and maps
+  # to each notation's bottom type.
   TYPE_ARRAY = "array"
   TYPE_BOOLEAN = "boolean"
-  # Pseudo type marking the "false" schema (no valid instance). Not a
-  # JSON Schema type name: templates map it to their bottom type.
-  TYPE_BOTTOM = "bottom"
   TYPE_INTEGER = "integer"
   TYPE_NULL = "null"
   TYPE_NUMBER = "number"
   TYPE_OBJECT = "object"
   TYPE_STRING = "string"
 
+  # Pseudo type marking the "false" schema (no valid instance). Not a
+  # JSON Schema type name: templates map it to their bottom type.
+  TYPE_BOTTOM = "bottom"
+
+  # The compiled record for one schema node. This is the internal
+  # representation the generators render; Schematrix.generate returns
+  # these, keyed by locator.
+  #
+  # - `type`: set of JSON Schema type names (the TYPE_ constants).
+  # - `ref`: locator of the referenced object schema, when the node
+  #   resolved to a `$ref` the compiler kept; nil otherwise.
+  # - `properties`: hash of original property name => Schema.
+  # - `required`: whether the node demands a value (a property the
+  #   constructor demands); nil on records that say nothing about it.
+  # - `additional_properties`: Schema of the catch-all, Schema::Empty
+  #   for the open default, nil when the shape is closed.
+  # - `items`: Schema of the array element.
+  # - `prefix_items`: array of Schemas, one per tuple position.
+  # - `any_of` / `one_of`: arrays of variant Schemas (value context
+  #   only; object context merges its branches instead).
+  # - `intersection`: true when the record conjoins (an `allOf` merge);
+  #   its terms intersect instead of union.
+  # - `default`: the schema's `default` value.
+  # - `description`, `title`, `enum`: captured annotations. The
+  #   description becomes the generated class comment.
   Schema =
     Data.define(
       :additional_properties,
@@ -30,6 +56,8 @@ module Schematrix
       :type,
     )
 
+  # The unconstrained record: no types, no ref, no variants. It types
+  # as untyped and is the identity for intersections.
   Schema::Empty =
     Schema.new(
       additional_properties: nil,
@@ -64,16 +92,16 @@ module Schematrix
   # compiled schema constrains, and whether the constructor demands
   # the property.
   class Schema
-    # A schema that constrains nothing: empty type set, no ref, no
-    # variants. It types as untyped and is the identity for
+    # Whether the schema constrains nothing: empty type set, no ref,
+    # no variants. It types as untyped and is the identity for
     # intersections.
     def untyped?
       type.empty? && ref.nil? && any_of.empty? && one_of.empty?
     end
 
-    # A property the constructor demands: required, no default to
-    # fall back on, and not nil-typed (optional values render
-    # nilable wherever they may be absent).
+    # Whether the constructor demands the property: required, no
+    # default to fall back on, and not nil-typed. Optional values
+    # render nilable wherever they may be absent.
     def strictly_required?
       return false if type.include?(TYPE_NULL)
       return false unless required
@@ -82,13 +110,13 @@ module Schematrix
       true
     end
 
-    # D23: a schema whose whole shape is a catch-all (an object with
+    # Whether the schema's whole shape is a catch-all (an object with
     # no own properties, no ref, no variants, and a non-closed
-    # additionalProperties) is a plain Hash, not a class. It types as
-    # Hash[String, <catch-all value type>] and generates nothing: a
-    # class would only wrap a map and could not be iterated. A closed
-    # shape (catch-all nil) is an empty object, not a map, and keeps
-    # its class.
+    # additionalProperties). Such a schema is a plain Hash, not a
+    # class: it types as Hash[String, <catch-all value type>] and
+    # generates nothing, because a class would only wrap a map and
+    # could not be iterated. A closed shape (catch-all nil) is an
+    # empty object, not a map, and keeps its class.
     def map_shaped?
       return false unless type.include?(TYPE_OBJECT)
       return false unless (type - [TYPE_OBJECT, TYPE_NULL]).empty?
@@ -102,16 +130,15 @@ module Schematrix
   end
 
   # Visits a single schema subtree rooted at the given locator. When it
-  # finds a $ref it resolves the reference through the document store to
-  # decide how to represent it, and records edges to object schemas so
-  # their classes get generated. It never visits ref targets itself: the
-  # caller (see Compiler) decides when and whether to do that.
+  # finds a $ref it resolves the reference through the document store
+  # to decide how to represent it, and records edges to object schemas
+  # so their classes get generated. It never visits ref targets itself:
+  # the caller (see Compiler) decides when and whether to do that.
   #
   # Nodes are consumed as instances of the metaschema model
-  # (Schematrix::Meta::Schema, D22): compile converts raw store
-  # documents at its boundary, and from_h coerces nested schema
-  # slots on the way in, so reads are typed throughout. The $ref
-  # rewrite algebra (except/merge in resolve_reference) stays on raw
+  # (Schematrix::Meta::Schema): compile converts raw store documents at
+  # its boundary, so reads are typed throughout. The $ref rewrite
+  # algebra (except/merge in resolve_reference) stays on raw
   # String-keyed hashes: to_h dumps a node, the algebra merges, and
   # from_h loads the result back (see present_slots).
   #
@@ -123,7 +150,7 @@ module Schematrix
     # Keywords without a codegen representation. They are ignored
     # and logged once per document at debug level; the shapes stay
     # open. Extend the list when the official metaschemas reveal
-    # more keywords we cannot express as Ruby types.
+    # more keywords without a rendering as Ruby types.
     IGNORED_KEYWORDS = %w[
       not
       unevaluatedProperties
@@ -160,11 +187,17 @@ module Schematrix
     # to_h of a fresh instance is exactly that default set.
     MODEL_DEFAULTS = Schematrix::Meta::Schema.new.to_h.freeze
 
-    # The findings of a visit: the object schemas the subtree contains
-    # by locator, and edges to object schemas living elsewhere that it
-    # references.
+    # The findings of a visit: `objects` maps the locator of every
+    # object schema the subtree contains to its Schema record, and
+    # `edges` lists the locators of object schemas living elsewhere
+    # that it references. The Compiler feeds the edges back into its
+    # worklist so those classes get generated too.
     attr_reader :objects, :edges
 
+    # `locator` is the URI this visitor's subtree is rooted at, and
+    # `store` the shared DocumentStore. `closed_shapes` treats an
+    # absent additionalProperties as false (closed classes) instead
+    # of the spec's open default.
     def initialize(locator, store, closed_shapes: false)
       @locator = locator
       @store = store
@@ -174,12 +207,15 @@ module Schematrix
       @ref_base = nil
     end
 
+    # Compiles the subtree rooted at this visitor's locator. `node` is
+    # the raw parsed document node there: a Hash or a boolean. Returns
+    # self; read objects and edges afterwards.
     def compile(node)
       # Seed the path from the locator's fragment: a visitor may start
       # at the document root ("/" seeds the nameless [""] site) or at
       # an interior locator the compiler discovered through an edge.
       # The store hands out raw parsed documents; the model boundary
-      # conversion happens here (D22).
+      # conversion happens here.
       node = Schematrix::Meta::Schema.from_h(node) if node.is_a?(Hash)
       path = @locator.fragment.split("/")
       name = path.pop || "" # document root is nameless
@@ -208,7 +244,7 @@ module Schematrix
       site = path + [name]
 
       # JSON Schema allows "true" as a catch-all. It types as
-      # untyped and creates no class (D24): a class would force object
+      # untyped and creates no class: a class would force object
       # shape on values that may be scalars, so no slot type may ever
       # point at one. A document that is just true produces no output.
       return Schema::Empty if node.is_a?(TrueClass)
@@ -253,12 +289,12 @@ module Schematrix
         items = visit_subtree(site, "items", node.items)
         prefix_items = visit_prefix_items(site, node)
 
-        # Composition context (D2): a node that is the document root or
+        # Composition context: a node that is the document root or
         # types as object becomes a generated class, so composition
-        # branches merge into one property set (Phase 3). A value node
+        # branches merge into one property set. A value node
         # unions its anyOf/oneOf branches as variants instead, except
         # that inline object branches inside anyOf merge into the
-        # property's own class (D3).
+        # property's own class.
         object_context = name.empty? || type.include?(TYPE_OBJECT)
         if object_context
           body = compile_object(site, node)
@@ -271,7 +307,7 @@ module Schematrix
           any_of = visit_variant_list(site, "anyOf", branches[:any_of])
           one_of = visit_variant_list(site, "oneOf", branches[:one_of])
           if branches[:mergeable].any?
-            # D3: anyOf object branches merge into one class that
+            # anyOf object branches merge into one class that
             # registers at this node's own locator
             body = merge_value_branches(site, node, branches[:mergeable])
             properties = body.properties
@@ -337,7 +373,7 @@ module Schematrix
     #   instead (2020-12 semantics, see resolve_reference).
     # - scalar target: return the target node itself so its type
     #   information is compiled in place of the reference, and no ref.
-    # A $dynamicRef resolves through the D9 static approximation first.
+    # A $dynamicRef resolves through the static approximation first.
     def resolve_reference(site, node)
       reference = node.ref
       if reference.nil? && node.dynamic_ref
@@ -374,7 +410,7 @@ module Schematrix
         # a ref with shape-applying siblings is the allOf-equivalent
         # of the target and those siblings. Rewrite the node into
         # that form instead of keeping the ref: the site becomes its
-        # own conjoined class (D4/D5), no dead sibling classes
+        # own conjoined class, no dead sibling classes
         # register, and no dangling class references render.
         # Annotation-only siblings (title, description, default, ...)
         # and scalar constraints without codegen stay on the pure-ref
@@ -389,7 +425,7 @@ module Schematrix
           return Schematrix::Meta::Schema.from_h(rewritten), nil, nil
         end
 
-        # D23: a target whose whole shape is a catch-all is a plain
+        # A target whose whole shape is a catch-all is a plain
         # Hash, not a class. Inline its content at this site (the
         # slot's own record is then map-shaped and renders as a Hash)
         # so no class is generated for the target and no edge is
@@ -422,12 +458,11 @@ module Schematrix
       present_slots(node).except("$ref")
     end
 
-    # Folds the $ref target's non-object type terms into the node
-    # (gap 4 of the bootstrap rounding): slots whose target is typed
-    # like ["object", "boolean"] render the honest union
-    # (Klass | bool) instead of lying with the class alone, which
-    # would under-accept the boolean/null instances the schema
-    # allows. A pure-object target contributes nothing.
+    # Folds the $ref target's non-object type terms into the node:
+    # slots whose target is typed like ["object", "boolean"] render
+    # the honest union (Klass | bool) instead of lying with the class
+    # alone, which would under-accept the boolean/null instances the
+    # schema allows. A pure-object target contributes nothing.
     def with_ref_types(node, target)
       extra = Array(target["type"]) - [TYPE_OBJECT]
       return node if extra.empty?
@@ -443,13 +478,13 @@ module Schematrix
       Schematrix::Meta::Schema.from_h(target.merge(siblings_of(node)))
     end
 
-    # Raw-node form of the D23 map rule, applied to $ref targets
-    # before they compile: the type stays within {object, null} and
-    # includes object, there are no own properties, no composition
-    # keyword could conjure properties back (those targets keep the
-    # ref path and their class), and the catch-all is not closed.
-    # Absent additionalProperties is the spec's untyped catch-all
-    # unless closed_shapes was requested (D12).
+    # Raw-node form of the map rule (see Schema#map_shaped?), applied
+    # to $ref targets before they compile: the type stays within
+    # {object, null} and includes object, there are no own properties,
+    # no composition keyword could conjure properties back (those
+    # targets keep the ref path and their class), and the catch-all is
+    # not closed. Absent additionalProperties is the spec's untyped
+    # catch-all unless closed_shapes was requested.
     def map_target?(target)
       types = Set.new(Array(target["type"]))
       own_properties = target["properties"]
@@ -480,6 +515,8 @@ module Schematrix
       base
     end
 
+    # Whether two locators belong to the same document: their keys
+    # match once the fragments are stripped.
     def same_document?(one, other)
       @store.document_key(one) == @store.document_key(other)
     end
@@ -506,7 +543,7 @@ module Schematrix
       end
     end
 
-    # D9 static approximation for $dynamicRef: assume the dynamic
+    # Static approximation for $dynamicRef: assume the dynamic
     # scope equals the ref base document (the document of the nearest
     # dereferenced inline target, else this visitor's document). Walk
     # up the containment chain from the ref site to the root and take
@@ -584,7 +621,7 @@ module Schematrix
       visit_schema(path, branch_name, branch)
     end
 
-    # Visits prefixItems entries as value schemas (D13). All entries
+    # Visits prefixItems entries as value schemas. All entries
     # share the "prefixItems" path segment: inline object entries
     # register no class (their numeric position is not a valid class
     # name; they fall back to untyped in the element union), while $ref
@@ -613,7 +650,7 @@ module Schematrix
       end
     end
 
-    # additionalProperties normalization (D12): the spec default is
+    # additionalProperties normalization: the spec default is
     # permissive, so absence behaves like true (untyped catch-all)
     # and only an explicit false closes the shape. nil (meaning
     # "no catch-all" to the templates) survives only for false, or
@@ -631,10 +668,10 @@ module Schematrix
     end
 
     # Visits anyOf/oneOf branches in value context, one Schema per
-    # branch, in the matching variant list (D1). Branch locators use
-    # anyOf_0 / oneOf_0 path segments (D3). Object branches inside
+    # branch, in the matching variant list. Branch locators use
+    # anyOf_0 / oneOf_0 path segments. Object branches inside
     # oneOf register positional classes (OneOf0); anyOf branches do not
-    # register (they merge per D3). $ref branches keep working through
+    # register (they merge). $ref branches keep working through
     # resolve_reference, recording their edge. A false branch accepts
     # nothing and contributes no variant.
     def visit_variant_list(path, keyword, branches)
@@ -648,7 +685,7 @@ module Schematrix
 
     # Splits a value-context node's composition branches. Inline
     # object branches inside anyOf are mergeable into the node's own
-    # class (D3); everything else stays a variant, including $ref
+    # class; everything else stays a variant, including $ref
     # branches to objects (their target keeps its own class via the
     # recorded edge).
     def split_value_branches(node)
@@ -661,12 +698,12 @@ module Schematrix
       { mergeable:, any_of: any_variants, one_of: Array(node.one_of) }
     end
 
-    # Object-context composition (Phase 3): merge the branch
+    # Object-context composition: merge the branch
     # properties of every composition keyword into one property set,
     # parent first, then branches in document order. allOf conjoins
-    # (D5: required unions, conflicting types intersect); the union
+    # (required unions, conflicting types intersect); the union
     # keywords merge optional branches with the untyped-contribution
-    # rule inside anyOf/oneOf lists (D12); then/else/dependentSchemas
+    # rule inside anyOf/oneOf lists; then/else/dependentSchemas
     # are single branches and merge their own properties only; `if` is
     # a condition and is ignored.
     def compile_object(path, node)
@@ -683,7 +720,7 @@ module Schematrix
     end
 
     # Merges inline object branches of a value-level anyOf into the
-    # node's own class (D3): union semantics with the
+    # node's own class: union semantics with the
     # untyped-contribution rule, every property optional.
     def merge_value_branches(path, node, branches)
       union_list_body(path, node_body(path, node), branches)
@@ -698,15 +735,16 @@ module Schematrix
       )
     end
 
-    # Follows a $ref branch to its final target for merging (D4 flat
-    # merge). The branch itself records no edge and registers no class
-    # (D6: merging produces no dead code); value references nested
-    # inside its properties still record their edges, because those
-    # classes are referenced from the merged result. The branch's
-    # content compiles against the target's document, so nested
-    # relative refs resolve where they were written. Boolean targets
-    # contribute an open body (true) or nothing at all (false,
-    # uninhabitable, over-accepting like every skipped false branch).
+    # Follows a $ref branch to its final target for merging (a flat
+    # merge, no inheritance). The branch itself records no edge and
+    # registers no class (merging produces no dead code); value
+    # references nested inside its properties still record their
+    # edges, because those classes are referenced from the merged
+    # result. The branch's content compiles against the target's
+    # document, so nested relative refs resolve where they were
+    # written. Boolean targets contribute an open body (true) or
+    # nothing at all (false, uninhabitable, over-accepting like every
+    # skipped false branch).
     def branch_body(path, raw)
       unless raw.is_a?(Schematrix::Meta::Schema) && !raw.ref.nil?
         return node_body(path, raw)
@@ -746,7 +784,7 @@ module Schematrix
       pairs.to_h
     end
 
-    # allOf fold (D5 conjunction): properties conjoin, required unions,
+    # allOf fold (conjunction): properties conjoin, required unions,
     # additionalProperties intersects. A `true` branch is the identity;
     # a `false` branch would make the schema uninhabitable and is
     # skipped (approximation: over-accepting, never under-accepting).
@@ -772,11 +810,11 @@ module Schematrix
       )
     end
 
-    # anyOf/oneOf fold (D3/D3a merge): union semantics. Branches that
-    # do not constrain a property contribute untyped to its union
-    # (D12), so properties mentioned by only some branches are not
-    # over-constrained; branch-introduced properties are optional
-    # (D5), the parent's own required-ness survives.
+    # anyOf/oneOf fold: union semantics. Branches that
+    # do not constrain a property contribute untyped to its union,
+    # so properties mentioned by only some branches are not
+    # over-constrained; branch-introduced properties are optional,
+    # the parent's own required-ness survives.
     def union_list_body(path, acc, list)
       compiled =
         Array(list).filter_map do |raw|
@@ -832,7 +870,7 @@ module Schematrix
       )
     end
 
-    # D5 conflict rule: distinct declarations of the same property
+    # Conflict rule: distinct declarations of the same property
     # conjoin syntactically (String & Integer / T.all), even if
     # uninhabited; that is the schema author's problem. Facets beyond
     # type/ref/variants keep the parent's declaration.
@@ -865,7 +903,7 @@ module Schematrix
     end
 
     # Union of property contributions. :untyped marks a branch that
-    # does not constrain the property (D12); it swallows the whole
+    # does not constrain the property; it swallows the whole
     # union, because any value is then acceptable for some branch.
     # A bottom (false) contribution accepts nothing, so it
     # contributes nothing; every-bottom is bottom.
@@ -919,7 +957,7 @@ module Schematrix
       arrays.first.prefix_items
     end
 
-    # allOf intersects additionalProperties (D12): any false closes
+    # allOf intersects additionalProperties: any false closes
     # the result; untyped (absent) is the identity; declared schemas
     # conjoin.
     def conjoin_additional(own, other)
@@ -932,7 +970,7 @@ module Schematrix
       conjoin_schemas(decls.first, decls.last)
     end
 
-    # Union branches open the shape (D12): untyped wins, a closed
+    # Union branches open the shape: untyped wins, a closed
     # (false) branch contributes nothing because an instance from
     # another branch may still carry extra keys, and declared schemas
     # union their types. A $ref surviving on one side names the

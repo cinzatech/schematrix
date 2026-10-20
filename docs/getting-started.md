@@ -1,0 +1,141 @@
+# Getting started
+
+## Requirements
+
+- Ruby 3.4 or newer.
+
+## Installation
+
+Add the gem to your `Gemfile`:
+
+```ruby
+gem "schematrix", "~> 0.1"
+```
+
+```sh
+bundle install
+```
+
+Or install it directly:
+
+```sh
+gem install schematrix
+```
+
+## Your first schema
+
+Save this document as `person.schema.json`:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Person",
+  "type": "object",
+  "properties": {
+    "firstName": { "type": "string" },
+    "lastName":  { "type": "string" },
+    "age":       { "type": "integer" }
+  },
+  "required": ["firstName", "lastName"]
+}
+```
+
+Run the generator:
+
+```sh
+schematrix -g plain_ruby -m MyApp -o app/generated person.schema.json
+```
+
+The command names three things you always choose:
+
+- `-g`, the generator. Four exist: `plain_ruby`, `sorbet_ruby`, `rbi`,
+  `rbs`. See [Generators](generators.md).
+- `-m`, the module the generated classes live in.
+- `-o`, the output directory. It is created when missing.
+
+The command writes `app/generated/person.rb`:
+
+```ruby
+module MyApp
+  class Person
+    ORIGINAL_KEYS = {
+      "firstName" => :first_name,
+      "lastName" => :last_name,
+      "age" => :age
+    }.freeze
+
+    def initialize(first_name:, last_name:, age: nil)
+      @first_name = first_name
+      @last_name = last_name
+      @age = age
+
+      @_extra = {}
+    end
+
+    attr_accessor :first_name, :last_name, :age
+
+    def [](key)
+      @_extra[key]
+    end
+
+    def []=(key, value)
+      @_extra[key] = value
+    end
+
+    def self.from_h(hash)
+      instance =
+        new(
+          first_name: hash["firstName"],
+          last_name: hash["lastName"],
+          age: hash["age"]
+        )
+
+      hash.each do |key, value|
+        next if ORIGINAL_KEYS.key?(key)
+
+        instance[key] = value
+      end
+      instance
+    end
+
+    def to_h
+      result = {}
+      result["firstName"] = @first_name unless @first_name.nil?
+      result["lastName"] = @last_name unless @last_name.nil?
+      result["age"] = @age unless @age.nil?
+      @_extra.each { |key, value| result[key] = value }
+      result
+    end
+  end
+end
+```
+
+The class loads and dumps documents under their original key names:
+
+```ruby
+person = MyApp::Person.from_h(
+  JSON.parse(File.read("person.json"))
+)
+person.first_name # => "Ada"
+File.write("out.json", JSON.generate(person.to_h))
+```
+
+`from_h` and `to_h` round-trip: what `from_h` loads, `to_h` dumps under
+the same keys, including keys the schema never declared (they ride the
+`[]` catch-all). See [Generated code](generated-code.md).
+
+## YAML schemas
+
+JSON is a subset of YAML, and both load. A schema stored as `.yaml` or
+`.yml` works the same way:
+
+```sh
+schematrix -g rbs -m MyApp -o sig person.schema.yaml
+```
+
+## Next steps
+
+- The [command line reference](cli.md) lists every option.
+- [Schema features](schema-features.md) explains how your keywords
+  compile, including composition and `$ref`.
+- The [library API](library-api.md) runs the same pipeline from Ruby.

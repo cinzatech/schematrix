@@ -11,9 +11,18 @@ require_relative "templates/rbi"
 
 module Schematrix
   module Generators
-    # Base class for all output generators. Subclasses provide an ERB template
-    # and, optionally, override helper methods to produce different output
-    # formats.
+    # Base class for all output generators. A generator renders the
+    # compiled record of one object schema as one file: an ERB template
+    # filled through a template helper class, then formatted with
+    # SyntaxTree. Subclasses provide the template and, optionally,
+    # override helper methods to produce different output formats.
+    #
+    # The shared rendering lives in the Templates modules:
+    # Templates::RubyHelpers (constructor, from_h/to_h),
+    # Templates::Coercions (the coerce_ methods),
+    # Templates::SorbetHelpers and Templates::TypeComposer (type
+    # algebra for the Sorbet and RBS notations), and
+    # Templates::Base (declaration scaffolding).
     class Base
       include Resolver
 
@@ -60,6 +69,10 @@ module Schematrix
         yield
       ].freeze
 
+      # `output_dir` is the directory files are written to (created on
+      # demand), `module_name` the namespace generated code is placed
+      # in. `format: false` skips SyntaxTree formatting and emits the
+      # template output as-is.
       def initialize(output_dir, module_name, format: true)
         @output_dir = output_dir
         @module_name = module_name
@@ -74,6 +87,9 @@ module Schematrix
         File.join(@output_dir, filename)
       end
 
+      # Renders, formats, and writes the file for this locator's
+      # class, creating the output directory when missing. Returns the
+      # path written.
       def write(locator, object)
         uri = URI(locator)
         class_name = class_name_from_path(uri)
@@ -86,12 +102,16 @@ module Schematrix
         file_path
       end
 
+      # Fills the ERB template through this generator's template class
+      # and formats the result. Returns the file content.
       def transform(path, class_name, object)
         code = template(path, class_name, object).render(self.class.erb)
 
         format_code(code)
       end
 
+      # The ERB object for this generator's template file, compiled
+      # once per class.
       def self.erb
         @erb ||=
           begin
@@ -101,20 +121,29 @@ module Schematrix
           end
       end
 
+      # Name of the template helper class that fills this generator's
+      # ERB template.
       def self.template_class
         raise NotImplementedError, "#{name} must implement #template_class"
       end
 
+      # Name of the ERB file under generators/templates this generator
+      # renders through.
       def self.template_name
         raise NotImplementedError, "#{name} must implement #template_name"
       end
 
+      # File extension of this generator's output, including the dot.
       def self.file_extension
         raise NotImplementedError, "#{name} must implement #file_extension"
       end
 
       private
 
+      # Builds the template object the ERB renders through: mangled
+      # property names, the original-key map, the catch-all schema,
+      # and the description comment, alongside the module, path, and
+      # class name. Mangled-name collisions are warned from here.
       def template(path, class_name, object)
         properties = object&.properties
         property_keys = original_key_map(properties)
@@ -130,6 +159,8 @@ module Schematrix
         )
       end
 
+      # SyntaxTree formatting, skipped when the generator was built
+      # with format: false.
       def format_code(code)
         return SyntaxTree.format(code) if @format
 
@@ -171,7 +202,7 @@ module Schematrix
         name
       end
 
-      # The original-name key map (D21): original String property
+      # The original-name key map: original String property
       # name to mangled accessor symbol, the inverse of property_name
       # ($id -> id, if -> if_). Generated classes carry it as the
       # ORIGINAL_KEYS constant so round-tripping inverts the
@@ -203,14 +234,15 @@ module Schematrix
       end
     end
 
-    # Outputs a schema as a plain, mutable Ruby class
+    # Outputs a schema as a plain, mutable Ruby class, with no type
+    # annotations.
     class PlainRuby < Base
       def self.template_name = "plain_ruby.erb"
       def self.file_extension = ".rb"
       def self.template_class = Templates::PlainRuby
     end
 
-    # Outputs RBS type signatures matching a JSON Schema object
+    # Outputs RBS type signatures matching a JSON Schema object.
     class Rbs < Base
       def self.template_name = "rbs.erb"
       def self.file_extension = ".rbs"
@@ -218,17 +250,20 @@ module Schematrix
 
       private
 
+      # Formats with syntax_tree-rbs instead of plain SyntaxTree.
       def format_code(code) = @format ? SyntaxTree::RBS.format(code) : code
     end
 
-    # Outputs a schema as a mutable Ruby class with inline Sorbet signatures
+    # Outputs a schema as a mutable Ruby class with inline Sorbet
+    # signatures and real method bodies, under `# typed: strict`.
     class SorbetRuby < Base
       def self.template_name = "sorbet_ruby.erb"
       def self.file_extension = ".rb"
       def self.template_class = Templates::SorbetRuby
     end
 
-    # Outputs a schema as an RBI sorbet signature file
+    # Outputs a schema as an RBI Sorbet signature file: signatures
+    # only, empty bodies.
     class Rbi < Base
       def self.template_name = "rbi.erb"
       def self.file_extension = ".rbi"
@@ -236,6 +271,8 @@ module Schematrix
     end
   end
 
+  # The generator registry the CLI resolves `-g` names against:
+  # `plain_ruby`, `rbs`, `sorbet_ruby`, `rbi`.
   GENERATORS = {
     "plain_ruby" => Generators::PlainRuby,
     "rbs" => Generators::Rbs,

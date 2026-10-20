@@ -3,7 +3,9 @@ require "tty-option"
 require_relative "generators/base"
 
 module Schematrix
-  # Command line tooling for the library
+  # The `schematrix` command line interface. Parses ARGV through
+  # tty-option and runs Schematrix.generate with the parsed settings.
+  # The user-facing manual for every option lives in docs/cli.md.
   class CLI
     include TTY::Option
 
@@ -81,6 +83,13 @@ module Schematrix
       desc "Print usage"
     end
 
+    # Parses nothing itself; call parse first, then run. Prints help
+    # when asked, refuses invalid arguments and unknown generator
+    # names, pairs output directories with generators (zero `-o` flags
+    # mean `generated`, one `-o` is shared by all generators, one per
+    # `-g` pairs in flag order), and hands everything to
+    # Schematrix.generate. Exits 1 on any failure, with the reason on
+    # the fatal log level.
     def run
       Schematrix.logger =
         TTY::Logger.new do |config|
@@ -148,7 +157,7 @@ module Schematrix
     private
 
     # vendor/schemas is searched unless the user points elsewhere;
-    # explicit directories replace the default, never stack with it
+    # explicit directories replace the default, never stack with it.
     def resolved_schema_dirs
       schema_dirs = Array(params[:schema_dir])
       schema_dirs = %w[vendor/schemas] if schema_dirs.empty?

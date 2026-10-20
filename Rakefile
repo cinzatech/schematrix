@@ -11,7 +11,7 @@ require "rdoc/task"
 RDoc::Task.new do |rdoc|
   rdoc.main = "README.md"
   rdoc.rdoc_dir = "doc"
-  rdoc.rdoc_files.include("README.md", "lib/**/*.{rb,erb}")
+  rdoc.rdoc_files.include("README.md", "docs/**/*.md", "lib/**/*.rb")
 end
 
 namespace :meta do

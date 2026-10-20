@@ -4,13 +4,13 @@ module Schematrix
   module Generators
     module Templates
       # Computes and renders the from_h/to_h round-trip machinery of a
-      # generated class (D21). One symmetric class method per property
+      # generated class. One symmetric class method per property
       # that carries a class-shaped term dispatches on the value's own
       # class: a Hash loads through the target class's from_h, an
       # instance dumps through its to_h, everything else (booleans,
-      # scalars, already-raw values) passes through unchanged. D23
-      # extends the same rule to plain-Hash map slots (values coerce
-      # from the declared catch-all schema) and to array elements.
+      # scalars, already-raw values) passes through unchanged. The
+      # same rule covers plain-Hash map slots (values coerce
+      # from the declared catch-all schema) and array elements.
       module Coercions
         include Resolver
 
@@ -54,6 +54,9 @@ module Schematrix
           nil
         end
 
+        # The first class-shaped term of the schema: the ref, then an
+        # object-typed class, then the variant branches in document
+        # order. nil when none applies.
         def class_term(path, name, schema)
           return nil if schema.nil?
           return class_name_from_path(schema.ref) unless schema.ref.nil?
