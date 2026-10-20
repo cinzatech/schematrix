@@ -66,14 +66,10 @@ module Schematrix
           lines.map { |line| "  #{line}" }.join("\n")
         end
 
-        # Whether a namespace segment comes from a container keyword
-        # (properties, $defs) rather than a schema that owns its own
-        # class file.
         def container_segment?(segment)
           CONTAINER_SEGMENTS.include?(segment)
         end
 
-        # One end per declaration opened above.
         def declaration_close
           Array.new(@class_name.split("::").size) { "  end" }.join("\n")
         end

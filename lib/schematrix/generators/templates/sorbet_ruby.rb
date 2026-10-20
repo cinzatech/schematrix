@@ -5,7 +5,7 @@ require_relative "sorbet_helpers"
 module Schematrix
   module Generators
     module Templates
-      # Sorbet Ruby template class
+      # Rendering logic for the Sorbet Ruby generator
       class SorbetRuby < Base
         include RubyHelpers
         include SorbetHelpers

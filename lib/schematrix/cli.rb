@@ -117,7 +117,6 @@ module Schematrix
           exit 1
         end
         output << "generated" if output.empty?
-        # If only one output dir specified, we use it for every generator
         output_dirs =
           (
             if output.size == 1

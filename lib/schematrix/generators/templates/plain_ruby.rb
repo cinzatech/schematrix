@@ -4,7 +4,7 @@ require_relative "ruby_helpers"
 module Schematrix
   module Generators
     module Templates
-      # Plain Ruby template class
+      # Rendering logic for the plain Ruby generator
       class PlainRuby < Base
         include RubyHelpers
 

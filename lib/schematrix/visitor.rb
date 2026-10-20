@@ -575,10 +575,9 @@ module Schematrix
     end
 
     # Visit subtrees (other than properties), like items or
-    # additionalProperties, that contain nested schema definition. It
-    # will store object definitions on a nested path by the name of the
-    # branch being visited. The branch comes from a model slot: a
-    # model instance or a boolean schema.
+    # additionalProperties, that contain nested schema definition. The
+    # branch comes from a model slot: a model instance or a boolean
+    # schema.
     def visit_subtree(path, branch_name, branch)
       return nil if branch.nil?
 
@@ -817,7 +816,6 @@ module Schematrix
       branch = branch_body(path, raw)
       return acc if branch.nil?
 
-      branch = branch_body(path, raw)
       properties =
         acc
           .properties

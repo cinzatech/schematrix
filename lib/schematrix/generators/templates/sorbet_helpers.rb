@@ -9,7 +9,6 @@ module Schematrix
 
         SORBET_TYPE_ANYTHING = "T.anything"
 
-        # Maps JSON Schema scalar types to their Sorbet equivalents
         SORBET_SCALAR_TYPES = {
           nil => SORBET_TYPE_ANYTHING,
           TYPE_STRING => "String",
@@ -19,8 +18,6 @@ module Schematrix
           TYPE_NULL => "NilClass",
           TYPE_BOTTOM => "T.noreturn",
         }.freeze
-
-        # Sorbet syntax hooks for TypeComposer
 
         def untyped = SORBET_TYPE_ANYTHING
 
@@ -43,8 +40,6 @@ module Schematrix
         def join_union(types) = "T.any(#{types.join(", ")})"
 
         def join_intersection(types) = "T.all(#{types.join(", ")})"
-
-        # Sorbet emitters
 
         def sorbet_additional_properties_type
           @sorbet_additional_properties_type ||=

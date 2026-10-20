@@ -4,7 +4,7 @@ require_relative "type_composer"
 module Schematrix
   module Generators
     module Templates
-      # RBS template class
+      # Rendering logic for the RBS generator
       class Rbs < Base
         include TypeComposer
 
@@ -14,7 +14,6 @@ module Schematrix
         # must be narrowed.
         RBS_TYPE_TOP = "top"
 
-        # Maps JSON Schema scalar types to their RBS equivalents
         RBS_SCALAR_TYPES = {
           nil => RBS_TYPE_TOP,
           TYPE_STRING => "String",
@@ -25,8 +24,6 @@ module Schematrix
         }.freeze
 
         private
-
-        # RBS syntax hooks for TypeComposer
 
         def untyped = RBS_TYPE_TOP
 
@@ -58,8 +55,6 @@ module Schematrix
         def join_union(types) = types.join(" | ")
 
         def join_intersection(types) = types.join(" & ")
-
-        # RBS emitters
 
         def rbs_attr_accessors
           return "" if @properties.nil?

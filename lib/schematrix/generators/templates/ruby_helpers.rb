@@ -4,7 +4,8 @@ require_relative "coercions"
 module Schematrix
   module Generators
     module Templates
-      # Common functions for Ruby class name and file handling
+      # Constructor and from_h/to_h rendering shared by the
+      # Ruby-emitting formats
       module RubyHelpers
         include Coercions
 
