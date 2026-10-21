@@ -125,7 +125,12 @@ into the property's type instead:
 
 - `$ref` to an object schema: the property types as the target's class,
   and that class is generated. Chains of `$ref` to `$ref` follow to the
-  final target.
+  final target. A definition whose own `$ref` sits beside
+  shape-applying keywords is itself the target (2020-12 applies
+  both): the chain stops there, and its sibling `$ref` applies when
+  the definition compiles. This is the OpenAPI 3.1 schema idiom,
+  where nearly every definition carries the
+  `specification-extensions` hook beside its own keywords.
 - `$ref` to a scalar schema: the target's type compiles in place of the
   reference.
 - `$ref` to `true`: only the reference's own siblings remain, which

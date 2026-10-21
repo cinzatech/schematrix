@@ -581,7 +581,11 @@ module Schematrix
     end
 
     # Follows chains of pure references to the final node, guarding
-    # against cycles. Returns the node and its locator.
+    # against cycles. Returns the node and its locator. A landed node
+    # whose $ref sits beside shape-applying keywords ends the chain:
+    # 2020-12 applies both, so that node is the reference's target and
+    # its own $ref applies when the node compiles (see
+    # resolve_reference); following it would resolve past the target.
     def final_target(base, reference, seen = Set.new)
       locator = URI.join(base, reference)
       locator.fragment = "/" if locator.fragment.nil?
@@ -592,6 +596,9 @@ module Schematrix
       node = @store.node_at(locator)
       reference = node.is_a?(Hash) ? node["$ref"] : nil
       return node, locator if reference.nil?
+      if SHAPE_SIBLINGS.any? { |keyword| node.key?(keyword) }
+        return node, locator
+      end
 
       target, target_locator = final_target(locator, reference, seen)
       target ? [target, target_locator] : [node, locator]
