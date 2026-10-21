@@ -80,7 +80,7 @@ module Schematrix
           return "" if @properties.nil? || @properties.empty?
 
           params =
-            @properties
+            constructor_properties
               .map do |name, property|
                 "#{name}: #{property_type_of(@path, name, property)}"
               end

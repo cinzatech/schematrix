@@ -13,7 +13,7 @@ module Schematrix
           return "" if @properties.nil? || @properties.empty?
 
           args =
-            @properties
+            constructor_properties
               .map do |name, schema|
                 unless schema.default.nil?
                   next "#{name}: #{schema.default.inspect}"
@@ -25,6 +25,19 @@ module Schematrix
               .join(", ")
 
           "(#{args})"
+        end
+
+        # Constructor kwargs in the order Ruby reports for the method:
+        # required keywords first, then optional ones, each group in
+        # document order. Method#parameters normalizes that way, and
+        # sorbet-runtime validates the sig against it, so a required
+        # property after an optional one must still emit first.
+        def constructor_properties
+          required, optional =
+            @properties.partition do |_name, schema|
+              schema.required && schema.default.nil?
+            end
+          (required + optional).to_h
         end
 
         def constructor_assignments

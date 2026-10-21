@@ -1,0 +1,9 @@
+{
+  "title": "RequiredAfterOptional",
+  "type": "object",
+  "properties": {
+    "note": { "type": "string" },
+    "id": { "type": "integer" }
+  },
+  "required": ["id"]
+}
