@@ -35,7 +35,7 @@ module Schematrix
       short "-g"
       long "--generators list"
       convert :list
-      desc "Output generators to use, e.g.: plain_ruby, rbs"
+      desc "Output generators to use, e.g.: plain_ruby, dsl_plain_ruby"
     end
 
     option :output do

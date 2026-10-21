@@ -1,0 +1,15 @@
+module M
+  module Dsl
+    class Schema
+      def self.build: { (Schema) -> void } -> Hash[String, top]
+
+      def initialize: -> void
+
+      def entries: { (Schema::Props::Entries::Items) -> void } -> instance
+
+      def extra: (String key, top value) -> instance
+
+      def to_h: -> Hash[String, top]
+    end
+  end
+end

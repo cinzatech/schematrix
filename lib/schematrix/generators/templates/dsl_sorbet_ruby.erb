@@ -1,0 +1,27 @@
+# typed: strict
+
+module <%= @module_name %>
+<%= declaration_open %>
+    extend T::Sig
+    <% unless @property_keys.empty? %>
+    <%= original_keys_constant %>
+
+    <% end %>    <%= build_signature %>
+    <%= build_method %>
+
+    <%= initialize_signature %>
+    <%= initialize_method %>
+    <% setter_methods(sigged: true).each do |method| %>
+
+    <%= method %>
+    <% end %>
+    <% unless @additional_properties.nil? %>
+
+    <%= extra_signature %>
+    <%= extra_method %>
+    <% end %>
+
+    <%= to_h_signature %>
+    <%= to_h_method %>
+<%= declaration_close %>
+end

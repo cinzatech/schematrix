@@ -1,6 +1,6 @@
 # Generators
 
-A generator renders compiled schema records as source files. Four exist:
+A generator renders compiled schema records as source files. Eight exist:
 
 | Name | Files | Contents |
 | ------------- | ----- | -------- |
@@ -8,11 +8,15 @@ A generator renders compiled schema records as source files. Four exist:
 | `sorbet_ruby` | `.rb` | Mutable Ruby classes with inline Sorbet `sig` blocks, `# typed: strict`. |
 | `rbi` | `.rbi` | Sorbet interface files: signatures only, empty bodies. |
 | `rbs` | `.rbs` | RBS signature files. |
+| `dsl_plain_ruby` | `.rb` | Instance DSL builders, no type annotations. |
+| `dsl_sorbet_ruby` | `.rb` | Instance DSL builders with inline Sorbet `sig` blocks, `# typed: strict`. |
+| `dsl_rbi` | `.rbi` | Sorbet interface files for the instance DSL builders. |
+| `dsl_rbs` | `.rbs` | RBS signature files for the instance DSL builders. |
 
-All four walk the same compiled records, so one schema produces the same
-classes under every format. All four format their output with SyntaxTree
-(`syntax_tree` for Ruby, `syntax_tree-rbs` for RBS). Pass `format:
-false` to [a generator instance](library-api.md) to skip that step.
+All eight walk the same compiled records, so one schema produces the same
+classes under every format. All eight format their output with SyntaxTree
+(`syntax_tree` for Ruby, `syntax_tree-rbs` for RBS). Pass `format:`
+false to [a generator instance](library-api.md) to skip that step.
 
 ## What every generator emits
 
@@ -32,6 +36,13 @@ For each object schema the compiler found, one file per class:
   per shape.
 
 The details live in [Generated code](generated-code.md).
+
+The `dsl_` generators write builders instead of data classes: classes
+whose methods define one instance of the schema. They nest under a `Dsl`
+module level and a `dsl/` file prefix, so both families can share an
+output directory. The call grammar, the parse contract, and the Sorbet
+story live in [The instance DSL](dsl.md); the rest of this page is about
+the data classes.
 
 ## plain_ruby
 
@@ -160,6 +171,16 @@ into `top`, but a read from it must be narrowed before use. Sorbet's
 
 A property typed only `["object", "null"]` through a `$ref` keeps its
 class and renders nilable instead of collapsing to `nil`.
+
+Setter signatures on the DSL builders type the value the call admits,
+not the slot's nilability: an optional integer property takes
+`params(value: Integer)`, and an explicit `nil` rides the union only
+when the schema admits null. Block types carry the child builder's
+class (`T.proc.params(arg0: Person).void` in Sorbet,
+`(Person) -> void` blocks in RBS). Builders type their document hash
+`T::Hash[String, T.untyped]` in Sorbet and `Hash[String, top]` in RBS:
+setters call `concat`, `<<`, and `merge` on their slot reads, and those
+are the types that admit every call.
 
 ## Maps
 

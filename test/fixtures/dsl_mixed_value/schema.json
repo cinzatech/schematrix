@@ -1,0 +1,12 @@
+{
+  "title": "MixedValue",
+  "type": "object",
+  "properties": {
+    "option": {
+      "type": ["string", "object"],
+      "properties": {
+        "foo": { "type": "integer" }
+      }
+    }
+  }
+}

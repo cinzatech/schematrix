@@ -1,9 +1,11 @@
 # Generated code
 
-Every generator produces the same runtime shape: classes that hold data,
-load documents, and dump documents. This page describes that shape. The
-samples show `plain_ruby` output; `sorbet_ruby` adds signatures to the
-same bodies, and `rbi`/`rbs` declare the same surface.
+Every data generator produces the same runtime shape: classes that hold
+data, load documents, and dump documents. This page describes that
+shape. The samples show `plain_ruby` output; `sorbet_ruby` adds
+signatures to the same bodies, and `rbi`/`rbs` declare the same surface.
+The `dsl_` generators produce builders instead, documented in
+[The instance DSL](dsl.md).
 
 ## Class anatomy
 

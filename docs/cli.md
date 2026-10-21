@@ -41,8 +41,9 @@ any file is written. See [Names and files](naming.md).
 
 Required. One or more generator names, given as repeated flags or as a
 comma-separated list. The names are `plain_ruby`, `sorbet_ruby`, `rbi`,
-and `rbs`. An unknown name stops the run with a fatal log message and
-exit status 1.
+`rbs`, and the `dsl_` prefixed builders of each (`dsl_plain_ruby`,
+`dsl_sorbet_ruby`, `dsl_rbi`, `dsl_rbs`). An unknown name stops the run
+with a fatal log message and exit status 1.
 
 ```sh
 schematrix -g plain_ruby,rbs -m MyApp schema.json

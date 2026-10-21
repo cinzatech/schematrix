@@ -70,3 +70,16 @@ left unconstrained: those render as `T.anything` or `top`. Reads from
 such a slot need narrowing before the type checker accepts them. That
 is the honest statement about data whose shape the schema does not
 constrain.
+
+## Builders
+
+The instance DSL builders ([The instance DSL](dsl.md)) inherit every
+approximation above and add their own:
+
+- A builder writes what its source declared and nothing else. `default`
+  never materializes at build time, and `required` is never enforced.
+- Where several variants of a union carry object classes, the block
+  form builds through the first one, matching the data classes' first
+  class term.
+- Tuples feed the array setter positionally; deeper array nesting has
+  no dedicated spelling and rides Array literals.

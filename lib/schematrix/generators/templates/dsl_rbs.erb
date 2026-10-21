@@ -1,0 +1,16 @@
+module <%= @module_name %>
+<%= declaration_open %>
+    <%= build_signature %>
+
+    <%= initialize_signature %>
+    <% unless dsl_rbs_setters.empty? %>
+    <%= dsl_rbs_setters %>
+    <% end %>
+    <% unless @additional_properties.nil? %>
+
+    <%= extra_signature %>
+    <% end %>
+
+    <%= to_h_signature %>
+<%= declaration_close %>
+end

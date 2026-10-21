@@ -6,8 +6,13 @@ require "syntax_tree/rbs"
 require_relative "resolver"
 require_relative "templates/plain_ruby"
 require_relative "templates/rbs"
+require_relative "templates/rbs_notation"
 require_relative "templates/sorbet_ruby"
 require_relative "templates/rbi"
+require_relative "templates/dsl_plain_ruby"
+require_relative "templates/dsl_sorbet_ruby"
+require_relative "templates/dsl_rbi"
+require_relative "templates/dsl_rbs"
 
 module Schematrix
   module Generators
@@ -303,14 +308,86 @@ module Schematrix
       def self.file_extension = ".rbi"
       def self.template_class = Templates::Rbi
     end
+
+    # Naming overrides shared by the DSL generators: builder classes
+    # nest under a Dsl module level, so the builder family and the
+    # data-class family can never fold onto one constant or one
+    # file, and the builder's own surface names stay reserved.
+    module DslNaming
+      # A property whose mangled name lands here would override the
+      # generated entry point, the dump method, the catch-all
+      # setter, or the constructor; it takes the keyword treatment
+      # instead (a trailing underscore), with ORIGINAL_KEYS still
+      # recording the mapping.
+      RESERVED_METHOD_NAMES = %w[build to_h extra initialize].freeze
+
+      def class_name_from_path(uri, name = nil)
+        "Dsl::#{super}"
+      end
+
+      def property_name(key)
+        name = super
+        name = "#{name}_" if RESERVED_METHOD_NAMES.include?(name)
+        name
+      end
+    end
+
+    # Outputs the schema's DSL builders as plain, mutable Ruby
+    # classes, with no type annotations.
+    class DslPlainRuby < Base
+      include DslNaming
+
+      def self.template_name = "dsl_plain_ruby.erb"
+      def self.file_extension = ".rb"
+      def self.template_class = Templates::DslPlainRuby
+    end
+
+    # Outputs the DSL builders with inline Sorbet signatures and
+    # real method bodies, under `# typed: strict`.
+    class DslSorbetRuby < Base
+      include DslNaming
+
+      def self.template_name = "dsl_sorbet_ruby.erb"
+      def self.file_extension = ".rb"
+      def self.template_class = Templates::DslSorbetRuby
+    end
+
+    # Outputs the DSL builders as an RBI Sorbet signature file:
+    # signatures only, empty bodies.
+    class DslRbi < Base
+      include DslNaming
+
+      def self.template_name = "dsl_rbi.erb"
+      def self.file_extension = ".rbi"
+      def self.template_class = Templates::DslRbi
+    end
+
+    # Outputs the DSL builders as RBS signature files.
+    class DslRbs < Base
+      include DslNaming
+
+      def self.template_name = "dsl_rbs.erb"
+      def self.file_extension = ".rbs"
+      def self.template_class = Templates::DslRbs
+
+      private
+
+      # Formats with syntax_tree-rbs instead of plain SyntaxTree.
+      def format_code(code) = @format ? SyntaxTree::RBS.format(code) : code
+    end
   end
 
   # The generator registry the CLI resolves `-g` names against:
-  # `plain_ruby`, `rbs`, `sorbet_ruby`, `rbi`.
+  # `plain_ruby`, `rbs`, `sorbet_ruby`, `rbi`, and the dsl_ prefixed
+  # builders of each.
   GENERATORS = {
     "plain_ruby" => Generators::PlainRuby,
     "rbs" => Generators::Rbs,
     "sorbet_ruby" => Generators::SorbetRuby,
     "rbi" => Generators::Rbi,
+    "dsl_plain_ruby" => Generators::DslPlainRuby,
+    "dsl_sorbet_ruby" => Generators::DslSorbetRuby,
+    "dsl_rbi" => Generators::DslRbi,
+    "dsl_rbs" => Generators::DslRbs,
   }.freeze
 end

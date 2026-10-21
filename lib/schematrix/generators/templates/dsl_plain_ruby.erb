@@ -1,0 +1,20 @@
+module <%= @module_name %>
+<%= declaration_open %>
+    <% unless @property_keys.empty? %>
+    <%= original_keys_constant %>
+
+    <% end %>    <%= build_method %>
+
+    <%= initialize_method %>
+    <% setter_methods.each do |method| %>
+
+    <%= method %>
+    <% end %>
+    <% unless @additional_properties.nil? %>
+
+    <%= extra_method %>
+    <% end %>
+
+    <%= to_h_method %>
+<%= declaration_close %>
+end

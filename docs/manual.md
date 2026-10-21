@@ -37,10 +37,12 @@ the output.
   logging, exit behavior.
 - [Library API](library-api.md): `Schematrix.generate`, the error types,
   driving generators from Ruby.
-- [Generators](generators.md): the four output formats and their type
+- [Generators](generators.md): the eight output formats and their type
   mappings.
 - [Generated code](generated-code.md): what a generated class contains
   and how loading and dumping work.
+- [The instance DSL](dsl.md): the builder generators, their call
+  grammar, and the parse contract.
 - [Schema features](schema-features.md): every supported keyword, and
   how composition and references compile.
 - [Names and files](naming.md): how class names, module nesting, and

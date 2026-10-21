@@ -48,8 +48,9 @@ schematrix -g plain_ruby -m MyApp -o app/generated person.schema.json
 
 The command names three things you always choose:
 
-- `-g`, the generator. Four exist: `plain_ruby`, `sorbet_ruby`, `rbi`,
-  `rbs`. See [Generators](generators.md).
+- `-g`, the generator. Eight exist: `plain_ruby`, `sorbet_ruby`, `rbi`,
+  `rbs`, and the `dsl_` prefixed builders of each. See
+  [Generators](generators.md).
 - `-m`, the module the generated classes live in.
 - `-o`, the output directory. It is created when missing.
 

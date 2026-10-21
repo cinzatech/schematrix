@@ -4,7 +4,7 @@
 
 `schematrix` is a Ruby gem and CLI tool that reads [JSON Schema](https://json-schema.org/) files and produces idiomatic Ruby source code. Point it at a schema, choose a generator, and get ready-to-use Ruby classes and type signatures written into your project.
 
-Four output formats share one compiler: plain Ruby classes, Ruby classes with inline Sorbet signatures, Sorbet RBI files, and RBS signature files.
+Eight output formats share one compiler: plain Ruby classes, Ruby classes with inline Sorbet signatures, Sorbet RBI files, RBS signature files, and each of those four notations again as a builder DSL. The DSL classes define instances of the schema through plain method calls; running one builds the document as a Hash, and parsing one reconstructs the same document statically.
 
 ---
 
@@ -233,18 +233,23 @@ running from the repository root.
 
 ## Generators
 
-All four generators walk the same compiled records and write one file
+All eight generators walk the same compiled records and write one file
 per object schema. They differ only in notation:
 
-| Name          | Writes                                                          |
-| ------------- | --------------------------------------------------------------- |
-| `plain_ruby`  | Mutable Ruby classes, no annotations                            |
-| `sorbet_ruby` | Mutable Ruby classes with inline Sorbet `sig` blocks            |
-| `rbi`         | Sorbet signature files: signatures only, empty bodies           |
-| `rbs`         | RBS signature files                                             |
+| Name             | Writes                                                          |
+| ---------------- | --------------------------------------------------------------- |
+| `plain_ruby`     | Mutable Ruby classes, no annotations                            |
+| `sorbet_ruby`    | Mutable Ruby classes with inline Sorbet `sig` blocks            |
+| `rbi`            | Sorbet signature files: signatures only, empty bodies           |
+| `rbs`            | RBS signature files                                             |
+| `dsl_plain_ruby` | Instance DSL builders, no annotations                           |
+| `dsl_sorbet_ruby` | Instance DSL builders with inline Sorbet `sig` blocks          |
+| `dsl_rbi`        | Sorbet signature files for the instance DSL builders            |
+| `dsl_rbs`        | RBS signature files for the instance DSL builders               |
 
 See the [generator guide](docs/generators.md) for sample output and the
-type mapping tables per notation.
+type mapping tables per notation. The instance DSL has its own page:
+[The instance DSL](docs/dsl.md).
 
 ### `plain_ruby`
 
@@ -339,6 +344,7 @@ The complete manual lives in [`docs/`](docs/manual.md):
 - [Library API](docs/library-api.md)
 - [Generators](docs/generators.md)
 - [Generated code](docs/generated-code.md)
+- [The instance DSL](docs/dsl.md)
 - [Schema features](docs/schema-features.md)
 - [Names and files](docs/naming.md)
 - [Limits and approximations](docs/limits.md)

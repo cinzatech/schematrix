@@ -85,9 +85,12 @@ generator.write(locator, node) # renders, formats, writes, returns the path
   `command:` to name the regenerating command in its last line; the
   CLI passes `schematrix`, the rake task `rake meta:generate`.
 
-The four generator classes are `PlainRuby`, `SorbetRuby`, `Rbi`, and
-`Rbs`. They share the rendering described in
-[Generators](generators.md).
+Eight generator classes exist: `PlainRuby`, `SorbetRuby`, `Rbi`, and
+`Rbs` for the data classes, plus `DslPlainRuby`, `DslSorbetRuby`,
+`DslRbi`, and `DslRbs` for the instance builders. They share the
+rendering described in [Generators](generators.md); the builders place
+every class under a `Dsl` module level, so a data generator and a DSL
+generator can write to one directory.
 
 ## The generated loading model
 

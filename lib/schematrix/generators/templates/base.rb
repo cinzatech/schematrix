@@ -58,8 +58,8 @@ module Schematrix
           segments = @class_name.split("::")
           klass = segments.pop
           lines =
-            segments.map do |segment|
-              if container_segment?(segment)
+            segments.each_with_index.map do |segment, index|
+              if container_segment?(segment, index)
                 "module #{segment}"
               else
                 "class #{segment}"
@@ -73,8 +73,11 @@ module Schematrix
         end
 
         # Whether a name segment is a container level (Props/Defs)
-        # and therefore opens as a module.
-        def container_segment?(segment)
+        # and therefore opens as a module. The position indexes the
+        # declared segments, so generators that inject their own
+        # leading segment can force just that one (the DSL builders'
+        # Dsl level is a namespace, never a schema-owned class).
+        def container_segment?(segment, _index)
           CONTAINER_SEGMENTS.include?(segment)
         end
 

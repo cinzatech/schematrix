@@ -1,0 +1,19 @@
+module M
+  module Dsl
+    class Schema
+      module Defs
+        class Value
+          def self.build: { (Value) -> void } -> Hash[String, top]
+
+          def initialize: -> void
+
+          def v: (String value) -> instance
+
+          def extra: (String key, top value) -> instance
+
+          def to_h: -> Hash[String, top]
+        end
+      end
+    end
+  end
+end
