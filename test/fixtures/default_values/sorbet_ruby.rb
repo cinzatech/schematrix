@@ -2,7 +2,13 @@
 
 module M
   class Schema
-    ORIGINAL_KEYS = { "color" => :color, "count" => :count }.freeze
+    extend T::Sig
+
+    ORIGINAL_KEYS =
+      T.let(
+        { "color" => :color, "count" => :count }.freeze,
+        T::Hash[String, Symbol]
+      )
 
     sig { params(color: T.nilable(String), count: T.nilable(Integer)).void }
     def initialize(color: "blue", count: 0)
@@ -28,7 +34,7 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }
     def self.from_h(hash)
       instance = new
       instance.color = hash["color"] if hash.key?("color")
@@ -42,7 +48,7 @@ module M
       instance
     end
 
-    sig { returns(T::Hash[String, T.anything]) }
+    sig { returns(T::Hash[String, T.untyped]) }
     def to_h
       result = {}
       result["color"] = @color unless @color.nil?

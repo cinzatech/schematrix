@@ -4,7 +4,10 @@ module M
   class Schema
     module Props
       class Child
-        ORIGINAL_KEYS = { "value" => :value }.freeze
+        extend T::Sig
+
+        ORIGINAL_KEYS =
+          T.let({ "value" => :value }.freeze, T::Hash[String, Symbol])
 
         sig { params(value: T.nilable(String)).void }
         def initialize(value: nil)
@@ -26,7 +29,7 @@ module M
           @_extra[key] = value
         end
 
-        sig { params(hash: T::Hash[String, T.anything]).returns(Child) }
+        sig { params(hash: T::Hash[String, T.untyped]).returns(Child) }
         def self.from_h(hash)
           instance = new(value: hash["value"])
 
@@ -38,7 +41,7 @@ module M
           instance
         end
 
-        sig { returns(T::Hash[String, T.anything]) }
+        sig { returns(T::Hash[String, T.untyped]) }
         def to_h
           result = {}
           result["value"] = @value unless @value.nil?

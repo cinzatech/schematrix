@@ -2,6 +2,7 @@
 
 module <%= @module_name %>
 <%= declaration_open %>
+    extend T::Sig
     <% unless @property_keys.empty? %>
     <%= original_keys_constant %>
 

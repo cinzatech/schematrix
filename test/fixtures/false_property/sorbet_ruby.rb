@@ -2,9 +2,15 @@
 
 module M
   class Schema
-    ORIGINAL_KEYS = { "name" => :name, "legacy" => :legacy }.freeze
+    extend T::Sig
 
-    sig { params(name: T.nilable(String), legacy: T.nilable(T.noreturn)).void }
+    ORIGINAL_KEYS =
+      T.let(
+        { "name" => :name, "legacy" => :legacy }.freeze,
+        T::Hash[String, Symbol]
+      )
+
+    sig { params(name: T.nilable(String), legacy: T.untyped).void }
     def initialize(name: nil, legacy: nil)
       @name = name
       @legacy = legacy
@@ -15,7 +21,7 @@ module M
     sig { returns(T.nilable(String)) }
     attr_accessor :name
 
-    sig { returns(T.nilable(T.noreturn)) }
+    sig { returns(T.untyped) }
     attr_accessor :legacy
 
     sig { params(key: String).returns(T.anything) }
@@ -28,7 +34,7 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }
     def self.from_h(hash)
       instance = new(name: hash["name"], legacy: hash["legacy"])
 
@@ -40,7 +46,7 @@ module M
       instance
     end
 
-    sig { returns(T::Hash[String, T.anything]) }
+    sig { returns(T::Hash[String, T.untyped]) }
     def to_h
       result = {}
       result["name"] = @name unless @name.nil?

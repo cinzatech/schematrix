@@ -4,7 +4,10 @@ module M
   class Schema
     module Defs
       class Address
-        ORIGINAL_KEYS = { "city" => :city }.freeze
+        extend T::Sig
+
+        ORIGINAL_KEYS =
+          T.let({ "city" => :city }.freeze, T::Hash[String, Symbol])
 
         sig { params(city: T.nilable(String)).void }
         def initialize(city: nil)
@@ -26,7 +29,7 @@ module M
           @_extra[key] = value
         end
 
-        sig { params(hash: T::Hash[String, T.anything]).returns(Address) }
+        sig { params(hash: T::Hash[String, T.untyped]).returns(Address) }
         def self.from_h(hash)
           instance = new(city: hash["city"])
 
@@ -38,7 +41,7 @@ module M
           instance
         end
 
-        sig { returns(T::Hash[String, T.anything]) }
+        sig { returns(T::Hash[String, T.untyped]) }
         def to_h
           result = {}
           result["city"] = @city unless @city.nil?

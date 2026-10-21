@@ -2,7 +2,10 @@
 
 module M
   class Schema
-    ORIGINAL_KEYS = { "config" => :config }.freeze
+    extend T::Sig
+
+    ORIGINAL_KEYS =
+      T.let({ "config" => :config }.freeze, T::Hash[String, Symbol])
 
     sig { params(config: T.nilable(T::Hash[String, T.anything])).void }
     def initialize(config: nil)
@@ -24,7 +27,7 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }
     def self.from_h(hash)
       instance = new(config: hash["config"])
 
@@ -36,7 +39,7 @@ module M
       instance
     end
 
-    sig { returns(T::Hash[String, T.anything]) }
+    sig { returns(T::Hash[String, T.untyped]) }
     def to_h
       result = {}
       result["config"] = @config unless @config.nil?

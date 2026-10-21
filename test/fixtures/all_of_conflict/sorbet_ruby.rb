@@ -2,16 +2,18 @@
 
 module M
   class Schema
-    ORIGINAL_KEYS = { "a" => :a }.freeze
+    extend T::Sig
 
-    sig { params(a: T.nilable(T.all(String, Integer))).void }
+    ORIGINAL_KEYS = T.let({ "a" => :a }.freeze, T::Hash[String, Symbol])
+
+    sig { params(a: T.untyped).void }
     def initialize(a: nil)
       @a = a
 
       @_extra = T.let({}, T::Hash[String, T.anything])
     end
 
-    sig { returns(T.nilable(T.all(String, Integer))) }
+    sig { returns(T.untyped) }
     attr_accessor :a
 
     sig { params(key: String).returns(T.anything) }
@@ -24,7 +26,7 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }
     def self.from_h(hash)
       instance = new(a: hash["a"])
 
@@ -36,7 +38,7 @@ module M
       instance
     end
 
-    sig { returns(T::Hash[String, T.anything]) }
+    sig { returns(T::Hash[String, T.untyped]) }
     def to_h
       result = {}
       result["a"] = @a unless @a.nil?

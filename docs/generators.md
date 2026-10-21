@@ -55,9 +55,10 @@ per class, nested under directories that mirror the class nesting.
 ## sorbet_ruby
 
 The Sorbet format writes the same classes with `sig` blocks and real
-bodies, under a `# typed: strict` header. The file loads without
-`sorbet-runtime` installed, but type checking with `srb tc` requires
-the `sorbet-runtime` gem at runtime.
+bodies, under a `# typed: strict` header. Loading the file requires
+the `sorbet-runtime` gem: the class body calls `T.let` eagerly and
+carries `sig` blocks. Type checking with `srb tc` requires the
+`sorbet` gem.
 
 ```ruby
 # typed: strict

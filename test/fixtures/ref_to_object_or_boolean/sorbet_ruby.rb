@@ -2,7 +2,13 @@
 
 module M
   class Schema
-    ORIGINAL_KEYS = { "meta" => :meta, "nullable" => :nullable }.freeze
+    extend T::Sig
+
+    ORIGINAL_KEYS =
+      T.let(
+        { "meta" => :meta, "nullable" => :nullable }.freeze,
+        T::Hash[String, Symbol]
+      )
 
     sig do
       params(
@@ -33,7 +39,7 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
+    sig { params(value: T.untyped, klass: T.untyped).returns(T.untyped) }
     def self.coerce_class_slot(value, klass)
       if value.is_a?(klass)
         value.to_h
@@ -44,31 +50,31 @@ module M
       end
     end
 
-    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
+    sig { params(value: T.untyped, klass: T.untyped).returns(T.untyped) }
     def self.coerce_array_slot(value, klass)
       return value unless value.is_a?(Array)
 
       value.map { |element| coerce_class_slot(element, klass) }
     end
 
-    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
+    sig { params(value: T.untyped, klass: T.untyped).returns(T.untyped) }
     def self.coerce_map_slot(value, klass)
       return value unless value.is_a?(Hash)
 
       value.transform_values { |entry| coerce_class_slot(entry, klass) }
     end
 
-    sig { params(value: T.anything).returns(T.anything) }
+    sig { params(value: T.untyped).returns(T.untyped) }
     def self.coerce_meta(value)
       coerce_class_slot(value, M::Schema::Defs::Meta)
     end
 
-    sig { params(value: T.anything).returns(T.anything) }
+    sig { params(value: T.untyped).returns(T.untyped) }
     def self.coerce_nullable(value)
       coerce_class_slot(value, M::Schema::Defs::Nullable)
     end
 
-    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }
     def self.from_h(hash)
       instance =
         new(
@@ -84,7 +90,7 @@ module M
       instance
     end
 
-    sig { returns(T::Hash[String, T.anything]) }
+    sig { returns(T::Hash[String, T.untyped]) }
     def to_h
       result = {}
       result["meta"] = self.class.coerce_meta(@meta) unless @meta.nil?

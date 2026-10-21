@@ -2,7 +2,10 @@
 
 module M
   class Schema
-    ORIGINAL_KEYS = { "anchor" => :anchor }.freeze
+    extend T::Sig
+
+    ORIGINAL_KEYS =
+      T.let({ "anchor" => :anchor }.freeze, T::Hash[String, Symbol])
 
     sig { params(anchor: T.nilable(String)).void }
     def initialize(anchor: "myAnchor")
@@ -24,7 +27,7 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }
     def self.from_h(hash)
       instance = new
       instance.anchor = hash["anchor"] if hash.key?("anchor")
@@ -37,7 +40,7 @@ module M
       instance
     end
 
-    sig { returns(T::Hash[String, T.anything]) }
+    sig { returns(T::Hash[String, T.untyped]) }
     def to_h
       result = {}
       result["anchor"] = @anchor unless @anchor.nil?

@@ -4,9 +4,15 @@ module M
   class Schema
     module Props
       class Value
-        ORIGINAL_KEYS = { "name" => :name, "age" => :age }.freeze
+        extend T::Sig
 
-        sig { params(name: T.anything, age: T.anything).void }
+        ORIGINAL_KEYS =
+          T.let(
+            { "name" => :name, "age" => :age }.freeze,
+            T::Hash[String, Symbol]
+          )
+
+        sig { params(name: T.untyped, age: T.untyped).void }
         def initialize(name: nil, age: nil)
           @name = name
           @age = age
@@ -14,10 +20,10 @@ module M
           @_extra = T.let({}, T::Hash[String, T.anything])
         end
 
-        sig { returns(T.anything) }
+        sig { returns(T.untyped) }
         attr_accessor :name
 
-        sig { returns(T.anything) }
+        sig { returns(T.untyped) }
         attr_accessor :age
 
         sig { params(key: String).returns(T.anything) }
@@ -30,7 +36,7 @@ module M
           @_extra[key] = value
         end
 
-        sig { params(hash: T::Hash[String, T.anything]).returns(Value) }
+        sig { params(hash: T::Hash[String, T.untyped]).returns(Value) }
         def self.from_h(hash)
           instance = new(name: hash["name"], age: hash["age"])
 
@@ -42,7 +48,7 @@ module M
           instance
         end
 
-        sig { returns(T::Hash[String, T.anything]) }
+        sig { returns(T::Hash[String, T.untyped]) }
         def to_h
           result = {}
           result["name"] = @name unless @name.nil?

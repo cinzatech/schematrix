@@ -6,7 +6,10 @@ module M
       class L1
         module Props
           class L2
-            ORIGINAL_KEYS = { "val" => :val }.freeze
+            extend T::Sig
+
+            ORIGINAL_KEYS =
+              T.let({ "val" => :val }.freeze, T::Hash[String, Symbol])
 
             sig { params(val: T.nilable(String)).void }
             def initialize(val: nil)
@@ -28,7 +31,7 @@ module M
               @_extra[key] = value
             end
 
-            sig { params(hash: T::Hash[String, T.anything]).returns(L2) }
+            sig { params(hash: T::Hash[String, T.untyped]).returns(L2) }
             def self.from_h(hash)
               instance = new(val: hash["val"])
 
@@ -40,7 +43,7 @@ module M
               instance
             end
 
-            sig { returns(T::Hash[String, T.anything]) }
+            sig { returns(T::Hash[String, T.untyped]) }
             def to_h
               result = {}
               result["val"] = @val unless @val.nil?

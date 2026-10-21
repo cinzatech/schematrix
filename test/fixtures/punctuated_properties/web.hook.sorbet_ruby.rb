@@ -4,7 +4,9 @@ module M
   class Schema
     module Props
       class WebHook
-        ORIGINAL_KEYS = { "url" => :url }.freeze
+        extend T::Sig
+
+        ORIGINAL_KEYS = T.let({ "url" => :url }.freeze, T::Hash[String, Symbol])
 
         sig { params(url: T.nilable(String)).void }
         def initialize(url: nil)
@@ -26,7 +28,7 @@ module M
           @_extra[key] = value
         end
 
-        sig { params(hash: T::Hash[String, T.anything]).returns(WebHook) }
+        sig { params(hash: T::Hash[String, T.untyped]).returns(WebHook) }
         def self.from_h(hash)
           instance = new(url: hash["url"])
 
@@ -38,7 +40,7 @@ module M
           instance
         end
 
-        sig { returns(T::Hash[String, T.anything]) }
+        sig { returns(T::Hash[String, T.untyped]) }
         def to_h
           result = {}
           result["url"] = @url unless @url.nil?

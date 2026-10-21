@@ -2,10 +2,13 @@
 
 module M
   class Schema
-    ORIGINAL_KEYS = {
-      "firstName" => :first_name,
-      "lastName" => :last_name
-    }.freeze
+    extend T::Sig
+
+    ORIGINAL_KEYS =
+      T.let(
+        { "firstName" => :first_name, "lastName" => :last_name }.freeze,
+        T::Hash[String, Symbol]
+      )
 
     sig do
       params(first_name: T.nilable(String), last_name: T.nilable(String)).void
@@ -33,7 +36,7 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }
     def self.from_h(hash)
       instance = new(first_name: hash["firstName"], last_name: hash["lastName"])
 
@@ -45,7 +48,7 @@ module M
       instance
     end
 
-    sig { returns(T::Hash[String, T.anything]) }
+    sig { returns(T::Hash[String, T.untyped]) }
     def to_h
       result = {}
       result["firstName"] = @first_name unless @first_name.nil?

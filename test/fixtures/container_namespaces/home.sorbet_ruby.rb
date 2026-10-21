@@ -4,7 +4,10 @@ module M
   class Schema
     module Props
       class Home
-        ORIGINAL_KEYS = { "street" => :street }.freeze
+        extend T::Sig
+
+        ORIGINAL_KEYS =
+          T.let({ "street" => :street }.freeze, T::Hash[String, Symbol])
 
         sig { params(street: T.nilable(String)).void }
         def initialize(street: nil)
@@ -26,7 +29,7 @@ module M
           @_extra[key] = value
         end
 
-        sig { params(hash: T::Hash[String, T.anything]).returns(Home) }
+        sig { params(hash: T::Hash[String, T.untyped]).returns(Home) }
         def self.from_h(hash)
           instance = new(street: hash["street"])
 
@@ -38,7 +41,7 @@ module M
           instance
         end
 
-        sig { returns(T::Hash[String, T.anything]) }
+        sig { returns(T::Hash[String, T.untyped]) }
         def to_h
           result = {}
           result["street"] = @street unless @street.nil?

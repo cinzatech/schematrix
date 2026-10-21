@@ -2,7 +2,9 @@
 
 module M
   class Schema
-    ORIGINAL_KEYS = { "child" => :child }.freeze
+    extend T::Sig
+
+    ORIGINAL_KEYS = T.let({ "child" => :child }.freeze, T::Hash[String, Symbol])
 
     sig { params(child: T.nilable(Schema::Props::Child)).void }
     def initialize(child: nil)
@@ -24,7 +26,7 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
+    sig { params(value: T.untyped, klass: T.untyped).returns(T.untyped) }
     def self.coerce_class_slot(value, klass)
       if value.is_a?(klass)
         value.to_h
@@ -35,26 +37,26 @@ module M
       end
     end
 
-    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
+    sig { params(value: T.untyped, klass: T.untyped).returns(T.untyped) }
     def self.coerce_array_slot(value, klass)
       return value unless value.is_a?(Array)
 
       value.map { |element| coerce_class_slot(element, klass) }
     end
 
-    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
+    sig { params(value: T.untyped, klass: T.untyped).returns(T.untyped) }
     def self.coerce_map_slot(value, klass)
       return value unless value.is_a?(Hash)
 
       value.transform_values { |entry| coerce_class_slot(entry, klass) }
     end
 
-    sig { params(value: T.anything).returns(T.anything) }
+    sig { params(value: T.untyped).returns(T.untyped) }
     def self.coerce_child(value)
       coerce_class_slot(value, M::Schema::Props::Child)
     end
 
-    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }
     def self.from_h(hash)
       instance = new(child: coerce_child(hash["child"]))
 
@@ -66,7 +68,7 @@ module M
       instance
     end
 
-    sig { returns(T::Hash[String, T.anything]) }
+    sig { returns(T::Hash[String, T.untyped]) }
     def to_h
       result = {}
       result["child"] = self.class.coerce_child(@child) unless @child.nil?

@@ -2,18 +2,16 @@
 
 module M
   class Schema
-    ORIGINAL_KEYS = {
-      "flag" => :flag,
-      "dead" => :dead,
-      "sibling" => :sibling
-    }.freeze
+    extend T::Sig
+
+    ORIGINAL_KEYS =
+      T.let(
+        { "flag" => :flag, "dead" => :dead, "sibling" => :sibling }.freeze,
+        T::Hash[String, Symbol]
+      )
 
     sig do
-      params(
-        flag: T.anything,
-        dead: T.nilable(T.noreturn),
-        sibling: T.nilable(String)
-      ).void
+      params(flag: T.untyped, dead: T.untyped, sibling: T.nilable(String)).void
     end
     def initialize(flag: nil, dead: nil, sibling: nil)
       @flag = flag
@@ -23,10 +21,10 @@ module M
       @_extra = T.let({}, T::Hash[String, T.anything])
     end
 
-    sig { returns(T.anything) }
+    sig { returns(T.untyped) }
     attr_accessor :flag
 
-    sig { returns(T.nilable(T.noreturn)) }
+    sig { returns(T.untyped) }
     attr_accessor :dead
 
     sig { returns(T.nilable(String)) }
@@ -42,7 +40,7 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }
     def self.from_h(hash)
       instance =
         new(flag: hash["flag"], dead: hash["dead"], sibling: hash["sibling"])
@@ -55,7 +53,7 @@ module M
       instance
     end
 
-    sig { returns(T::Hash[String, T.anything]) }
+    sig { returns(T::Hash[String, T.untyped]) }
     def to_h
       result = {}
       result["flag"] = @flag unless @flag.nil?

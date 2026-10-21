@@ -2,9 +2,12 @@
 
 module M
   class Schema
-    ORIGINAL_KEYS = { "foo" => :foo, "bar" => :bar }.freeze
+    extend T::Sig
 
-    sig { params(foo: T.anything, bar: T.anything).void }
+    ORIGINAL_KEYS =
+      T.let({ "foo" => :foo, "bar" => :bar }.freeze, T::Hash[String, Symbol])
+
+    sig { params(foo: T.untyped, bar: T.untyped).void }
     def initialize(foo: nil, bar: nil)
       @foo = foo
       @bar = bar
@@ -12,10 +15,10 @@ module M
       @_extra = T.let({}, T::Hash[String, T.anything])
     end
 
-    sig { returns(T.anything) }
+    sig { returns(T.untyped) }
     attr_accessor :foo
 
-    sig { returns(T.anything) }
+    sig { returns(T.untyped) }
     attr_accessor :bar
 
     sig { params(key: String).returns(T.anything) }
@@ -28,7 +31,7 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }
     def self.from_h(hash)
       instance = new(foo: hash["foo"], bar: hash["bar"])
 
@@ -40,7 +43,7 @@ module M
       instance
     end
 
-    sig { returns(T::Hash[String, T.anything]) }
+    sig { returns(T::Hash[String, T.untyped]) }
     def to_h
       result = {}
       result["foo"] = @foo unless @foo.nil?

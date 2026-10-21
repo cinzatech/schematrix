@@ -2,7 +2,9 @@
 
 module M
   class Schema
-    ORIGINAL_KEYS = { "score" => :score }.freeze
+    extend T::Sig
+
+    ORIGINAL_KEYS = T.let({ "score" => :score }.freeze, T::Hash[String, Symbol])
 
     sig { params(score: T.nilable(Numeric)).void }
     def initialize(score: nil)
@@ -24,7 +26,7 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(hash: T::Hash[String, T.anything]).returns(Schema) }
+    sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }
     def self.from_h(hash)
       instance = new(score: hash["score"])
 
@@ -36,7 +38,7 @@ module M
       instance
     end
 
-    sig { returns(T::Hash[String, T.anything]) }
+    sig { returns(T::Hash[String, T.untyped]) }
     def to_h
       result = {}
       result["score"] = @score unless @score.nil?
