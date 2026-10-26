@@ -29,11 +29,17 @@ For each object schema the compiler found, one file per class:
   `nil`, and properties carrying a schema `default` use that value.
 - One accessor per property, plus its entry in `ORIGINAL_KEYS`.
 - Catch-all accessors `[]` and `[]=` when the class accepts extra keys.
-- `from_h` and `to_h` for loading and dumping, with one `coerce_` method
-  per property whose values carry a nested class. Each delegates to one
-  of three shared slot helpers (`coerce_class_slot`, `coerce_array_slot`,
+- `from_h` and `to_h` for loading and dumping, with one `coerce_`
+  method per property whose values carry a nested class or a coercing
+  scalar format. Class-shaped properties delegate to one of three
+  shared slot helpers (`coerce_class_slot`, `coerce_array_slot`,
   `coerce_map_slot`) that carry the symmetric load/dump dispatch once
-  per shape.
+  per shape; coercing formats convert through a spec interpreter
+  (`coerce_spec`) that mirrors the slot's type structure, so arrays,
+  tuples, maps, catch-all values, and union branches all convert, and
+  delegates to the coercer directly when the slot is one scalar. The
+  built-in coercers the file calls are emitted next to the helpers (a
+  project coercer is referenced by name).
 
 The details live in [Generated code](generated-code.md).
 
@@ -156,6 +162,34 @@ How a JSON Schema type renders per notation:
 | map              | `T::Hash[String, V]`          | `Hash[String, V]`   |
 | no `type` at all | `T.anything`                  | `top`               |
 | `false` schema   | `T.noreturn`                  | `top`               |
+
+A scalar slot's `format` picks its row through the scalar type table:
+`date` renders `Date` and `date-time` renders `Time`, with the value
+converted on load and dump wherever the formatted type appears
+(elements, tuples, map values, union branches included). A union whose
+branches convert the same JSON type through different coercers fails
+generation with `CoercionConflictError`. A format the table does not
+list renders as its bare type, and a generator's `scalar_types:`
+option adds the project's own rows:
+
+```ruby
+Schematrix::Generators::SorbetRuby.new(
+  "app/generated",
+  "Billing",
+  scalar_types: {
+    ["string", "money"] => Schematrix::ScalarType.new(
+      sorbet: "Money",
+      rbs: "Money",
+      coercer: Money
+    )
+  }
+)
+```
+
+The option merges over the built-in table, so a built-in format can be
+remapped. A coercer must be a named module answering `coerce(value)`;
+anything else fails the generator's construction, before any file is
+written. See [Library API](library-api.md).
 
 Absence wraps a type: an optional property renders as `T.nilable(T)` in
 Sorbet and `(T)?` in RBS. A union of declared types renders as

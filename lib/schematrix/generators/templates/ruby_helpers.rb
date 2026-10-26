@@ -89,12 +89,17 @@ module Schematrix
               lines << "  next if ORIGINAL_KEYS.key?(key)"
             end
             lines << ""
-            lines << "  instance[key] = value"
+            rider = extra_conversion? ? "coerce_extra(value)" : "value"
+            lines << "  instance[key] = #{rider}"
             lines << "end"
           end
           lines << "instance"
           lines.join("\n")
         end
+
+        # Whether the open class's extra riders convert through the
+        # catch-all schema's coercing format.
+        def extra_conversion? = !catch_all_spec.nil?
 
         # Constructor kwargs of from_h: every property without a
         # constructor default. Absent keys pass nil, which is what
@@ -167,11 +172,20 @@ module Schematrix
             lines << "result[\"#{original_key_of(name)}\"] = #{value} " \
               "unless @#{name}.nil?"
           end
-          if @additional_properties
-            lines << "@_extra.each { |key, value| result[key] = value }"
-          end
+          lines << extra_dump_line if @additional_properties
           lines << "result"
           lines.join("\n")
+        end
+
+        # The catch-all dump line: rider values convert through the
+        # catch-all spec when it carries a coercing format.
+        def extra_dump_line
+          if extra_conversion?
+            "@_extra.each { |key, value| result[key] = " \
+              "self.class.coerce_extra(value) }"
+          else
+            "@_extra.each { |key, value| result[key] = value }"
+          end
         end
 
         def original_key_of(name)

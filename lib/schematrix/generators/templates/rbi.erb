@@ -17,7 +17,7 @@ module <%= @module_name %>
     sig { params(key: String, value: <%= sorbet_additional_properties_type %>).returns(<%= sorbet_additional_properties_type %>) }
     def []=(key, value); end
     <% end %>
-<% unless coercion_helpers.empty? %>
+<% if legacy_conversions? %>
 
     <%= sorbet_coercion_helper_signature %>
     def self.coerce_class_slot(value, klass); end
@@ -27,6 +27,21 @@ module <%= @module_name %>
 
     <%= sorbet_coercion_helper_signature %>
     def self.coerce_map_slot(value, klass); end
+<% end %>
+<% if spec_conversions? || catch_all_spec %>
+<% if spec_uses_class_slot? %>
+
+    <%= sorbet_coercion_helper_signature %>
+    def self.coerce_class_slot(value, klass); end
+<% end %>
+
+    <%= sorbet_spec_helper_signature %>
+    def self.coerce_spec(value, spec); end
+<% end %>
+<% if catch_all_spec %>
+
+    <%= sorbet_coercion_signature %>
+    def self.coerce_extra(value); end
 <% end %>
 <% property_coercions.each do |name, plan| %>
 <% next if plan.nil? %>
@@ -41,4 +56,9 @@ module <%= @module_name %>
     <%= sorbet_to_h_signature %>
     def to_h; end
 <%= declaration_close %>
+<% coercer_block = coercer_modules_block(sig: sorbet_coercion_signature, requires: false, stub: true) %>
+<% unless coercer_block.empty? %>
+
+<%= coercer_block %>
+<% end %>
 end

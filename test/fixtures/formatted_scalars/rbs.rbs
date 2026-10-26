@@ -1,0 +1,23 @@
+module M
+  class Schema
+    attr_accessor created_at: Time
+    attr_accessor birthday: Date?
+    attr_accessor email: String?
+    attr_accessor count: Integer?
+
+    def initialize: (
+      created_at: Time,
+      ?birthday: Date?,
+      ?email: String?,
+      ?count: Integer?
+    ) -> void
+
+    def []: (String) -> top
+
+    def []=: (String, top) -> top
+
+    def self.from_h: (Hash[String, top] hash) -> Schema
+
+    def to_h: -> Hash[String, top]
+  end
+end

@@ -69,7 +69,7 @@ module Schematrix
               else
                 # nil elements (malformed type lists) fall through the
                 # scalar map's nil key to untyped, like any unknown type
-                [scalar_type(type)]
+                [scalar_type(type, schema.format)]
               end
             end
 

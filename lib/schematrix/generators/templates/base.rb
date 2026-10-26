@@ -21,7 +21,8 @@ module Schematrix
           properties:,
           additional_properties:,
           documentation_comment:,
-          property_keys: []
+          property_keys: [],
+          scalar_types: Schematrix::BUILTIN_SCALAR_TYPES
         )
           @module_name = module_name
           @path = path
@@ -30,6 +31,21 @@ module Schematrix
           @property_keys = property_keys
           @additional_properties = additional_properties
           @documentation_comment = documentation_comment
+          @scalar_types = scalar_types
+        end
+
+        # The merged [type, format] rendering table the type algebra
+        # and the coercion plans read. Generators pass the table their
+        # `scalar_types:` option produced; the default is the built in
+        # one.
+        attr_reader :scalar_types
+
+        # The rendering entry of a [type, format] pair, most specific
+        # first: the exact pair, then the bare type. nil when neither
+        # is in the table, so an unknown format renders as its bare
+        # type and an unknown type as unconstrained.
+        def lookup_scalar_type(type, format = nil)
+          scalar_types[[type, format]] || scalar_types[[type, nil]]
         end
 
         # Evaluates the ERB with this template's binding: the template

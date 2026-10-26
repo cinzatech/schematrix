@@ -1,0 +1,42 @@
+{
+  "title": "NestedFormats",
+  "type": "object",
+  "properties": {
+    "log": {
+      "type": "array",
+      "items": { "type": "string", "format": "date-time" }
+    },
+    "window": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "string", "format": "date" },
+        { "type": "string", "format": "date-time" }
+      ],
+      "items": false
+    },
+    "rates": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "format": "date-time" }
+    },
+    "milestone": {
+      "anyOf": [
+        { "type": "string", "format": "date" },
+        { "type": "integer" }
+      ]
+    },
+    "amount": {
+      "anyOf": [
+        { "type": "string", "format": "date-time" },
+        { "$ref": "#/$defs/money" }
+      ]
+    }
+  },
+  "additionalProperties": { "type": "string", "format": "date" },
+  "$defs": {
+    "money": {
+      "type": "object",
+      "properties": { "cents": { "type": "integer" } },
+      "required": ["cents"]
+    }
+  }
+}

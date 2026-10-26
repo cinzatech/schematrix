@@ -78,6 +78,14 @@ Rules:
   loads through that class's own `from_h`, an instance passes through,
   anything else passes through unchanged. The same dispatch dumps in the
   other direction through `to_h`.
+- Values of properties whose scalar `format` maps to a coercer (`date`,
+  `date-time`, or a project's own) convert the same way at every
+  position the formatted type renders: a document string loads through
+  the coercer, an instance dumps through it, arrays convert
+  elementwise (tuple positions each through their own coercer), maps
+  and catch-all riders convert their values, and union branches
+  dispatch on the value's class. The converter is emitted into the
+  file, so these slots need no gem at runtime.
 - A property with a schema `default` keeps that default when the key is
   absent from the hash. `from_h` assigns defaulted properties only when
   the key is present.
