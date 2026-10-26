@@ -2,6 +2,15 @@ require "tty-option"
 
 require_relative "generators/base"
 
+# Splits a comma-separated option value into its elements. A custom
+# conversion instead of the built-in `:list`: tty-option treats every
+# option whose conversion name looks list-like as multi-argument and
+# consumes all following tokens, which would absorb the positional
+# input files when -g is the last option before them.
+TTY::Option::Conversions.convert(:comma) do |value|
+  value.split(",").map(&:strip).reject(&:empty?)
+end
+
 module Schematrix
   # The `schematrix` command line interface. Parses ARGV through
   # tty-option and runs Schematrix.generate with the parsed settings.
@@ -29,12 +38,14 @@ module Schematrix
       arity one_or_more
     end
 
+    # Splits comma-separated values at parse time through the :comma
+    # conversion; repeated flags accumulate alongside them.
     option :generators do
       required
       arity one_or_more
       short "-g"
       long "--generators list"
-      convert :list
+      convert :comma
       desc "Output generators to use, e.g.: plain_ruby, dsl_plain_ruby"
     end
 
