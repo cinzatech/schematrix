@@ -166,11 +166,17 @@ merge into one class:
   "the document may carry the `then` properties, or the `else`
   properties, or neither".
 
-On a value schema (a property, an array element), the keywords union
-into the property's type instead:
+On a value schema (a property, an array element), the branches
+contribute to the property's type instead:
 
-- Scalar branches become union terms: `anyOf: [string, integer]` types
-  the slot `String | Integer`.
+- `allOf` conjoins: scalar branches intersect their type terms
+  (`allOf: [string, integer]` types the slot `String & Integer`), a
+  `$ref` branch keeps its target class (and that class generates),
+  and an inline object branch merges its properties into the
+  property's own class, as it does under `anyOf`. Branch facets with
+  no codegen rendering (`minLength`, ...) contribute nothing.
+- Scalar branches of the union keywords become union terms:
+  `anyOf: [string, integer]` types the slot `String | Integer`.
 - Inline object branches inside `anyOf` merge into the property's own
   class.
 - Inline object branches inside `oneOf` become their own positional

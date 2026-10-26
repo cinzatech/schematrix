@@ -354,7 +354,14 @@ module Schematrix
             type:,
           )
 
-        own_class = ref.nil? && type.include?(TYPE_OBJECT)
+        # Value-context allOf: the branches conjoin into the slot's
+        # record (object context folded them in compile_object
+        # instead).
+        unless object_context
+          schema = fold_value_allof(site, schema, node.all_of)
+        end
+
+        own_class = ref.nil? && schema.type.include?(TYPE_OBJECT)
         if register_object && own_class && !schema.map_shaped?
           @objects[current_locator(site)] = schema
         end
@@ -748,6 +755,52 @@ module Schematrix
     # untyped-contribution rule, every property optional.
     def merge_value_branches(path, node, branches)
       union_list_body(path, node_body(path, node), branches)
+    end
+
+    # Value-context allOf fold: the branches conjoin into the slot's
+    # record. A branch declaring an inline object shape absorbs into
+    # the slot's own class, its properties merging under this site
+    # (the object-context rule); everything else visits as a value
+    # and conjoins: scalar branches intersect their type terms, and a
+    # $ref branch keeps its target class through the recorded edge.
+    # A true branch is the identity and a false branch is skipped
+    # (over-accepting, like every other skipped false).
+    def fold_value_allof(path, schema, raws)
+      Array(raws).each_with_index do |raw, index|
+        next unless raw.is_a?(Schematrix::Meta::Schema)
+
+        if raw.ref.nil? && Array(raw.type).include?(TYPE_OBJECT)
+          body =
+            conjoin_body(
+              path,
+              Body.new(
+                properties: schema.properties,
+                additional_properties: schema.additional_properties,
+              ),
+              raw,
+            )
+          schema =
+            schema.with(
+              type: schema.type | Set[TYPE_OBJECT],
+              properties: body.properties,
+              additional_properties: body.additional_properties,
+            )
+          next
+        end
+
+        branch =
+          visit_schema(
+            path,
+            "allOf_#{index}",
+            raw,
+            required: false,
+            register_object: false,
+          )
+        next if branch.type == Set[TYPE_BOTTOM]
+
+        schema = conjoin_schemas(schema, branch)
+      end
+      schema
     end
 
     # The mergeable parts of a raw node: its own properties and its

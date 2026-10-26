@@ -1,0 +1,8 @@
+{"type":"object",
+ "$defs":{"Base":{"type":"object","properties":{"id":{"type":"string"}}},
+          "Mixin":{"type":"object","properties":{"tag":{"type":"string"}}}},
+ "properties":{
+   "str":{"allOf":[{"type":"string"},{"minLength":1}]},
+   "refonly":{"allOf":[{"$ref":"#/$defs/Base"}]},
+   "both":{"allOf":[{"$ref":"#/$defs/Base"},{"$ref":"#/$defs/Mixin"}]},
+   "typed":{"type":"object","allOf":[{"$ref":"#/$defs/Base"}]}}}
