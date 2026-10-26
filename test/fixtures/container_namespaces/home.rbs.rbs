@@ -2,6 +2,8 @@ module M
   class Schema
     module Props
       class Home
+        ORIGINAL_KEYS: Hash[String, Symbol]
+
         attr_accessor street: String?
 
         def initialize: (?street: String?) -> void

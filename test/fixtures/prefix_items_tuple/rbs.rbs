@@ -1,5 +1,7 @@
 module M
   class Schema
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
     attr_accessor point: Array[top]?
 
     def initialize: (?point: Array[top]?) -> void

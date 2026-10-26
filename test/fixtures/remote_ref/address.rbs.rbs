@@ -1,5 +1,7 @@
 module M
   class Address
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
     attr_accessor street: String?
     attr_accessor zip: Address::Props::Zip?
 
@@ -8,6 +10,14 @@ module M
     def []: (String) -> top
 
     def []=: (String, top) -> top
+
+    def self.coerce_class_slot: (top value, top klass) -> top
+
+    def self.coerce_array_slot: (top value, top klass) -> top
+
+    def self.coerce_map_slot: (top value, top klass) -> top
+
+    def self.coerce_zip: (top value) -> top
 
     def self.from_h: (Hash[String, top] hash) -> Address
 

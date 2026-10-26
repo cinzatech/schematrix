@@ -1,5 +1,7 @@
 module M
   class Schema
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
     attr_accessor log: Array[Time]?
     attr_accessor window: Array[(Date | Time)]?
     attr_accessor rates: Hash[String, Time]?
@@ -17,6 +19,22 @@ module M
     def []: (String) -> Date?
 
     def []=: (String, Date?) -> Date?
+
+    def self.coerce_class_slot: (top value, top klass) -> top
+
+    def self.coerce_spec: (top value, top spec) -> top
+
+    def self.coerce_extra: (top value) -> top
+
+    def self.coerce_log: (top value) -> top
+
+    def self.coerce_window: (top value) -> top
+
+    def self.coerce_rates: (top value) -> top
+
+    def self.coerce_milestone: (top value) -> top
+
+    def self.coerce_amount: (top value) -> top
 
     def self.from_h: (Hash[String, top] hash) -> Schema
 

@@ -1,5 +1,7 @@
 module M
   class Schema
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
     attr_accessor flag: top
     attr_accessor dead: top
     attr_accessor sibling: String?

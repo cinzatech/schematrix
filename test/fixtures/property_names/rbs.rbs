@@ -1,5 +1,7 @@
 module M
   class Schema
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
     attr_accessor vocab: Hash[String, bool]?
 
     def initialize: (?vocab: Hash[String, bool]?) -> void

@@ -4,6 +4,8 @@ module M
       class L1
         module Props
           class L2
+            ORIGINAL_KEYS: Hash[String, Symbol]
+
             attr_accessor val: String?
 
             def initialize: (?val: String?) -> void

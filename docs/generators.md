@@ -120,11 +120,18 @@ def self.from_h(hash); end
 
 The RBS format writes `.rbs` signatures, one module tree per class. Type
 names inside a signature are relative (`ComplexObject::Props::Address`),
-which resolves lexically from the enclosing class.
+which resolves lexically from the enclosing class. The signature
+describes the same surface as the Ruby output: the constructor takes
+the same required keywords (a required property typed
+`["string", "null"]` stays a required argument), and `ORIGINAL_KEYS`
+and the `coerce_` class methods the Ruby file defines are declared
+alongside the accessors.
 
 ```rbs
 module MyApp
   class Person
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
     attr_accessor first_name: String
     attr_accessor last_name: String
     attr_accessor age: Integer?

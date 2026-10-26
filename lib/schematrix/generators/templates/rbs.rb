@@ -1,4 +1,5 @@
 require_relative "base"
+require_relative "ruby_helpers"
 require_relative "rbs_notation"
 require_relative "type_composer"
 
@@ -7,6 +8,7 @@ module Schematrix
     module Templates
       # Rendering logic for the RBS generator
       class Rbs < Base
+        include RubyHelpers
         include TypeComposer
         include RbsNotation
 
@@ -24,13 +26,16 @@ module Schematrix
             .join("\n")
         end
 
+        # Mirrors the generated Ruby constructor: the same required
+        # keywords (null-typed required properties included) in the
+        # same required-first order.
         def rbs_initialize_params
           return "" if @properties.nil?
 
-          @properties
+          constructor_properties
             .map do |name, schema|
               type = property_type_of(@path, name, schema)
-              if schema&.strictly_required?
+              if schema.constructor_required?
                 "#{name}: #{type}"
               else
                 "?#{name}: #{type}"

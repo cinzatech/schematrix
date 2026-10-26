@@ -1,5 +1,7 @@
 module M
   class Schema
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
     attr_accessor entries: Array[Schema::Props::Entries::Items]?
 
     def initialize: (?entries: Array[Schema::Props::Entries::Items]?) -> void
@@ -7,6 +9,14 @@ module M
     def []: (String) -> top
 
     def []=: (String, top) -> top
+
+    def self.coerce_class_slot: (top value, top klass) -> top
+
+    def self.coerce_array_slot: (top value, top klass) -> top
+
+    def self.coerce_map_slot: (top value, top klass) -> top
+
+    def self.coerce_entries: (top value) -> top
 
     def self.from_h: (Hash[String, top] hash) -> Schema
 
