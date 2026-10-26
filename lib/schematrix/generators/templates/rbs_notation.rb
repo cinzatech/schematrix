@@ -11,23 +11,17 @@ module Schematrix
         # must be narrowed.
         RBS_TYPE_TOP = "top"
 
-        # RBS spelling per JSON Schema type name; unknown names fall
-        # back to top.
-        RBS_SCALAR_TYPES = {
-          nil => RBS_TYPE_TOP,
-          TYPE_STRING => "String",
-          TYPE_INTEGER => "Integer",
-          TYPE_NUMBER => "Numeric",
-          TYPE_BOOLEAN => "bool",
-          TYPE_NULL => "nil",
-        }.freeze
-
         private
 
         def untyped = RBS_TYPE_TOP
 
-        def scalar_type(type)
-          RBS_SCALAR_TYPES.fetch(type, RBS_TYPE_TOP)
+        # The RBS spelling of a [type, format] pair, read from the
+        # merged scalar type table; an unknown pair renders as top.
+        def scalar_type(type, format = nil)
+          entry = lookup_scalar_type(type, format)
+          return RBS_TYPE_TOP if entry.nil?
+
+          entry.rbs
         end
 
         def array_of(element) = "Array[#{element}]"

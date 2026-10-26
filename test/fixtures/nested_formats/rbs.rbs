@@ -1,0 +1,25 @@
+module M
+  class Schema
+    attr_accessor log: Array[Time]?
+    attr_accessor window: Array[(Date | Time)]?
+    attr_accessor rates: Hash[String, Time]?
+    attr_accessor milestone: (Date | Integer)?
+    attr_accessor amount: (Time | Schema::Defs::Money)?
+
+    def initialize: (
+      ?log: Array[Time]?,
+      ?window: Array[(Date | Time)]?,
+      ?rates: Hash[String, Time]?,
+      ?milestone: (Date | Integer)?,
+      ?amount: (Time | Schema::Defs::Money)?
+    ) -> void
+
+    def []: (String) -> Date?
+
+    def []=: (String, Date?) -> Date?
+
+    def self.from_h: (Hash[String, top] hash) -> Schema
+
+    def to_h: -> Hash[String, top]
+  end
+end

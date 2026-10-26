@@ -26,8 +26,10 @@ host resolves to a local file through schema directories (`--schema-dir`).
 Generated code represents every instance the schema accepts. A schema
 feature with no exact Ruby rendering widens the generated type instead of
 narrowing acceptance. The generated classes do not validate: they shape
-data. Constraints such as `pattern`, `minimum`, or `format` never reach
-the output.
+data. Constraints such as `pattern`, `minimum`, or `minLength` never
+reach the output. `format` is the exception: a scalar format the scalar
+type table maps changes the slot's Ruby type and converts its values on
+load and dump (see [Schema features](schema-features.md)).
 
 ## Manual contents
 

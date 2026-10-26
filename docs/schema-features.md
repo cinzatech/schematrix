@@ -33,8 +33,68 @@ with `InvalidSchemaError`.
 
 The `description` annotation becomes a comment above the generated
 class. `title` is captured but unused. Constraint keywords such as
-`pattern`, `minimum`, `format`, `minLength` never reach the output: the
-generated classes shape data, they do not validate it.
+`pattern`, `minimum`, `minLength` never reach the output: the generated
+classes shape data, they do not validate it.
+
+## Formats
+
+A scalar slot's `format` picks the Ruby type the slot renders, from the
+scalar type table the compiler carries:
+
+| Schema shape                                  | Rendering (Sorbet / RBS) |
+| --------------------------------------------- | ------------------------ |
+| `{ "type": "string" }`                        | `String` / `String`      |
+| `{ "type": "string", "format": "date" }`      | `Date` / `Date`          |
+| `{ "type": "string", "format": "date-time" }` | `Time` / `Time`          |
+
+The `date` and `date-time` entries also carry a coercer, and every
+slot the type algebra renders from a coercing entry converts on load
+and dump: a document string loads through `Date.iso8601` /
+`Time.iso8601`, an instance dumps through `iso8601`, and anything else
+passes through unchanged. That covers plain scalar properties, array
+elements and tuple positions, map and catch-all values, and union
+branches. The coercion code is emitted into the generated file itself,
+so the output keeps no runtime dependency on this gem. See
+[Generated code](generated-code.md).
+
+One union shape cannot convert: branches that would convert the same
+JSON type through different coercers, such as `anyOf` of `date` and
+`date-time`. The value carries no mark of its branch, so generation
+fails with `CoercionConflictError` instead of emitting a
+converter that is wrong for every instance of the branch whose
+coercer it does not use.
+
+A format with no table entry renders as its bare type, exactly as if
+it were absent. A project maps its own formats to its own classes
+through a generator's `scalar_types:` option, which merges over the
+built-in table:
+
+```ruby
+Schematrix::Generators::SorbetRuby.new(
+  "app/generated",
+  "Billing",
+  scalar_types: {
+    ["string", "money"] => Schematrix::ScalarType.new(
+      sorbet: "Money",
+      rbs: "Money",
+      coercer: Money
+    ),
+    ["integer", "id"] => Schematrix::ScalarType.new(
+      sorbet: "Id",
+      rbs: "Id"
+    )
+  }
+)
+```
+
+A coercer is any named module answering `coerce(value)`, following the
+same rule: a document value loads, an instance dumps, anything else
+passes through. An entry with `coercer: nil` maps a format to a type
+without conversion. The schema stays plain JSON Schema with annotation
+formats, which every other tool reads unchanged. See
+[Library API](library-api.md) for the option and
+[Limits](limits.md) for the conversion contract and its one
+non-convertible shape.
 
 ## Properties
 

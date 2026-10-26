@@ -86,6 +86,11 @@ module Schematrix
           "sig { params(value: T.untyped, klass: T.untyped).returns(" \
             "T.untyped) }"
         end
+
+        def sorbet_spec_helper_signature
+          "sig { params(value: T.untyped, spec: T.untyped).returns(" \
+            "T.untyped) }"
+        end
       end
     end
   end

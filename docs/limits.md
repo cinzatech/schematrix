@@ -8,9 +8,32 @@ rejects data the schema accepts.
 ## No validation
 
 Constraint keywords never reach the output. Generated classes check no
-`pattern`, `minimum`, `maxLength`, `format`, `multipleOf`, or similar.
-`from_h` accepts a hash that violates the schema and builds an instance
-from it. Validate data separately when you need to.
+`pattern`, `minimum`, `maxLength`, `multipleOf`, or similar. `from_h`
+accepts a hash that violates the schema and builds an instance from
+it. Validate data separately when you need to.
+
+## Format conversion
+
+`format` is the one annotation that reaches the output. For the scalar
+formats the scalar type table maps (`date`, `date-time`, and whatever
+the project adds through `scalar_types:`), every slot the type algebra
+renders from a mapped format converts on load and dump: plain scalar
+properties, array elements and tuple positions, map and catch-all
+values, and branches of a union. The conversion can fail where the
+schema does not: a string the coercer cannot parse raises from
+`from_h` (`Date::Error`, `ArgumentError`, or whatever the coercer
+raises). The spec reads `format` as an annotation, so a document with
+an unparseable date string is valid; loading it into a generated class
+is not. Validate documents before loading when that distinction
+matters.
+
+One shape cannot convert: a union whose branches would convert the
+same JSON type through different coercers, such as `anyOf` of `date`
+and `date-time`. A loaded value carries no mark of the branch it came
+from, so rendering either branch's type alone would name loaded
+values the other branch never produces. Generation fails with
+`CoercionConflictError` instead. Give the branches distinct JSON
+types, or map them to one coercer.
 
 ## Ignored keywords
 
@@ -28,8 +51,8 @@ one exists.
 
 `format`, `examples`, `default`, `title`, `description`, and
 `deprecated` are annotations or constraints with no output effect, so
-their absence from the list above is expected: `default` and
-`description` do reach the output, the rest do not.
+their absence from the list above is expected: `default`, `description`,
+and mapped `format` values do reach the output, the rest do not.
 
 ## Accepted approximations
 

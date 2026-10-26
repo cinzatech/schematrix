@@ -10,22 +10,16 @@ module Schematrix
         # Sorbet's spelling of the unconstrained type.
         SORBET_TYPE_ANYTHING = "T.anything"
 
-        # Sorbet spelling per JSON Schema type name; unknown names fall
-        # back to T.anything.
-        SORBET_SCALAR_TYPES = {
-          nil => SORBET_TYPE_ANYTHING,
-          TYPE_STRING => "String",
-          TYPE_INTEGER => "Integer",
-          TYPE_NUMBER => "Numeric",
-          TYPE_BOOLEAN => "T::Boolean",
-          TYPE_NULL => "NilClass",
-          TYPE_BOTTOM => "T.noreturn",
-        }.freeze
-
         def untyped = SORBET_TYPE_ANYTHING
 
-        def scalar_type(type)
-          SORBET_SCALAR_TYPES.fetch(type, SORBET_TYPE_ANYTHING)
+        # The Sorbet spelling of a [type, format] pair, read from the
+        # merged scalar type table; an unknown pair renders as
+        # unconstrained.
+        def scalar_type(type, format = nil)
+          entry = lookup_scalar_type(type, format)
+          return SORBET_TYPE_ANYTHING if entry.nil?
+
+          entry.sorbet
         end
 
         def array_of(element) = "T::Array[#{element}]"
@@ -59,6 +53,14 @@ module Schematrix
         # the slot's target class.
         def sorbet_coercion_helper_signature
           "sig { params(value: #{SORBET_TYPE_ANYTHING}, klass: #{
+            SORBET_TYPE_ANYTHING
+          }).returns(#{SORBET_TYPE_ANYTHING}) }"
+        end
+
+        # Signature of the spec interpreter, whose second parameter is
+        # the conversion spec rather than a slot helper's class.
+        def sorbet_spec_helper_signature
+          "sig { params(value: #{SORBET_TYPE_ANYTHING}, spec: #{
             SORBET_TYPE_ANYTHING
           }).returns(#{SORBET_TYPE_ANYTHING}) }"
         end

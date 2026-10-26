@@ -9,7 +9,8 @@ Options:
       --closed-shapes      Treat absent additionalProperties as false: closed
                            classes with no catch-all, instead of the spec
                            default
-  -g, --generators list    Output generators to use, e.g.: plain_ruby, rbs
+  -g, --generators list    Output generators to use, e.g.: plain_ruby,
+                           dsl_plain_ruby
   -h, --help               Print usage
   -m, --module string      Module where the output code will be placed
   -o, --output string      Directory where the output will be written

@@ -50,6 +50,12 @@ you want.
 - `Schematrix::OutputCollisionError` when two compiled classes, or two
   generators sharing a file extension in one directory, would write the
   same file.
+- `Schematrix::CoercionConflictError` while rendering a class whose
+  schema unions branches that would convert the same JSON type through
+  different coercers (see [Limits](limits.md)).
+- `Schematrix::CoercionHelperCollisionError` while rendering a class
+  whose coerced property names fold onto the generated coercion
+  helpers.
 
 Collisions are checked for every generator and class before the first
 file is written, so a failed run leaves no partial output.
@@ -81,9 +87,57 @@ generator.write(locator, node) # renders, formats, writes, returns the path
 - `node` is the `Schematrix::Schema` record for that locator.
 - Pass `format: false` to skip SyntaxTree formatting and receive the
   template output as-is.
-- `write` prefixes the file with a `DO NOT EDIT MANUALLY` banner. Pass
-  `command:` to name the regenerating command in its last line; the
-  CLI passes `schematrix`, the rake task `rake meta:generate`.
+- Pass `command:` to name the regenerating command in the written
+  files' banner; the CLI passes `schematrix`, the rake task
+  `rake meta:generate`.
+- Pass `scalar_types:` to map `[type, format]` pairs to renderings of
+  the project's own, merged over the built-in table (below).
+
+## Scalar types
+
+`scalar_types` customizes how scalar slots render, per notation, and
+which of them convert on load and dump:
+
+```ruby
+Schematrix::Generators::SorbetRuby.new(
+  "app/generated",
+  "Billing",
+  scalar_types: {
+    ["string", "money"] => Schematrix::ScalarType.new(
+      sorbet: "Money",
+      rbs: "Money",
+      coercer: Money
+    ),
+    ["integer", "id"] => Schematrix::ScalarType.new(
+      sorbet: "Id",
+      rbs: "Id"
+    )
+  }
+)
+```
+
+The keys are `[type, format]` pairs; a lookup tries the exact pair,
+then the bare type, so a format with no entry renders as its bare
+type. `Schematrix::ScalarType` carries the Sorbet spelling, the RBS
+spelling, and an optional coercer: any named module answering
+`coerce(value)`. A coercing slot follows the same rule the
+nested-class slots follow: a document value loads through
+`coercer.coerce`, an instance dumps through it, and anything else
+passes through. That conversion runs at every position the type
+algebra renders the formatted type: scalar properties, array elements
+and tuple positions, map and catch-all values, and union branches.
+The built-in table maps the standard
+formats this way (`date` to `Date`, `date-time` to `Time`) and emits
+the converter into the generated file; a project coercer is referenced
+by its name and required by the generate script, as any class it names
+is. A union whose branches convert the same JSON type through
+different coercers has no correct converter and fails the run with
+`CoercionConflictError` (see [Limits](limits.md)).
+
+A coercer must be a named module (or class) answering `coerce`: an
+anonymous module, a nameless value, or a missing method raises
+`ArgumentError` at generator construction, before any file is
+written.
 
 Eight generator classes exist: `PlainRuby`, `SorbetRuby`, `Rbi`, and
 `Rbs` for the data classes, plus `DslPlainRuby`, `DslSorbetRuby`,

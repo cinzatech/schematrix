@@ -1,0 +1,21 @@
+module M
+  module Dsl
+    class Schema
+      def self.build: { (Schema) -> void } -> Hash[String, top]
+
+      def initialize: -> void
+
+      def created_at: (Time value) -> instance
+
+      def birthday: (Date value) -> instance
+
+      def email: (String value) -> instance
+
+      def count: (Integer value) -> instance
+
+      def extra: (String key, top value) -> instance
+
+      def to_h: -> Hash[String, top]
+    end
+  end
+end

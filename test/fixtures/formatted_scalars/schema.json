@@ -1,0 +1,11 @@
+{
+  "title": "FormattedScalars",
+  "type": "object",
+  "properties": {
+    "created_at": { "type": "string", "format": "date-time" },
+    "birthday": { "type": ["string", "null"], "format": "date" },
+    "email": { "type": "string", "format": "email" },
+    "count": { "type": "integer" }
+  },
+  "required": ["created_at"]
+}

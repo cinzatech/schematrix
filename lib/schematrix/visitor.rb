@@ -38,6 +38,9 @@ module Schematrix
   # - `default`: the schema's `default` value.
   # - `description`, `title`, `enum`: captured annotations. The
   #   description becomes the generated class comment.
+  # - `format`: the schema's `format` annotation. Scalar slots read it
+  #   against the scalar type table to render a formatted Ruby type
+  #   and to find the coercer that converts on load and dump.
   Schema =
     Data.define(
       :additional_properties,
@@ -45,6 +48,7 @@ module Schematrix
       :default,
       :description,
       :enum,
+      :format,
       :intersection,
       :items,
       :one_of,
@@ -64,6 +68,7 @@ module Schematrix
       any_of: [].freeze,
       default: nil,
       enum: nil,
+      format: nil,
       intersection: false,
       items: nil,
       one_of: [].freeze,
@@ -286,6 +291,7 @@ module Schematrix
         default = node.default
         title = node.title
         description = node.description
+        format = node.format
         items = visit_subtree(site, "items", node.items)
         prefix_items = visit_prefix_items(site, node)
 
@@ -326,6 +332,7 @@ module Schematrix
             default:,
             description:,
             enum:,
+            format:,
             intersection: false,
             items:,
             one_of:,

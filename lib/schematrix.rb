@@ -2,6 +2,7 @@ require "tty-logger"
 
 require_relative "schematrix/version"
 require_relative "schematrix/meta"
+require_relative "schematrix/scalar_types"
 require_relative "schematrix/compiler"
 
 # Compiles JSON Schema documents and generates Ruby source and type
@@ -27,6 +28,13 @@ module Schematrix
   # onto the shared coercion helpers: the delegating property methods
   # would override the helpers they call.
   class CoercionHelperCollisionError < StandardError
+  end
+
+  # Raised while rendering a class whose schema unions branches that
+  # would convert the same JSON type through different coercers: a
+  # loaded value carries no mark of the branch it came from, so no
+  # converter is correct for every instance the union accepts.
+  class CoercionConflictError < StandardError
   end
 
   # Compiles every schema reachable from `input_files` and writes one

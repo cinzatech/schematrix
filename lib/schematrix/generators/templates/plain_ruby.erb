@@ -35,4 +35,9 @@ module <%= @module_name %>
 
     <%= to_h_method %>
 <%= declaration_close %>
+<% coercer_block = coercer_modules_block %>
+<% unless coercer_block.empty? %>
+
+<%= coercer_block %>
+<% end %>
 end
