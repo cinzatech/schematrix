@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "x#{1+1}y": { "type": "integer" },
+    "back\\slash": { "type": "string" },
+    "a\"b": { "type": "string" }
+  }
+}

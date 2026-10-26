@@ -118,7 +118,7 @@ module Schematrix
         def load_assignments
           defaulted_properties.map do |name|
             "instance.#{name} = #{load_value(name)} " \
-              "if hash.key?(\"#{original_key_of(name)}\")"
+              "if hash.key?(#{original_key_of(name).inspect})"
           end
         end
 
@@ -126,7 +126,7 @@ module Schematrix
         # lookup, or the lookup wrapped in its coercion when the
         # property carries a class-shaped term.
         def load_value(name)
-          source = "hash[\"#{original_key_of(name)}\"]"
+          source = "hash[#{original_key_of(name).inspect}]"
           return source unless coerced_property_names.include?(name)
 
           "coerce_#{name}(#{source})"
@@ -169,7 +169,7 @@ module Schematrix
           property_coercions.each do |name, plan|
             value =
               (plan.nil? ? "@#{name}" : "self.class.coerce_#{name}(@#{name})")
-            lines << "result[\"#{original_key_of(name)}\"] = #{value} " \
+            lines << "result[#{original_key_of(name).inspect}] = #{value} " \
               "unless @#{name}.nil?"
           end
           lines << extra_dump_line if @additional_properties
