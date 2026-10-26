@@ -18,6 +18,38 @@ class TestCLI < Minitest::Test
     assert_equal %w[schema.json other.json], Array(cli.params[:input])
   end
 
+  def test_generators_as_last_option_leaves_input_files_alone
+    cli = Schematrix::CLI.new
+    cli.parse(%w[-m M -o out -g plain_ruby schema.json other.json])
+
+    assert_empty cli.params.errors.to_a
+    assert_equal ["plain_ruby"], Array(cli.params[:generators])
+    assert_equal %w[schema.json other.json], Array(cli.params[:input])
+  end
+
+  def test_generators_accept_a_comma_separated_list
+    cli = Schematrix::CLI.new
+    cli.parse(%w[-g plain_ruby,rbs -m M schema.json])
+
+    assert_empty cli.params.errors.to_a
+    assert_equal %w[plain_ruby rbs], Array(cli.params[:generators])
+  end
+
+  def test_generators_option_is_repeatable
+    cli = Schematrix::CLI.new
+    cli.parse(%w[-g plain_ruby -g rbs -m M schema.json])
+
+    assert_empty cli.params.errors.to_a
+    assert_equal %w[plain_ruby rbs], Array(cli.params[:generators])
+  end
+
+  def test_generators_value_with_only_delimiters_is_invalid
+    cli = Schematrix::CLI.new
+    cli.parse(%w[-g ,,, -m M schema.json])
+
+    refute_empty cli.params.errors.to_a
+  end
+
   def test_schema_dir_option_is_repeatable
     cli = Schematrix::CLI.new
     cli.parse(
