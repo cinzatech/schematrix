@@ -94,12 +94,42 @@ class TestRoundTrip < Minitest::Test
     end
   end
 
+  METACHARACTER_KEYS_SCHEMA = <<~'JSON'
+    {
+      "type": "object",
+      "properties": {
+        "x#{1+1}y": { "type": "integer" },
+        "back\\slash": { "type": "string" },
+        "quote\"inside": { "type": "string" }
+      }
+    }
+  JSON
+
+  def test_from_h_and_to_h_read_and_write_the_quoted_keys
+    with_generated_class(METACHARACTER_KEYS_SCHEMA) do |mod|
+      source = { "x\#{1+1}y" => 7, "back\\slash" => "v", 'quote"inside' => "w" }
+
+      loaded = mod::Schema.from_h(source)
+      assert_equal 7, loaded.x__1_1_y
+      assert_equal "v", loaded.back_slash
+      assert_equal "w", loaded.quote_inside
+
+      dumped = loaded.to_h
+      assert_equal source, dumped
+
+      reloaded = mod::Schema.from_h(dumped)
+      assert_equal 7, reloaded.x__1_1_y
+      assert_equal "v", reloaded.back_slash
+      assert_equal "w", reloaded.quote_inside
+    end
+  end
+
   private
 
-  def with_generated_class
+  def with_generated_class(schema_source = SCHEMA)
     Dir.mktmpdir do |dir|
       schema = File.join(dir, "schema.json")
-      File.write(schema, SCHEMA)
+      File.write(schema, schema_source)
       output = File.join(dir, "out")
       Schematrix.generate(
         generators: [Schematrix::Generators::PlainRuby.new(output, "Gen")],
