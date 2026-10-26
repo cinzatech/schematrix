@@ -2,6 +2,8 @@ module M
   class Schema
     module Defs
       class Value
+        ORIGINAL_KEYS: Hash[String, Symbol]
+
         attr_accessor v: String?
 
         def initialize: (?v: String?) -> void

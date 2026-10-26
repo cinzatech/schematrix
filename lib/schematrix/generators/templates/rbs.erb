@@ -1,5 +1,9 @@
 module <%= @module_name %>
 <%= declaration_open %>
+    <% unless @property_keys.empty? %>
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
+    <% end %>
     <%= rbs_attr_accessors %>
 
     def initialize: (
@@ -10,6 +14,31 @@ module <%= @module_name %>
     def []: (String) -> <%= rbs_additional_properties_type %>
 
     def []=: (String, <%= rbs_additional_properties_type %>) -> <%= rbs_additional_properties_type %>
+    <% end %>
+    <% if legacy_conversions? %>
+
+    def self.coerce_class_slot: (<%= untyped %> value, <%= untyped %> klass) -> <%= untyped %>
+
+    def self.coerce_array_slot: (<%= untyped %> value, <%= untyped %> klass) -> <%= untyped %>
+
+    def self.coerce_map_slot: (<%= untyped %> value, <%= untyped %> klass) -> <%= untyped %>
+    <% end %>
+    <% if spec_conversions? || catch_all_spec %>
+    <% if spec_uses_class_slot? %>
+
+    def self.coerce_class_slot: (<%= untyped %> value, <%= untyped %> klass) -> <%= untyped %>
+    <% end %>
+
+    def self.coerce_spec: (<%= untyped %> value, <%= untyped %> spec) -> <%= untyped %>
+    <% end %>
+    <% if catch_all_spec %>
+
+    def self.coerce_extra: (<%= untyped %> value) -> <%= untyped %>
+    <% end %>
+    <% property_coercions.each do |name, plan| %>
+    <% next if plan.nil? %>
+
+    def self.coerce_<%= name %>: (<%= untyped %> value) -> <%= untyped %>
     <% end %>
 
     def self.from_h: (Hash[String, <%= untyped %>] hash) -> <%= own_class_name %>

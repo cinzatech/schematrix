@@ -1,6 +1,8 @@
 module M
   # A described object
   class Schema
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
     attr_accessor name: String?
 
     def initialize: (?name: String?) -> void

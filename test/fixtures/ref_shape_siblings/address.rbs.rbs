@@ -2,6 +2,8 @@ module M
   class Schema
     module Props
       class Address
+        ORIGINAL_KEYS: Hash[String, Symbol]
+
         attr_accessor zip: String & Integer
         attr_accessor country: String?
         attr_accessor street: String?

@@ -104,15 +104,25 @@ module Schematrix
       type.empty? && ref.nil? && any_of.empty? && one_of.empty?
     end
 
-    # Whether the constructor demands the property: required, no
-    # default to fall back on, and not nil-typed. Optional values
-    # render nilable wherever they may be absent.
-    def strictly_required?
-      return false if type.include?(TYPE_NULL)
+    # Whether the constructor demands the property: listed in
+    # required, with no default to fall back on. A null-typed
+    # property still demands the keyword (its value may be nil; the
+    # argument may not be omitted), so only this predicate decides
+    # the constructor signature and everything that must match it.
+    def constructor_required?
       return false unless required
       return false unless default.nil?
 
       true
+    end
+
+    # Whether the constructor demands the property and its type does
+    # not admit nil: optional values render nilable wherever they may
+    # be absent.
+    def strictly_required?
+      return false if type.include?(TYPE_NULL)
+
+      constructor_required?
     end
 
     # Whether the schema's whole shape is a catch-all (an object with

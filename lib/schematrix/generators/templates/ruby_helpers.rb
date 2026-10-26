@@ -18,7 +18,7 @@ module Schematrix
                 unless schema.default.nil?
                   next "#{name}: #{schema.default.inspect}"
                 end
-                next "#{name}: nil" unless schema.required
+                next "#{name}: nil" unless schema.constructor_required?
 
                 "#{name}:"
               end
@@ -35,7 +35,7 @@ module Schematrix
         def constructor_properties
           required, optional =
             @properties.partition do |_name, schema|
-              schema.required && schema.default.nil?
+              schema.constructor_required?
             end
           (required + optional).to_h
         end

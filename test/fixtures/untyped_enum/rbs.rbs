@@ -1,5 +1,7 @@
 module M
   class Schema
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
     attr_accessor data: (Integer | bool | String)?
 
     def initialize: (?data: (Integer | bool | String)?) -> void

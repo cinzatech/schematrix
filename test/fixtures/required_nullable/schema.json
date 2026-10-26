@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "required": ["name"],
+  "properties": {
+    "name": { "type": ["string", "null"] },
+    "child": {
+      "type": "object",
+      "properties": { "k": { "type": "string" } }
+    }
+  }
+}

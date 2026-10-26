@@ -1,5 +1,7 @@
 module M
   class Schema
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
     attr_accessor name: String?
     attr_accessor credit_card: String?
     attr_accessor billing_address: String?

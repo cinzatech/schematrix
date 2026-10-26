@@ -2,6 +2,8 @@ module M
   class Schema
     module Defs
       class Address
+        ORIGINAL_KEYS: Hash[String, Symbol]
+
         attr_accessor city: String?
 
         def initialize: (?city: String?) -> void

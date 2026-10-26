@@ -2,6 +2,8 @@ module M
   class Schema
     module Props
       class Child
+        ORIGINAL_KEYS: Hash[String, Symbol]
+
         attr_accessor value: String?
 
         def initialize: (?value: String?) -> void
