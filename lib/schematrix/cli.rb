@@ -6,9 +6,15 @@ require_relative "generators/base"
 # conversion instead of the built-in `:list`: tty-option treats every
 # option whose conversion name looks list-like as multi-argument and
 # consumes all following tokens, which would absorb the positional
-# input files when -g is the last option before them.
+# input files when -g is the last option before them. A value with
+# nothing but delimiters converts to Undefined, which the parser
+# reports as an invalid conversion instead of storing an empty list
+# that satisfies the arity check.
 TTY::Option::Conversions.convert(:comma) do |value|
-  value.split(",").map(&:strip).reject(&:empty?)
+  names = value.split(",").map(&:strip).reject(&:empty?)
+  next TTY::Option::Const::Undefined if names.empty?
+
+  names
 end
 
 module Schematrix

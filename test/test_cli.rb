@@ -43,6 +43,13 @@ class TestCLI < Minitest::Test
     assert_equal %w[plain_ruby rbs], Array(cli.params[:generators])
   end
 
+  def test_generators_value_with_only_delimiters_is_invalid
+    cli = Schematrix::CLI.new
+    cli.parse(%w[-g ,,, -m M schema.json])
+
+    refute_empty cli.params.errors.to_a
+  end
+
   def test_schema_dir_option_is_repeatable
     cli = Schematrix::CLI.new
     cli.parse(
