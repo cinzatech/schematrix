@@ -1,5 +1,7 @@
 require "uri"
 
+require_relative "../pointer"
+
 module Schematrix
   module Generators
     # Common functions for Ruby class name and file handling: how a
@@ -13,16 +15,21 @@ module Schematrix
       # every 'properties' segment becomes a Props module level and
       # every '$defs' segment a Defs module level, so a property chain
       # and a definition chain can never fold onto the same class
-      # name. "$" prefixes (core vocabulary keywords like "$id") and
-      # mangling suffixes ("if_") are stripped so segments form valid
-      # constant names, and characters constant names cannot carry
-      # fold to separators ("web.hook" -> "WebHook").
+      # name. Fragment segments decode through Pointer before folding,
+      # so a locator and the property name it was built from fold to
+      # one name. "$" prefixes (core vocabulary keywords like "$id")
+      # and mangling suffixes ("if_") are stripped so segments form
+      # valid constant names, characters constant names cannot carry
+      # fold to separators ("web.hook" -> "WebHook"), names with no
+      # representable character fold to their UTF-8 hex ("@" ->
+      # "N40"), and a part that would start with a digit takes an
+      # "N" prefix ("2fa" -> "N2fa"), the constant-safe spelling.
       def class_name_from_path(uri, name = nil)
         file =
           File.basename(URI::RFC2396_PARSER.unescape(uri.path)).split(".").first
         segments = [
           file,
-          *uri.fragment.split("/"),
+          *uri.fragment.split("/").map { |part| Pointer.unescape(part) },
           *name.to_s.split("/"),
         ].compact.reject(&:empty?)
 
@@ -33,12 +40,16 @@ module Schematrix
 
             clean = segment.delete("$").gsub(/[^a-zA-Z\d\s_-]/, " ")
             clean = clean.strip.sub(/_+\z/, "")
+            clean = segment.unpack1("H*") if clean.empty?
             next if clean.empty?
 
             clean
           end
 
         pascal_case(meaningful.join("/"))
+          .split("::")
+          .map { |part| part.sub(/\A(\d)/, "N\\1") }
+          .join("::")
       end
 
       private

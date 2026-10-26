@@ -296,11 +296,16 @@ module Schematrix
       # stripped, characters identifiers cannot carry replaced with
       # underscores, a leading digit prefixed, and Ruby keywords
       # suffixed with an underscore so generated accessors and keyword
-      # arguments stay parseable. Original keys stay reachable through
+      # arguments stay parseable. A name with no representable
+      # character folds to its UTF-8 hex instead of a pile of
+      # underscores, so sibling names stay distinct and the class-name
+      # derivation (which folds the same hex) agrees with the file
+      # that declares the class. Original keys stay reachable through
       # the catch-all accessors.
       def property_name(key)
         name = underscore(key).delete_prefix("$")
         name = name.gsub(/[^a-z0-9_]/, "_")
+        name = key.unpack1("H*") if name.empty? || name.match?(/\A_+\z/)
         name = "_#{name}" if name.match?(/\A\d/)
         name = "_" if name.empty?
         name = "#{name}_" if RUBY_KEYWORDS.include?(name)

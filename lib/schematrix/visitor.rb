@@ -1,5 +1,7 @@
 require "uri"
 
+require_relative "pointer"
+
 module Schematrix
   # The JSON Schema type names the compiler tracks, shared by the
   # visitor and the notation hooks. TYPE_BOTTOM is not a schema type
@@ -232,7 +234,7 @@ module Schematrix
       # The store hands out raw parsed documents; the model boundary
       # conversion happens here.
       node = Schematrix::Meta::Schema.from_h(node) if node.is_a?(Hash)
-      path = @locator.fragment.split("/")
+      path = @locator.fragment.split("/").map { |part| Pointer.unescape(part) }
       name = path.pop || "" # document root is nameless
       visit_schema(path, name, node, required: false)
 
@@ -630,8 +632,11 @@ module Schematrix
 
     # The locator URI for a path of containment segments, leading
     # empty segment included ([""] names the document root itself).
+    # Schema keys escape into their tokens, so a key carrying "/",
+    # "~" or "%" cannot change the pointer's shape or leave the
+    # locator string unparseable; Pointer.unescape reverses it.
     def locator_for(path)
-      fragment = path.join("/")
+      fragment = path.map { |segment| Pointer.escape(segment) }.join("/")
       locator = @locator.dup
       locator.fragment = fragment.empty? ? "/" : fragment
       locator

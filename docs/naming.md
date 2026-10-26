@@ -12,14 +12,22 @@ A class name is the schema's locator folded to PascalCase:
    `payment-methods.schema.json` gives `payment-methods`.
 2. Append the schema's path inside the document: the fragment
    segments (`properties`, `address`, `$defs`, `billing`, `anyOf_0`)
-   joined with the file part.
+   joined with the file part. Each segment decodes first, so a
+   locator and the property name it was built from fold to one name
+   (`first%20name` and `first name` both give `FirstName`).
 3. Fold each segment: characters a constant cannot carry (spaces,
    dashes, dots, punctuation) become word breaks, and the parts
    PascalCase together. `web.hook` becomes `WebHook`;
-   `payment-methods` becomes `PaymentMethods`.
+   `payment-methods` becomes `PaymentMethods`. A segment with no
+   representable character at all folds to its UTF-8 hex, so `名前`
+   becomes `E5908de5898d` instead of vanishing into the container
+   name.
 4. Container segments get fixed names: a `properties` segment becomes a
    `Props` module level, a `$defs` segment becomes a `Defs` module
    level.
+5. A part that would start with a digit takes an `N` prefix, the
+   closest a Ruby constant gets to `2fa`: it becomes `N2fa`. The same
+   rule guards a schema file whose name starts with a digit.
 
 Examples:
 

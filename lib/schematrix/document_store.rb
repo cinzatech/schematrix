@@ -1,6 +1,8 @@
 require "uri"
 require "yaml"
 
+require_relative "pointer"
+
 module Schematrix
   # Raised when a locator points at a node that does not exist: a bad
   # JSON pointer, an unknown `$anchor`, an unmapped remote URI, or an
@@ -166,9 +168,11 @@ module Schematrix
       end
     end
 
-    # Escapes one JSON pointer token: ~ becomes ~0, / becomes ~1.
+    # Escapes one JSON pointer token for a fragment the store builds:
+    # the shared Pointer spelling, so the tokens a locator carries
+    # round-trip through Pointer.unescape.
     def escape(token)
-      token.to_s.gsub("~", "~0").gsub("/", "~1")
+      Pointer.escape(token)
     end
 
     # Undoes the percent-escaping Compiler#root_locator applied to a
@@ -296,14 +300,13 @@ module Schematrix
     end
 
     # Splits a fragment into JSON pointer tokens: the leading empty
-    # segment is dropped and ~1 / ~0 are unescaped.
+    # segment is dropped and each token decodes through Pointer
+    # (tilde escapes first, then percent-escapes, so a $ref to a key
+    # written "first%20name" or "a~1b" finds it).
     def tokens(fragment)
       return [] if fragment.nil? || fragment.empty? || fragment == "/"
 
-      fragment
-        .split("/")
-        .drop(1)
-        .map { |token| token.gsub("~1", "/").gsub("~0", "~") }
+      fragment.split("/").drop(1).map { |token| Pointer.unescape(token) }
     end
 
     # One pointer step: array nodes index numerically, hash nodes

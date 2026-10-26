@@ -46,6 +46,27 @@ class TestDocumentStore < Minitest::Test
 
     assert_match(/Nothing found at/, error.message)
   end
+
+  def test_percent_escapes_in_pointer_tokens_decode
+    schema_file =
+      File.join(FIXTURES_DIR, "non_identifier_properties", "schema.json")
+    uri =
+      URI("file://#{File.expand_path(schema_file)}#/properties/first%20name")
+    node = store.node_at(uri)
+
+    assert node.is_a?(Hash)
+    assert node.key?("properties")
+  end
+
+  def test_tilde_escapes_in_pointer_tokens_decode
+    schema_file =
+      File.join(FIXTURES_DIR, "non_identifier_properties", "schema.json")
+    uri = URI("file://#{File.expand_path(schema_file)}#/properties/a~1b")
+    node = store.node_at(uri)
+
+    assert node.is_a?(Hash)
+    assert node.key?("properties")
+  end
 end
 
 class TestDocumentValidation < Minitest::Test
