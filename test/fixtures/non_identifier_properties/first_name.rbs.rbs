@@ -2,6 +2,8 @@ module M
   class Schema
     module Props
       class FirstName
+        ORIGINAL_KEYS: Hash[String, Symbol]
+
         attr_accessor k: String?
 
         def initialize: (?k: String?) -> void
