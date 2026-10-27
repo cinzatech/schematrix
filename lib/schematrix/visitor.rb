@@ -354,7 +354,14 @@ module Schematrix
             type:,
           )
 
-        own_class = ref.nil? && type.include?(TYPE_OBJECT)
+        # Value-context allOf: the branches conjoin into the slot's
+        # record (object context folded them in compile_object
+        # instead).
+        unless object_context
+          schema = fold_value_allof(site, schema, node.all_of)
+        end
+
+        own_class = ref.nil? && schema.type.include?(TYPE_OBJECT)
         if register_object && own_class && !schema.map_shaped?
           @objects[current_locator(site)] = schema
         end
@@ -750,6 +757,68 @@ module Schematrix
       union_list_body(path, node_body(path, node), branches)
     end
 
+    # Value-context allOf fold: the branches conjoin into the slot's
+    # record. A branch declaring an inline object shape absorbs into
+    # the slot's own class, its properties merging under this site
+    # (the object-context rule); so does a branch whose object shape
+    # emerged through resolution (a $ref the compiler inlined, such
+    # as a map-shaped target), whose catch-all carries the slot's
+    # map typing. Every declared type of such a branch survives the
+    # merge (object beside null stays object beside null). Everything
+    # else visits as a value and conjoins: scalar branches intersect
+    # their type terms, and a $ref branch keeps its target class
+    # through the recorded edge. A true branch is the identity and a
+    # false branch is skipped (over-accepting, like every other
+    # skipped false).
+    def fold_value_allof(path, schema, raws)
+      Array(raws).each_with_index do |raw, index|
+        next unless raw.is_a?(Schematrix::Meta::Schema)
+
+        if raw.ref.nil? && Array(raw.type).include?(TYPE_OBJECT)
+          schema =
+            absorb_object_branch(path, schema, raw, Set.new(Array(raw.type)))
+          next
+        end
+
+        branch =
+          visit_schema(
+            path,
+            "allOf_#{index}",
+            raw,
+            required: false,
+            register_object: false,
+          )
+        next if branch.type == Set[TYPE_BOTTOM]
+
+        if branch.ref.nil? && branch.type.include?(TYPE_OBJECT)
+          schema = absorb_object_branch(path, schema, raw, branch.type)
+          next
+        end
+
+        schema = conjoin_schemas(schema, branch)
+      end
+      schema
+    end
+
+    # Merges one object-shaped branch into the slot's own class and
+    # unions the branch's types in.
+    def absorb_object_branch(path, schema, raw, branch_types)
+      body =
+        conjoin_body(
+          path,
+          Body.new(
+            properties: schema.properties,
+            additional_properties: schema.additional_properties,
+          ),
+          raw,
+        )
+      schema.with(
+        type: schema.type | branch_types,
+        properties: body.properties,
+        additional_properties: body.additional_properties,
+      )
+    end
+
     # The mergeable parts of a raw node: its own properties and its
     # normalized additionalProperties.
     def node_body(path, node)
@@ -894,36 +963,68 @@ module Schematrix
       )
     end
 
-    # Conflict rule: distinct declarations of the same property
-    # conjoin syntactically (String & Integer / T.all), even if
-    # uninhabited; that is the schema author's problem. Facets beyond
-    # type/ref/variants keep the parent's declaration.
+    # Conflict rule for distinct declarations of the same property.
+    # Type sets that share a term conjoin exactly on it: a value valid
+    # under both declarations carries one of the shared types, so the
+    # shared set renders as a union and never rejects schema-valid
+    # data. Disjoint declarations conjoin syntactically (String &
+    # Integer / T.all), even if uninhabited; that is the schema
+    # author's problem. Array declarations conjoin their element and
+    # tuple constraints, a declaration from one side alone carrying
+    # them whole. Facets beyond type/ref/variants keep the parent's
+    # declaration.
     def conjoin_schemas(own, other)
       return own if own == other
 
+      shared = own.type & other.type
+
       own.with(
-        type: own.type | other.type,
+        type: shared.empty? ? own.type | other.type : shared,
         items: conjoin_items(own, other),
+        prefix_items: conjoin_prefix_items(own, other),
         ref: own.ref || other.ref,
         any_of: own.any_of + other.any_of,
         one_of: own.one_of + other.one_of,
         required: own.required || other.required,
-        intersection: true,
+        intersection: shared.empty?,
       )
     end
 
     # allOf element intersection: array declarations conjoin their
     # items (an open tail is the identity, since it accepts any
-    # element); declarations that are not arrays say nothing about
-    # the element and leave it alone.
+    # element); a declaration from one side alone carries its items;
+    # declarations that are not arrays say nothing about the element.
     def conjoin_items(own, other)
-      unless own.type.include?(TYPE_ARRAY) && other.type.include?(TYPE_ARRAY)
-        return own.items
-      end
+      own_array = own.type.include?(TYPE_ARRAY)
+      other_array = other.type.include?(TYPE_ARRAY)
+      return own.items if own_array && !other_array
+      return other.items if !own_array && other_array
+      return nil unless own_array
       return other.items if own.items.nil?
       return own.items if other.items.nil?
 
       conjoin_schemas(own.items, other.items)
+    end
+
+    # Tuple positions conjoin pairwise where both declarations carry
+    # a tuple; a declaration from one side alone carries it whole;
+    # tuples of different length under two declarations have no
+    # positional merge and widen to no tuple constraint.
+    def conjoin_prefix_items(own, other)
+      own_tuple = own.type.include?(TYPE_ARRAY) && !own.prefix_items.empty?
+      other_tuple =
+        other.type.include?(TYPE_ARRAY) && !other.prefix_items.empty?
+      return own.prefix_items if own_tuple && !other_tuple
+      return other.prefix_items if !own_tuple && other_tuple
+      return [] unless own_tuple
+      if own.prefix_items.size != other.prefix_items.size
+        return other.prefix_items
+      end
+
+      own
+        .prefix_items
+        .zip(other.prefix_items)
+        .map { |own_item, other_item| conjoin_schemas(own_item, other_item) }
     end
 
     # Union of property contributions. :untyped marks a branch that

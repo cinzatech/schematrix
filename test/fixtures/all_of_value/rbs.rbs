@@ -1,0 +1,47 @@
+module M
+  class Schema
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
+    attr_accessor str: String?
+    attr_accessor refonly: Schema::Defs::Base?
+    attr_accessor both: Schema::Defs::Base?
+    attr_accessor typed: Schema::Props::Typed?
+    attr_accessor null_object: Schema::Props::NullObject?
+    attr_accessor str_arr: Array[String]?
+    attr_accessor narrowed: String?
+    attr_accessor map_ref: Hash[String, Integer]?
+
+    def initialize: (
+      ?str: String?,
+      ?refonly: Schema::Defs::Base?,
+      ?both: Schema::Defs::Base?,
+      ?typed: Schema::Props::Typed?,
+      ?null_object: Schema::Props::NullObject?,
+      ?str_arr: Array[String]?,
+      ?narrowed: String?,
+      ?map_ref: Hash[String, Integer]?
+    ) -> void
+
+    def []: (String) -> top
+
+    def []=: (String, top) -> top
+
+    def self.coerce_class_slot: (top value, top klass) -> top
+
+    def self.coerce_array_slot: (top value, top klass) -> top
+
+    def self.coerce_map_slot: (top value, top klass) -> top
+
+    def self.coerce_refonly: (top value) -> top
+
+    def self.coerce_both: (top value) -> top
+
+    def self.coerce_typed: (top value) -> top
+
+    def self.coerce_null_object: (top value) -> top
+
+    def self.from_h: (Hash[String, top] hash) -> Schema
+
+    def to_h: -> Hash[String, top]
+  end
+end

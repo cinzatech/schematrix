@@ -62,7 +62,15 @@ Each item below widens acceptance. None of them narrows it.
   then uninhabitable; the output behaves as if the branch were absent.
 - A union of distinct `$ref` targets on one property keeps the first
   target's class for loading and dumping. Other targets' classes still
-  generate.
+  generate. An `allOf` of distinct `$ref` targets on a value schema
+  keeps the first the same way.
+- An object shape that reaches a value-level `allOf` branch only
+  through a nested composition keyword contributes no properties to
+  the slot's class; its nested classes still generate under the
+  branch's positional path.
+- Fully disjoint `allOf` type declarations conjoin syntactically
+  (`String & Integer`), which is uninhabited when the types share no
+  value; the output behaves as if the branch were absent.
 - Inline object entries inside `prefixItems` contribute an
   unconstrained element type, because a numeric position is not a class
   name.

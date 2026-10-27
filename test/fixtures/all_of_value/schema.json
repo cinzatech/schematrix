@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "$defs": {
+    "Base": {
+      "type": "object",
+      "properties": { "id": { "type": "string" } }
+    },
+    "Mixin": {
+      "type": "object",
+      "properties": { "tag": { "type": "string" } }
+    },
+    "Map": {
+      "type": "object",
+      "additionalProperties": { "type": "integer" }
+    }
+  },
+  "properties": {
+    "str": { "allOf": [{ "type": "string" }, { "minLength": 1 }] },
+    "refonly": { "allOf": [{ "$ref": "#/$defs/Base" }] },
+    "both": {
+      "allOf": [{ "$ref": "#/$defs/Base" }, { "$ref": "#/$defs/Mixin" }]
+    },
+    "typed": { "type": "object", "allOf": [{ "$ref": "#/$defs/Base" }] },
+    "null_object": {
+      "allOf": [
+        {
+          "type": ["object", "null"],
+          "properties": { "k": { "type": "string" } }
+        }
+      ]
+    },
+    "str_arr": { "allOf": [{ "type": "array", "items": { "type": "string" } }] },
+    "narrowed": {
+      "allOf": [
+        { "type": ["string", "null"] },
+        { "type": ["string", "integer"] }
+      ]
+    },
+    "map_ref": { "allOf": [{ "$ref": "#/$defs/Map" }] }
+  }
+}
