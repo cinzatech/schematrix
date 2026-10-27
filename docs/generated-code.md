@@ -115,11 +115,17 @@ Schema property names become Ruby identifiers:
 2. A leading `$` is dropped: `$id` becomes `id`, `$ref` becomes `ref`.
 3. Characters an identifier cannot carry become underscores:
    `web/hook` becomes `web_hook`.
-4. A leading digit gains an underscore prefix.
-5. A Ruby keyword gains a trailing underscore: `if` becomes `if_`.
+4. A name left with nothing representable (only punctuation, or
+   script without Latin characters) folds to its UTF-8 hex instead:
+   `名前` becomes `e5908de5898d`, so distinct names stay distinct.
+5. A leading digit gains an underscore prefix.
+6. A Ruby keyword gains a trailing underscore: `if` becomes `if_`.
 
 The original name stays reachable: `ORIGINAL_KEYS` records the mapping,
-`from_h` reads the original spelling, and `to_h` writes it back.
+`from_h` reads the original spelling, and `to_h` writes it back. The
+class a nested object property generates folds the same hex, so the
+declaring file and the referencing parent agree on one constant; see
+[Names and files](naming.md).
 
 Two sibling property names can fold onto one accessor (`"foo-bar"` and
 `"foo_bar"` both become `foo_bar`). The generator keeps the first

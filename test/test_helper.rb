@@ -75,16 +75,21 @@ module SchematrixTestHelper
 
   # Maps a test-friendly path like 'l1/l2' or 'Address' to the locator of
   # the corresponding schema node. Names found under $defs resolve there,
-  # anything else is a chain of property names.
+  # anything else is a chain of property names. Name segments escape
+  # into the fragment the way the compiler builds locators.
   def fixture_locator(schema_file, path)
+    escape = ->(part) { Schematrix::Pointer.escape(part) }
     fragment =
       if path.empty?
         "/"
       elsif defs_entry?(schema_file, path.split("/").first)
-        "/$defs/#{path}"
+        "/$defs/#{path.split("/").map(&escape).join("/")}"
       else
         "/#{
-          path.split("/").map { |segment| "properties/#{segment}" }.join("/")
+          path
+            .split("/")
+            .map { |segment| "properties/#{escape.call(segment)}" }
+            .join("/")
         }"
       end
 

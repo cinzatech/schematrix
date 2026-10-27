@@ -108,6 +108,49 @@ class TestGenerate < Minitest::Test
     Schematrix.logger = nil
   end
 
+  # A hex-fallback key and the literal key of its hex fold (@ and 40)
+  # collapse onto one accessor and one class name. Distinctness is
+  # not a property of the fold; the collision stays loud, and before
+  # any file is written.
+  HEX_FALLBACK_COLLISION_SCHEMA = <<~JSON
+    {
+      "type": "object",
+      "properties": {
+        "@": {
+          "type": "object",
+          "properties": { "a": { "type": "string" } }
+        },
+        "40": {
+          "type": "object",
+          "properties": { "b": { "type": "string" } }
+        }
+      }
+    }
+  JSON
+
+  def test_hex_fallback_collision_fails_before_writing
+    Dir.mktmpdir do |dir|
+      schema = File.join(dir, "collide.json")
+      File.write(schema, HEX_FALLBACK_COLLISION_SCHEMA)
+
+      error =
+        assert_raises(Schematrix::OutputCollisionError) do
+          Schematrix.generate(
+            generators: [
+              Schematrix::Generators::PlainRuby.new(
+                File.join(dir, "out"),
+                MODULE_NAME,
+              ),
+            ],
+            input_files: [schema],
+          )
+        end
+
+      assert_empty Dir.glob("#{dir}/out/**/*")
+      assert_match(%r{props/n40\.rb}, error.message)
+    end
+  end
+
   HELPER_COLLISION_SCHEMA = <<~JSON
     {
       "type": "object",
@@ -119,7 +162,6 @@ class TestGenerate < Minitest::Test
       }
     }
   JSON
-
   def test_coerced_helper_named_property_raises
     Dir.mktmpdir do |dir|
       schema = File.join(dir, "clash.json")

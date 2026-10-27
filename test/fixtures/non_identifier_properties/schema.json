@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "first name": {
+      "type": "object",
+      "properties": { "k": { "type": "string" } }
+    },
+    "a/b": {
+      "type": "object",
+      "properties": { "z": { "type": "string" } }
+    }
+  }
+}

@@ -22,6 +22,43 @@ class TestResolver < Minitest::Test
     assert_equal "Order::Props::Customer", name
   end
 
+  # Only property segments fold through the accessor mangling. File
+  # names and definition keys have no mangled counterpart, so they
+  # keep the fold existing constants were generated with.
+  def test_file_basenames_keep_their_own_fold
+    name = resolver.class_name_from_path(locator_for("/schemas/API.json", "/"))
+
+    assert_equal "API", name
+  end
+
+  def test_defs_keys_keep_their_own_fold
+    name =
+      resolver.class_name_from_path(
+        locator_for("/schemas/order.json", "/$defs/HTTPServer"),
+      )
+
+    assert_equal "Order::Defs::HTTPServer", name
+  end
+
+  def test_a_property_inside_a_defs_entry_still_folds_like_the_mangled_name
+    generator = Schematrix::Generators::PlainRuby.new("/tmp", "M")
+    from_locator =
+      resolver.class_name_from_path(
+        locator_for(
+          "/schemas/order.json",
+          "/$defs/HTTPServer/properties/API%20key",
+        ),
+      )
+    from_parent =
+      generator.class_name_from_path(
+        locator_for("/schemas/order.json", "/$defs/HTTPServer"),
+        "properties/#{generator.send(:property_name, "API key")}",
+      )
+
+    assert_equal "Order::Defs::HTTPServer::Props::ApiKey", from_locator
+    assert_equal from_locator, from_parent
+  end
+
   def test_defs_segments_encode_a_defs_level
     name =
       resolver.class_name_from_path(
@@ -51,6 +88,81 @@ class TestResolver < Minitest::Test
       )
 
     assert_equal "Order::Props::Defs", name
+  end
+
+  def test_fragment_percent_escapes_decode_before_folding
+    name =
+      resolver.class_name_from_path(
+        locator_for("/schemas/order.json", "/properties/first%20name"),
+      )
+
+    assert_equal "Order::Props::FirstName", name
+  end
+
+  def test_an_escaped_slash_does_not_nest
+    name =
+      resolver.class_name_from_path(
+        locator_for("/schemas/order.json", "/properties/a%2Fb"),
+      )
+
+    assert_equal "Order::Props::AB", name
+  end
+
+  def test_names_without_representable_characters_fold_to_hex
+    name =
+      resolver.class_name_from_path(
+        locator_for("/schemas/order.json", "/properties/%E5%90%8D%E5%89%8D"),
+      )
+
+    assert_equal "Order::Props::E5908de5898d", name
+  end
+
+  def test_a_leading_digit_takes_the_n_prefix
+    name =
+      resolver.class_name_from_path(
+        locator_for("/schemas/order.json", "/properties/2fa"),
+      )
+
+    assert_equal "Order::Props::N2fa", name
+  end
+
+  # The invariant behind issue #5: whatever a parent references
+  # through the property's mangled name, the file written for the
+  # property's locator must declare the same class.
+  def test_mangled_name_and_locator_fold_to_one_class_name
+    generator = Schematrix::Generators::PlainRuby.new("/tmp", "M")
+    {
+      "first name" => "first%20name",
+      "properties" => "properties",
+      "$id" => "%24id",
+      "foo$bar" => "foo%24bar",
+      "a/b" => "a%2Fb",
+      "a~1b" => Schematrix::Pointer.escape("a~1b"),
+      "2fa" => "2fa",
+      "@" => "%40",
+      "pct%" => "pct%25",
+      "名前" => "%E5%90%8D%E5%89%8D",
+      "web.hook" => "web.hook",
+      "foo-" => "foo-",
+      "-" => "-",
+      "_-" => "_-",
+      "filter[name]" => "filter%5Bname%5D",
+      "API key" => "API%20key",
+      "HTTPServer" => "HTTPServer",
+      "firstName" => "firstName",
+    }.each do |key, escaped|
+      from_locator =
+        generator.class_name_from_path(
+          locator_for("/schemas/order.json", "/properties/#{escaped}"),
+        )
+      from_parent =
+        generator.class_name_from_path(
+          locator_for("/schemas/order.json", "/"),
+          "properties/#{generator.send(:property_name, key)}",
+        )
+
+      assert_equal from_locator, from_parent, key
+    end
   end
 
   def test_defs_as_the_first_segment_is_the_file_name

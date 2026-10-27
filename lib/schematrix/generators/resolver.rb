@@ -1,5 +1,7 @@
 require "uri"
 
+require_relative "../pointer"
+
 module Schematrix
   module Generators
     # Common functions for Ruby class name and file handling: how a
@@ -13,35 +15,84 @@ module Schematrix
       # every 'properties' segment becomes a Props module level and
       # every '$defs' segment a Defs module level, so a property chain
       # and a definition chain can never fold onto the same class
-      # name. "$" prefixes (core vocabulary keywords like "$id") and
-      # mangling suffixes ("if_") are stripped so segments form valid
-      # constant names, and characters constant names cannot carry
-      # fold to separators ("web.hook" -> "WebHook").
+      # name. Fragment segments decode through Pointer before folding.
+      # A segment that names a property folds exactly like the mangled
+      # accessor the parent derives its references from, so a locator
+      # and the property name it was built from fold to one name;
+      # file names and definition keys have no mangled counterpart and
+      # keep their own fold. "$" prefixes (core vocabulary keywords
+      # like "$id") and mangling suffixes ("if_") are stripped so
+      # segments form valid constant names, characters constant names
+      # cannot carry fold to separators ("web.hook" -> "WebHook"),
+      # names with no representable character fold to their UTF-8 hex
+      # ("@" -> "N40"), and a part that would start with a digit
+      # takes an "N" prefix ("2fa" -> "N2fa"), the constant-safe
+      # spelling.
       def class_name_from_path(uri, name = nil)
         file =
           File.basename(URI::RFC2396_PARSER.unescape(uri.path)).split(".").first
         segments = [
           file,
-          *uri.fragment.split("/"),
+          *uri.fragment.split("/").map { |part| Pointer.unescape(part) },
           *name.to_s.split("/"),
         ].compact.reject(&:empty?)
 
+        follows_properties = false
         meaningful =
           segments.filter_map do |segment|
-            next "Props" if segment == "properties"
-            next "Defs" if segment == "$defs"
+            property_segment = follows_properties
+            follows_properties = false
 
-            clean = segment.delete("$").gsub(/[^a-zA-Z\d\s_-]/, " ")
-            clean = clean.strip.sub(/_+\z/, "")
+            unless property_segment
+              case segment
+              when "properties"
+                follows_properties = true
+                next "Props"
+              when "$defs"
+                next "Defs"
+              end
+            end
+
+            clean =
+              if property_segment
+                # A property name folds exactly like the mangled
+                # accessor the parent derives its references from. The
+                # mangler turns "$" into a separator, so only a leading
+                # "$" (a keyword like "$id") disappears here; an
+                # interior one folds to the same separator.
+                underscore(segment.sub(/\A\$+/, ""))
+              else
+                segment.delete("$")
+              end
+            clean = clean.gsub(/[^a-zA-Z\d\s_-]/, " ")
+            clean = clean.strip.sub(/[\s_-]+\z/, "")
+            clean = segment.unpack1("H*") if clean.empty?
             next if clean.empty?
 
             clean
           end
 
         pascal_case(meaningful.join("/"))
+          .split("::")
+          .map { |part| part.sub(/\A(\d)/, "N\\1") }
+          .join("::")
       end
 
       private
+
+      # Snake-cases a name the way the property mangling spells it:
+      # case boundaries become separators and everything lowercases,
+      # so a segment read from a locator folds exactly like the
+      # mangled property name the parent derives its references from.
+      def underscore(string)
+        string
+          .to_s
+          .gsub("::", "/")
+          .gsub(/([A-Z\d]+)([A-Z][a-z])/, '\1_\2')
+          .gsub(/([a-z\d])([A-Z])/, '\1_\2')
+          .tr("-", "_")
+          .downcase
+      end
 
       # Folds a /-separated segment chain into one PascalCase constant
       # name with :: separators.
