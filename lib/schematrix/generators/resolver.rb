@@ -38,8 +38,9 @@ module Schematrix
             next "Props" if segment == "properties"
             next "Defs" if segment == "$defs"
 
-            clean = segment.delete("$").gsub(/[^a-zA-Z\d\s_-]/, " ")
-            clean = clean.strip.sub(/[\s_-]+\z/, "")
+            clean = underscore(segment).delete("$")
+            clean = clean.gsub(/[^a-z\d_]/, "_")
+            clean = clean.sub(/[\s_]+\z/, "")
             clean = segment.unpack1("H*") if clean.empty?
             next if clean.empty?
 
@@ -53,6 +54,20 @@ module Schematrix
       end
 
       private
+
+      # Snake-cases a name the way the property mangling spells it:
+      # case boundaries become separators and everything lowercases,
+      # so a segment read from a locator folds exactly like the
+      # mangled property name the parent derives its references from.
+      def underscore(string)
+        string
+          .to_s
+          .gsub("::", "/")
+          .gsub(/([A-Z\d]+)([A-Z][a-z])/, '\1_\2')
+          .gsub(/([a-z\d])([A-Z])/, '\1_\2')
+          .tr("-", "_")
+          .downcase
+      end
 
       # Folds a /-separated segment chain into one PascalCase constant
       # name with :: separators.

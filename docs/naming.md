@@ -92,7 +92,8 @@ every class lands on its own path. These fail with
 - Two generators that share a file extension writing to one directory
   (running `plain_ruby` and `sorbet_ruby` into the same `-o`).
 - Two schema sites whose folded class names collide, such as two
-  `$defs` keys that normalize to one constant.
+  `$defs` keys that normalize to one constant, or two keys where one
+  is the hex fallback spelling of the other (`"@"` and `"40"`).
 
 A collision aborts the run with nothing written, so a failed run never
 leaves half an output tree behind. Give same-extension generators

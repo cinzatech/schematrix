@@ -97,6 +97,7 @@ class TestResolver < Minitest::Test
     {
       "first name" => "first%20name",
       "a/b" => "a%2Fb",
+      "a~1b" => Schematrix::Pointer.escape("a~1b"),
       "2fa" => "2fa",
       "@" => "%40",
       "pct%" => "pct%25",
@@ -106,6 +107,9 @@ class TestResolver < Minitest::Test
       "-" => "-",
       "_-" => "_-",
       "filter[name]" => "filter%5Bname%5D",
+      "API key" => "API%20key",
+      "HTTPServer" => "HTTPServer",
+      "firstName" => "firstName",
     }.each do |key, escaped|
       from_locator =
         generator.class_name_from_path(

@@ -281,16 +281,6 @@ module Schematrix
         "#{underscore(class_name)}#{self.class.file_extension}"
       end
 
-      def underscore(string)
-        string
-          .to_s
-          .gsub("::", "/")
-          .gsub(/([A-Z\d]+)([A-Z][a-z])/, '\1_\2')
-          .gsub(/([a-z\d])([A-Z])/, '\1_\2')
-          .tr("-", "_")
-          .downcase
-      end
-
       # A property name safe to use as a Ruby identifier: snake-cased,
       # the leading "$" of core vocabulary keywords ($id, $ref, ...)
       # stripped, characters identifiers cannot carry replaced with

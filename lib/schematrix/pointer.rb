@@ -6,32 +6,31 @@ module Schematrix
   # containment levels and "%" starts an escape: a key carrying
   # either would change the pointer's shape or leave the locator
   # string unparseable. Escaping makes every fragment a valid URI
-  # whose tokens decode back to the original keys; unescaping is the
-  # inverse, per token, tilde first (the JSON pointer escape, so a
-  # key's literal "~1" survives) and percent second.
+  # whose tokens decode back to the original keys; unescaping reverses
+  # it per token, percent layer first (a document author's %7E1 means
+  # the pointer escape ~1), then the JSON pointer layer. A key's own
+  # ~ and / land as ~0/~1 before the percent pass, so they decode
+  # exactly once.
   module Pointer
     module_function
 
-    # Percent-encodes one key for use as a fragment token. The URI
-    # parser escapes "%" and the characters no URI parser accepts in
-    # a fragment, but leaves "/", "~" and the brackets its older
-    # grammar tolerated, so those are forced explicitly after it.
+    # Percent-encodes one key for use as a fragment token. The JSON
+    # pointer escapes land first (~0, ~1), so a key's own "~" and "/"
+    # survive the reader's pointer pass; the URI parse then encodes
+    # everything the fragment grammar cannot carry, and the brackets
+    # the older grammar tolerated force explicitly.
     def escape(token)
-      escaped = URI::RFC2396_PARSER.escape(token)
-      escaped
-        .gsub("/", "%2F")
-        .gsub("~", "%7E")
-        .gsub("[", "%5B")
-        .gsub("]", "%5D")
+      escaped = token.gsub("~", "~0").gsub("/", "~1")
+      escaped = URI::RFC2396_PARSER.escape(escaped)
+      escaped.gsub("~", "%7E").gsub("[", "%5B").gsub("]", "%5D")
     end
 
-    # Decodes one fragment token back to its key. "~1" and "~0" are
-    # the JSON pointer spellings of "/" and "~"; percent-escapes
-    # decode last, so a key's own percent signs never re-enter the
-    # tilde pass.
+    # Decodes one fragment token back to its key: the URI percent
+    # layer first (a document author's %7E1 means the pointer escape
+    # ~1), then the JSON pointer layer. A key's own escapes landed as
+    # ~0/~1 before encoding, so they decode exactly once.
     def unescape(token)
-      unescaped = token.gsub("~1", "/").gsub("~0", "~")
-      URI::RFC2396_PARSER.unescape(unescaped)
+      URI::RFC2396_PARSER.unescape(token).gsub("~1", "/").gsub("~0", "~")
     end
   end
 end
