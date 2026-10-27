@@ -35,7 +35,8 @@ class TestImmutable < Minitest::Test
       "type": "object",
       "properties": {
         "with": { "type": "string" },
-        "_extra": { "type": "integer" }
+        "_extra": { "type": "integer" },
+        "hash": { "type": "string" }
       },
       "required": ["with"]
     }
@@ -200,14 +201,27 @@ class TestImmutable < Minitest::Test
 
   def test_reserved_property_names_take_the_keyword_treatment
     with_generated_class(RESERVED_SCHEMA) do |mod|
-      value = mod::Schema.from_h("with" => "s", "_extra" => 7, "other" => true)
+      value =
+        mod::Schema.from_h(
+          "with" => "s",
+          "_extra" => 7,
+          "hash" => "abc",
+          "other" => true,
+        )
 
       assert_equal "s", value.with_
       assert_equal 7, value._extra_
-      assert_equal "t", value.with(with_: "t").with_
+      assert_equal "abc", value.hash_
+      assert_kind_of Integer, value.hash
+
+      rehashed = value.with(with_: "t", hash_: "def")
+
+      assert_equal "t", rehashed.with_
+      assert_equal "def", rehashed.hash_
       assert_equal "s", value.with_
+      assert_equal "abc", value.hash_
       assert_equal(
-        { "with" => "s", "_extra" => 7, "other" => true },
+        { "with" => "s", "_extra" => 7, "hash" => "abc", "other" => true },
         value.to_h,
       )
     end

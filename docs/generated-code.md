@@ -269,13 +269,15 @@ older == person.with(age: 37)  # => true
 [person, person.with(age: 36)].uniq.size # => 1
 ```
 
-`with` is a generated method name, so a property named `with` would
-override it. Like the DSL's `build` and `to_h`, the name is reserved:
-a property named `with` gains the trailing underscore treatment, with
+`with` and `hash` are generated method names, so a property named
+`with` or `hash` (a checksum field, say) would override one. Like the
+DSL's `build` and `to_h`, the names are reserved: a property named
+`with` or `hash` gains the trailing underscore treatment, with
 `ORIGINAL_KEYS` recording the mapping. `_extra` joins the reservation
-for the same reason. A property named `with_` or `_extra_` is
-untouched, and two siblings can still fold onto one accessor, with the
-collision warning of [Property names](#property-names).
+because the constructor keyword and the protected reader carry that
+name. A property named `with_`, `hash_` or `_extra_` is untouched, and
+two siblings can still fold onto one accessor, with the collision
+warning of [Property names](#property-names).
 
 The option applies to the data generators only. The `dsl_` builders
 are unaffected: a builder is mutable by construction, it accumulates a

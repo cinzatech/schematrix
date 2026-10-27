@@ -5,17 +5,19 @@ module M
     ORIGINAL_KEYS = {
       "with" => :with_,
       "_extra" => :_extra_,
-      "count" => :count
+      "count" => :count,
+      "hash" => :hash_
     }.freeze
 
     sig do
       params(
         with_: String,
         _extra_: T.nilable(Integer),
-        count: T.nilable(Integer)
+        count: T.nilable(Integer),
+        hash_: T.nilable(String)
       ).void
     end
-    def initialize(with_:, _extra_: nil, count: nil)
+    def initialize(with_:, _extra_: nil, count: nil, hash_: nil)
     end
 
     sig { returns(String) }
@@ -30,14 +32,24 @@ module M
     def count
     end
 
+    sig { returns(T.nilable(String)) }
+    def hash_
+    end
+
     sig do
       params(
         with_: String,
         _extra_: T.nilable(Integer),
-        count: T.nilable(Integer)
+        count: T.nilable(Integer),
+        hash_: T.nilable(String)
       ).returns(T.self_type)
     end
-    def with(with_: T.untyped, _extra_: T.untyped, count: T.untyped)
+    def with(
+      with_: T.untyped,
+      _extra_: T.untyped,
+      count: T.untyped,
+      hash_: T.untyped
+    )
     end
 
     sig { params(other: T.anything).returns(T::Boolean) }

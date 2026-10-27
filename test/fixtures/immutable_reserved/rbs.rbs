@@ -5,14 +5,21 @@ module M
     attr_reader with_: String
     attr_reader _extra_: Integer?
     attr_reader count: Integer?
+    attr_reader hash_: String?
 
     def initialize: (
       with_: String,
       ?_extra_: Integer?,
-      ?count: Integer?
+      ?count: Integer?,
+      ?hash_: String?
     ) -> void
 
-    def with: (?with_: String, ?_extra_: Integer?, ?count: Integer?) -> instance
+    def with: (
+      ?with_: String,
+      ?_extra_: Integer?,
+      ?count: Integer?,
+      ?hash_: String?
+    ) -> instance
 
     def ==: (top other) -> bool
 

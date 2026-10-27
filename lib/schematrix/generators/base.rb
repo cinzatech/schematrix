@@ -75,10 +75,11 @@ module Schematrix
       ].freeze
 
       # Method names the immutable surface adds on top of the
-      # property readers: the copier and the catch-all keyword and
-      # its protected reader. A property folding onto one takes the
-      # keyword treatment, with ORIGINAL_KEYS still recording it.
-      IMMUTABLE_RESERVED_METHOD_NAMES = %w[with _extra].freeze
+      # property readers: the copier, the catch-all keyword and its
+      # protected reader, and the digest half of the value equality.
+      # A property folding onto one takes the keyword treatment, with
+      # ORIGINAL_KEYS still recording it.
+      IMMUTABLE_RESERVED_METHOD_NAMES = %w[with _extra hash].freeze
 
       # `output_dir` is the directory files are written to (created on
       # demand), `module_name` the namespace generated code is placed
