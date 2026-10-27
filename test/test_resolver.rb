@@ -133,6 +133,9 @@ class TestResolver < Minitest::Test
     generator = Schematrix::Generators::PlainRuby.new("/tmp", "M")
     {
       "first name" => "first%20name",
+      "properties" => "properties",
+      "$id" => "%24id",
+      "foo$bar" => "foo%24bar",
       "a/b" => "a%2Fb",
       "a~1b" => Schematrix::Pointer.escape("a~1b"),
       "2fa" => "2fa",

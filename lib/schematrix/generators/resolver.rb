@@ -40,23 +40,27 @@ module Schematrix
         follows_properties = false
         meaningful =
           segments.filter_map do |segment|
-            case segment
-            when "properties"
-              follows_properties = true
-              next "Props"
-            when "$defs"
-              follows_properties = false
-              next "Defs"
-            end
-
             property_segment = follows_properties
             follows_properties = false
+
+            unless property_segment
+              case segment
+              when "properties"
+                follows_properties = true
+                next "Props"
+              when "$defs"
+                next "Defs"
+              end
+            end
 
             clean =
               if property_segment
                 # A property name folds exactly like the mangled
-                # accessor the parent derives its references from.
-                underscore(segment).delete("$")
+                # accessor the parent derives its references from. The
+                # mangler turns "$" into a separator, so only a leading
+                # "$" (a keyword like "$id") disappears here; an
+                # interior one folds to the same separator.
+                underscore(segment.sub(/\A\$+/, ""))
               else
                 segment.delete("$")
               end
