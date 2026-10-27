@@ -74,6 +74,13 @@ module Schematrix
         yield
       ].freeze
 
+      # Method names the immutable surface adds on top of the
+      # property readers: the copier, the catch-all keyword and its
+      # protected reader, and the digest half of the value equality.
+      # A property folding onto one takes the keyword treatment, with
+      # ORIGINAL_KEYS still recording it.
+      IMMUTABLE_RESERVED_METHOD_NAMES = %w[with _extra hash].freeze
+
       # `output_dir` is the directory files are written to (created on
       # demand), `module_name` the namespace generated code is placed
       # in. `format: false` skips SyntaxTree formatting and emits the
@@ -85,20 +92,32 @@ module Schematrix
       # answering `coerce(value)`, since the generated code calls
       # `#{coercer.name}.coerce(value)`: anything else fails here, at
       # construction, before any file can be written.
+      # `immutable: true` renders data classes as frozen value
+      # objects: readers instead of accessors, a `with` copier, and
+      # value equality. It applies to the data generators only; the
+      # DSL builders refuse it.
       def initialize(
         output_dir,
         module_name,
         format: true,
         command: nil,
-        scalar_types: {}
+        scalar_types: {},
+        immutable: false
       )
+        assert_immutable_supported if immutable
         @output_dir = output_dir
         @module_name = module_name
         @format = format
         @command = command
         @scalar_types = Schematrix::BUILTIN_SCALAR_TYPES.merge(scalar_types)
+        @immutable = immutable
         assert_coercers_valid(@scalar_types)
       end
+
+      # Whether this generator's output honors the immutable option.
+      # The data generators do; the DSL builders answer through
+      # DslNaming.
+      def self.immutable_supported? = true
 
       # The file this locator's class writes to, without writing it:
       # callers that batch many schemas check every target up front.
@@ -159,6 +178,18 @@ module Schematrix
       end
 
       private
+
+      # The immutable option only reshapes data classes: a builder
+      # accumulates a document, so it is mutable by construction, and
+      # asking for an immutable one fails here, at construction,
+      # before any file can be written.
+      def assert_immutable_supported
+        return if self.class.immutable_supported?
+
+        raise ArgumentError,
+              "#{self.class.name} generates mutable DSL builders; " \
+                "immutable applies to data generators"
+      end
 
       # Every coercer the merged table carries, checked whenever the
       # generator is built: a value without a coercer is fine, an
@@ -223,6 +254,7 @@ module Schematrix
           additional_properties: object.additional_properties,
           documentation_comment: documentation_comment(object),
           scalar_types: @scalar_types,
+          immutable: @immutable,
         )
       end
 
@@ -272,6 +304,9 @@ module Schematrix
         name = "_#{name}" if name.match?(/\A\d/)
         name = "_" if name.empty?
         name = "#{name}_" if RUBY_KEYWORDS.include?(name)
+        if @immutable && IMMUTABLE_RESERVED_METHOD_NAMES.include?(name)
+          name = "#{name}_"
+        end
         name
       end
 
@@ -357,6 +392,15 @@ module Schematrix
       # instead (a trailing underscore), with ORIGINAL_KEYS still
       # recording the mapping.
       RESERVED_METHOD_NAMES = %w[build to_h extra initialize].freeze
+
+      def self.included(base)
+        base.extend(ClassMethods)
+      end
+
+      # Builders accumulate a document, so no builder is immutable.
+      module ClassMethods
+        def immutable_supported? = false
+      end
 
       def class_name_from_path(uri, name = nil)
         "Dsl::#{super}"

@@ -37,13 +37,36 @@ module Schematrix
           slot_type(super)
         end
 
+        # typed: strict ivars carry a T.let, and freeze lands inside
+        # it so the assignment stays typed.
+        def immutable_catch_all_assignment
+          "@_extra = T.let(_extra.freeze, T::Hash[String, #{
+            sorbet_additional_properties_type
+          }])"
+        end
+
         def sorbet_attr_accessor(path, name, property)
+          type = property_type_of(path, name, property)
+          reader = <<~RUBY
+            sig { returns(
+              #{type}
+            ) }
+            attr_reader :#{name}
+          RUBY
+          return reader if immutable?
+
           <<~RUBY
             sig { returns(
-              #{property_type_of(path, name, property)}
+              #{type}
             ) }
             attr_accessor :#{name}
           RUBY
+        end
+
+        # Bodies call property readers on the other side; T.anything
+        # admits no calls, so the parameter types as T.untyped here.
+        def sorbet_equality_signature
+          "sig { params(other: T.untyped).returns(T::Boolean) }"
         end
 
         # The constant carries type annotations in typed: strict

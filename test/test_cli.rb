@@ -93,4 +93,20 @@ class TestCLI < Minitest::Test
       assert_raises(SystemExit) { cli.run }
     end
   end
+
+  def test_immutable_flag_parses
+    cli = Schematrix::CLI.new
+    cli.parse(%w[-g plain_ruby -m M --immutable schema.json])
+
+    assert_empty cli.params.errors.to_a
+    assert_equal true, cli.params[:immutable]
+  end
+
+  def test_immutable_defaults_to_false
+    cli = Schematrix::CLI.new
+    cli.parse(%w[-g plain_ruby -m M schema.json])
+
+    assert_empty cli.params.errors.to_a
+    assert_equal false, cli.params[:immutable]
+  end
 end

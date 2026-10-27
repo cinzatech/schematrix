@@ -22,7 +22,8 @@ module Schematrix
           additional_properties:,
           documentation_comment:,
           property_keys: [],
-          scalar_types: Schematrix::BUILTIN_SCALAR_TYPES
+          scalar_types: Schematrix::BUILTIN_SCALAR_TYPES,
+          immutable: false
         )
           @module_name = module_name
           @path = path
@@ -32,6 +33,7 @@ module Schematrix
           @additional_properties = additional_properties
           @documentation_comment = documentation_comment
           @scalar_types = scalar_types
+          @immutable = immutable
         end
 
         # The merged [type, format] rendering table the type algebra
@@ -55,6 +57,11 @@ module Schematrix
         end
 
         private
+
+        # Whether the class renders as a frozen value object: readers
+        # instead of accessors, the catch-all as a constructor
+        # keyword, a with copier, and value equality.
+        def immutable? = @immutable
 
         # The class's own name, without the module path: the name a
         # self-referencing signature renders (Schema, Child).

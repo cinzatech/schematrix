@@ -1,5 +1,7 @@
 module M
   class Schema
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
     attr_accessor x__1_1_y: Integer?
     attr_accessor back_slash: String?
     attr_accessor a_b: String?

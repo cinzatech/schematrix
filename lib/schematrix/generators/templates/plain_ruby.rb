@@ -10,14 +10,15 @@ module Schematrix
 
         private
 
-        # The whole attr_accessor line, or nothing when the schema
+        # The whole accessor line, or nothing when the schema
         # declares no properties: bare attr_accessor is a load-time
-        # ArgumentError.
+        # ArgumentError. Immutable classes carry readers only.
         def plain_attr_accessor_line
           return "" if @properties.nil? || @properties.empty?
 
+          keyword = immutable? ? "attr_reader" : "attr_accessor"
           names = @properties.keys.map { |key| key.to_sym.inspect }.join(", ")
-          "attr_accessor #{names}"
+          "#{keyword} #{names}"
         end
       end
     end

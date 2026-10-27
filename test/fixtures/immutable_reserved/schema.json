@@ -1,0 +1,12 @@
+{
+  "title": "Reserved",
+  "type": "object",
+  "properties": {
+    "with": { "type": "string" },
+    "_extra": { "type": "integer" },
+    "count": { "type": "integer" },
+    "hash": { "type": "string" }
+  },
+  "required": ["with"],
+  "additionalProperties": false
+}

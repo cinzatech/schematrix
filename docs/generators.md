@@ -43,6 +43,11 @@ For each object schema the compiler found, one file per class:
 
 The details live in [Generated code](generated-code.md).
 
+With `immutable: true` on a generator instance, or `--immutable` on
+the command line, the four data generators write frozen value objects
+instead: readers instead of accessors, a `with` copier, and value
+equality. See [Immutable classes](generated-code.md).
+
 The `dsl_` generators write builders instead of data classes: classes
 whose methods define one instance of the schema. They nest under a `Dsl`
 module level and a `dsl/` file prefix, so both families can share an

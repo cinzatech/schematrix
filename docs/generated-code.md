@@ -150,6 +150,144 @@ a class has no catch-all: no `[]`, no `[]=`, no `@_extra`, and `from_h`
 drops keys it does not know. See
 [Schema features](schema-features.md).
 
+## Immutable classes
+
+With `immutable: true` on a generator instance, or `--immutable` on the
+command line, the four data generators write frozen value objects
+instead of mutable classes. Loading and dumping rules do not change:
+`from_h` accepts the same documents and `to_h` produces the same
+hashes. For `person.schema.json` from [Getting
+started](getting-started.md), `plain_ruby` writes:
+
+```ruby
+module MyApp
+  class Person
+    ORIGINAL_KEYS = {
+      "firstName" => :first_name,
+      "lastName" => :last_name,
+      "age" => :age
+    }.freeze
+
+    def initialize(first_name:, last_name:, age: nil, _extra: {})
+      @first_name = first_name
+      @last_name = last_name
+      @age = age
+      @_extra = _extra.freeze
+      freeze
+    end
+
+    attr_reader :first_name, :last_name, :age
+
+    def [](key)
+      @_extra[key]
+    end
+
+    def with(first_name: @first_name, last_name: @last_name, age: @age, _extra: @_extra)
+      self.class.new(first_name: first_name, last_name: last_name, age: age, _extra: _extra)
+    end
+
+    def ==(other)
+      other.is_a?(self.class) && other.first_name == @first_name &&
+        other.last_name == @last_name && other.age == @age &&
+        other._extra == @_extra
+    end
+
+    alias eql? ==
+
+    def hash
+      [self.class, @first_name, @last_name, @age, @_extra].hash
+    end
+
+    def self.from_h(hash)
+      kwargs = {}
+      kwargs[:first_name] = hash["firstName"]
+      kwargs[:last_name] = hash["lastName"]
+      kwargs[:age] = hash["age"]
+      kwargs[:_extra] =
+        hash.each_with_object({}) do |(key, value), extras|
+          next if ORIGINAL_KEYS.key?(key)
+
+          extras[key] = value
+        end
+      new(**kwargs)
+    end
+
+    def to_h
+      result = {}
+      result["firstName"] = @first_name unless @first_name.nil?
+      result["lastName"] = @last_name unless @last_name.nil?
+      result["age"] = @age unless @age.nil?
+      @_extra.each { |key, value| result[key] = value }
+      result
+    end
+
+    protected
+
+    attr_reader :_extra
+  end
+end
+```
+
+The differences from the default shape:
+
+- `attr_reader` for every property. The writer methods are gone, so an
+  accidental `person.age = 37` raises `NoMethodError` instead of
+  mutating a document in place.
+- The instance freezes at the end of the constructor, and the catch-all
+  freezes with it. A frozen instance is safe to share between threads
+  and to memoize.
+- An open shape stays open on load and closed to writes afterwards:
+  `[]` remains, `[]=` is gone. The unknown keys arrive through the
+  `_extra:` keyword of the constructor, and `from_h` gathers them into
+  that keyword, so what it accepts does not change. A closed shape has
+  no `_extra:` keyword at all, exactly as it has no catch-all.
+- `from_h` builds the instance in one constructor call, since nothing
+  can be assigned afterwards. Defaulted properties still assign only
+  when the document carries their key, so absence keeps the default.
+- `with(**changes)` returns a new instance with the given properties
+  replaced and everything else kept, the catch-all included, which the
+  `_extra:` keyword replaces as a whole. The signature names one
+  keyword per property, so the type checker sees the same contract as
+  the constructor. A closed shape omits `_extra:` there too. The values
+  pass to the constructor as given: a nested document loads through
+  `from_h`, not through `with`.
+- `==`, `eql?` and `hash` compare the class, every property, and the
+  catch-all, so instances work in assertions, in `uniq`, and as Hash
+  keys. The catch-all comparison reads the other instance through a
+  protected `_extra` reader, which only instances of the class can
+  call. It keeps the underscore of the keyword to stay clear of
+  property readers.
+
+In use:
+
+```ruby
+person = MyApp::Person.from_h(doc)
+older = person.with(age: 37)
+older.frozen?                  # => true
+person.age                     # => 36
+older == person.with(age: 37)  # => true
+[person, person.with(age: 36)].uniq.size # => 1
+```
+
+`with` and `hash` are generated method names, so a property named
+`with` or `hash` (a checksum field, say) would override one. Like the
+DSL's `build` and `to_h`, the names are reserved: a property named
+`with` or `hash` gains the trailing underscore treatment, with
+`ORIGINAL_KEYS` recording the mapping. `_extra` joins the reservation
+because the constructor keyword and the protected reader carry that
+name. A property named `with_`, `hash_` or `_extra_` is untouched, and
+two siblings can still fold onto one accessor, with the collision
+warning of [Property names](#property-names).
+
+The option applies to the data generators only. The `dsl_` builders
+are unaffected: a builder is mutable by construction, it accumulates a
+document. Passing `immutable: true` to a DSL generator raises
+`ArgumentError`.
+
+The Sorbet signatures follow the runtime shape: the readers, `with`
+(`returns(T.self_type)`, so subclasses copy as themselves), `==` and
+`hash` all carry signatures, and the `[]=` signature is gone.
+
 ## File layout
 
 One file per class, in the output directory, at a path that mirrors the

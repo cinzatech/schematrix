@@ -14,6 +14,12 @@ module Schematrix
 
         def sorbet_attr_accessor(path, name, property)
           type = property_type_of(path, name, property)
+          reader = <<~RUBY
+            sig { returns(#{type}) }
+            def #{name}; end
+          RUBY
+          return reader if immutable?
+
           <<~RUBY
             sig { returns(#{type}) }
             def #{name}; end
@@ -21,6 +27,15 @@ module Schematrix
             sig { params(#{name}: #{type}).void }
             def #{name}=(#{name}); end
           RUBY
+        end
+
+        # The copier's RBI defaults: stub files carry no bodies, so
+        # the ivar defaults of the real method spell as T.untyped and
+        # the sig carries the contract.
+        def rbi_with_parameters
+          parameters = property_names.map { |name| "#{name}: T.untyped" }
+          parameters << "_extra: T.untyped" unless @additional_properties.nil?
+          parameters.join(", ")
         end
       end
     end
