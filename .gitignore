@@ -59,6 +59,7 @@ Gemfile.lock
 generated/
 
 # Untracked working log
+worklog
 WORKLOG.md
 # Editor config
 .vscode/
