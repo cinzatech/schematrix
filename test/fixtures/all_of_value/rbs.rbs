@@ -4,12 +4,20 @@ module M
     attr_accessor refonly: Schema::Defs::Base?
     attr_accessor both: Schema::Defs::Base?
     attr_accessor typed: Schema::Props::Typed?
+    attr_accessor null_object: Schema::Props::NullObject?
+    attr_accessor str_arr: Array[String]?
+    attr_accessor narrowed: String?
+    attr_accessor map_ref: Hash[String, Integer]?
 
     def initialize: (
       ?str: String?,
       ?refonly: Schema::Defs::Base?,
       ?both: Schema::Defs::Base?,
-      ?typed: Schema::Props::Typed?
+      ?typed: Schema::Props::Typed?,
+      ?null_object: Schema::Props::NullObject?,
+      ?str_arr: Array[String]?,
+      ?narrowed: String?,
+      ?map_ref: Hash[String, Integer]?
     ) -> void
 
     def []: (String) -> top

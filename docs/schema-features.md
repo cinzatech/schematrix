@@ -169,12 +169,15 @@ merge into one class:
 On a value schema (a property, an array element), the branches
 contribute to the property's type instead:
 
-- `allOf` conjoins: scalar branches intersect their type terms
-  (`allOf: [string, integer]` types the slot `String & Integer`), a
-  `$ref` branch keeps its target class (and that class generates),
-  and an inline object branch merges its properties into the
-  property's own class, as it does under `anyOf`. Branch facets with
-  no codegen rendering (`minLength`, ...) contribute nothing.
+- `allOf` conjoins: type declarations share their terms (`allOf:
+  [{"type": ["string", "null"]}, {"type": ["string", "integer"]}]`
+  types the slot `String`), fully disjoint declarations intersect
+  syntactically (`String & Integer`), array branches conjoin their
+  element and tuple constraints, a `$ref` branch keeps its target
+  class (and that class generates), and an inline object branch
+  merges its properties into the property's own class, as it does
+  under `anyOf`. Branch facets with no codegen rendering
+  (`minLength`, ...) contribute nothing.
 - Scalar branches of the union keywords become union terms:
   `anyOf: [string, integer]` types the slot `String | Integer`.
 - Inline object branches inside `anyOf` merge into the property's own

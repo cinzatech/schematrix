@@ -68,6 +68,9 @@ Each item below widens acceptance. None of them narrows it.
   through a nested composition keyword contributes no properties to
   the slot's class; its nested classes still generate under the
   branch's positional path.
+- Fully disjoint `allOf` type declarations conjoin syntactically
+  (`String & Integer`), which is uninhabited when the types share no
+  value; the output behaves as if the branch were absent.
 - Inline object entries inside `prefixItems` contribute an
   unconstrained element type, because a numeric position is not a class
   name.

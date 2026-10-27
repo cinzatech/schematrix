@@ -29,5 +29,8 @@ class TestAllOfValue < Minitest::Test
     assert_equal 2, locators.size
     assert(locators.any? { |locator| locator.end_with?("#/$defs/Base") })
     assert(locators.any? { |locator| locator.end_with?("#/$defs/Mixin") })
+    # A map-shaped target inlines at the ref site: it generates no
+    # class, and the slot renders a plain Hash instead.
+    refute(locators.any? { |locator| locator.end_with?("#/$defs/Map") })
   end
 end
