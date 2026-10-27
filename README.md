@@ -149,6 +149,9 @@ Options:
   -g, --generators list    Output generators to use, e.g.: plain_ruby,
                            dsl_plain_ruby
   -h, --help               Print usage
+      --immutable          Generate data classes as frozen value objects:
+                           readers, a with copier, and value equality; data
+                           generators only
   -m, --module string      Module where the output code will be placed
   -o, --output string      Directory where the output will be written
       --schema-dir string  Directory where remote schema URIs resolve to local

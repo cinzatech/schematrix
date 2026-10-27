@@ -12,6 +12,9 @@ Options:
   -g, --generators list    Output generators to use, e.g.: plain_ruby,
                            dsl_plain_ruby
   -h, --help               Print usage
+      --immutable          Generate data classes as frozen value objects:
+                           readers, a with copier, and value equality; data
+                           generators only
   -m, --module string      Module where the output code will be placed
   -o, --output string      Directory where the output will be written
       --schema-dir string  Directory where remote schema URIs resolve to local
@@ -93,6 +96,14 @@ keys accepted". The flag switches that default to "closed": generated
 classes carry no catch-all accessors and drop unknown keys on load.
 Explicit `additionalProperties` in the document always wins over the
 flag. See [Schema features](schema-features.md).
+
+### `--immutable`
+
+Generates data classes as frozen value objects: readers instead of
+accessors, frozen instances, a `with` copier, and value equality. The
+flag applies to every data generator of the run; the `dsl_` builders
+are unaffected, since a builder is mutable by construction. See
+[Immutable classes](generated-code.md).
 
 ### `--schema-dir`
 

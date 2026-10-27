@@ -92,6 +92,10 @@ generator.write(locator, node) # renders, formats, writes, returns the path
   `rake meta:generate`.
 - Pass `scalar_types:` to map `[type, format]` pairs to renderings of
   the project's own, merged over the built-in table (below).
+- Pass `immutable: true` to write data classes as frozen value
+  objects: readers instead of accessors, a `with` copier, and value
+  equality. The data generators accept it; the `dsl_` builders refuse
+  it. See [Immutable classes](generated-code.md).
 
 ## Scalar types
 
