@@ -15,15 +15,19 @@ module Schematrix
       # every 'properties' segment becomes a Props module level and
       # every '$defs' segment a Defs module level, so a property chain
       # and a definition chain can never fold onto the same class
-      # name. Fragment segments decode through Pointer before folding,
-      # so a locator and the property name it was built from fold to
-      # one name. "$" prefixes (core vocabulary keywords like "$id")
-      # and mangling suffixes ("if_") are stripped so segments form
-      # valid constant names, characters constant names cannot carry
-      # fold to separators ("web.hook" -> "WebHook"), names with no
-      # representable character fold to their UTF-8 hex ("@" ->
-      # "N40"), and a part that would start with a digit takes an
-      # "N" prefix ("2fa" -> "N2fa"), the constant-safe spelling.
+      # name. Fragment segments decode through Pointer before folding.
+      # A segment that names a property folds exactly like the mangled
+      # accessor the parent derives its references from, so a locator
+      # and the property name it was built from fold to one name;
+      # file names and definition keys have no mangled counterpart and
+      # keep their own fold. "$" prefixes (core vocabulary keywords
+      # like "$id") and mangling suffixes ("if_") are stripped so
+      # segments form valid constant names, characters constant names
+      # cannot carry fold to separators ("web.hook" -> "WebHook"),
+      # names with no representable character fold to their UTF-8 hex
+      # ("@" -> "N40"), and a part that would start with a digit
+      # takes an "N" prefix ("2fa" -> "N2fa"), the constant-safe
+      # spelling.
       def class_name_from_path(uri, name = nil)
         file =
           File.basename(URI::RFC2396_PARSER.unescape(uri.path)).split(".").first
@@ -33,14 +37,31 @@ module Schematrix
           *name.to_s.split("/"),
         ].compact.reject(&:empty?)
 
+        follows_properties = false
         meaningful =
           segments.filter_map do |segment|
-            next "Props" if segment == "properties"
-            next "Defs" if segment == "$defs"
+            case segment
+            when "properties"
+              follows_properties = true
+              next "Props"
+            when "$defs"
+              follows_properties = false
+              next "Defs"
+            end
 
-            clean = underscore(segment).delete("$")
-            clean = clean.gsub(/[^a-z\d_]/, "_")
-            clean = clean.sub(/[\s_]+\z/, "")
+            property_segment = follows_properties
+            follows_properties = false
+
+            clean =
+              if property_segment
+                # A property name folds exactly like the mangled
+                # accessor the parent derives its references from.
+                underscore(segment).delete("$")
+              else
+                segment.delete("$")
+              end
+            clean = clean.gsub(/[^a-zA-Z\d\s_-]/, " ")
+            clean = clean.strip.sub(/[\s_-]+\z/, "")
             clean = segment.unpack1("H*") if clean.empty?
             next if clean.empty?
 

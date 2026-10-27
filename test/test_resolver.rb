@@ -22,6 +22,43 @@ class TestResolver < Minitest::Test
     assert_equal "Order::Props::Customer", name
   end
 
+  # Only property segments fold through the accessor mangling. File
+  # names and definition keys have no mangled counterpart, so they
+  # keep the fold existing constants were generated with.
+  def test_file_basenames_keep_their_own_fold
+    name = resolver.class_name_from_path(locator_for("/schemas/API.json", "/"))
+
+    assert_equal "API", name
+  end
+
+  def test_defs_keys_keep_their_own_fold
+    name =
+      resolver.class_name_from_path(
+        locator_for("/schemas/order.json", "/$defs/HTTPServer"),
+      )
+
+    assert_equal "Order::Defs::HTTPServer", name
+  end
+
+  def test_a_property_inside_a_defs_entry_still_folds_like_the_mangled_name
+    generator = Schematrix::Generators::PlainRuby.new("/tmp", "M")
+    from_locator =
+      resolver.class_name_from_path(
+        locator_for(
+          "/schemas/order.json",
+          "/$defs/HTTPServer/properties/API%20key",
+        ),
+      )
+    from_parent =
+      generator.class_name_from_path(
+        locator_for("/schemas/order.json", "/$defs/HTTPServer"),
+        "properties/#{generator.send(:property_name, "API key")}",
+      )
+
+    assert_equal "Order::Defs::HTTPServer::Props::ApiKey", from_locator
+    assert_equal from_locator, from_parent
+  end
+
   def test_defs_segments_encode_a_defs_level
     name =
       resolver.class_name_from_path(
