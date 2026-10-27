@@ -40,23 +40,55 @@ module M
       end
     end
 
-    sig { params(value: T.untyped, klass: T.untyped).returns(T.untyped) }
-    def self.coerce_array_slot(value, klass)
-      return value unless value.is_a?(Array)
+    sig { params(value: T.untyped, spec: T.untyped).returns(T.untyped) }
+    def self.coerce_spec(value, spec)
+      case spec[0]
+      when :coerce
+        spec[1].coerce(value)
+      when :class
+        coerce_class_slot(value, spec[1])
+      when :array
+        return value unless value.is_a?(Array)
 
-      value.map { |element| coerce_class_slot(element, klass) }
-    end
+        if spec[1][0] == :tuple
+          prefix, tail = spec[1][1], spec[1][2]
+          value.each_with_index.map do |element, index|
+            sub = index < prefix.size ? prefix[index] : tail
+            sub.nil? ? element : coerce_spec(element, sub)
+          end
+        else
+          value.map { |element| coerce_spec(element, spec[1]) }
+        end
+      when :map
+        return value unless value.is_a?(Hash)
 
-    sig { params(value: T.untyped, klass: T.untyped).returns(T.untyped) }
-    def self.coerce_map_slot(value, klass)
-      return value unless value.is_a?(Hash)
-
-      value.transform_values { |entry| coerce_class_slot(entry, klass) }
+        value.transform_values { |entry| coerce_spec(entry, spec[1]) }
+      when :union
+        result = value
+        spec[1].each do |sub|
+          case sub[0]
+          when :class
+            result = coerce_class_slot(result, sub[1])
+          when :array
+            if result.is_a?(Array)
+              result = result.map { |element| coerce_spec(element, sub[1]) }
+            end
+          when :map
+            if result.is_a?(Hash)
+              result =
+                result.transform_values { |entry| coerce_spec(entry, sub[1]) }
+            end
+          when :coerce
+            result = sub[1].coerce(result)
+          end
+        end
+        result
+      end
     end
 
     sig { params(value: T.untyped).returns(T.untyped) }
     def self.coerce_entries(value)
-      coerce_array_slot(value, M::Schema::Props::Entries::Items)
+      coerce_spec(value, [:array, [:class, M::Schema::Props::Entries::Items]])
     end
 
     sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }

@@ -1,0 +1,118 @@
+# typed: strict
+
+module M
+  class Schema
+    extend T::Sig
+
+    ORIGINAL_KEYS = T.let({ "pair" => :pair }.freeze, T::Hash[String, Symbol])
+
+    sig do
+      params(
+        pair: T.nilable(T::Array[T.any(String, Schema::Defs::Address)])
+      ).void
+    end
+    def initialize(pair: nil)
+      @pair = pair
+
+      @_extra = T.let({}, T::Hash[String, T.anything])
+    end
+
+    sig { returns(T.nilable(T::Array[T.any(String, Schema::Defs::Address)])) }
+    attr_accessor :pair
+
+    sig { params(key: String).returns(T.anything) }
+    def [](key)
+      @_extra[key]
+    end
+
+    sig { params(key: String, value: T.anything).returns(T.anything) }
+    def []=(key, value)
+      @_extra[key] = value
+    end
+
+    sig { params(value: T.untyped, klass: T.untyped).returns(T.untyped) }
+    def self.coerce_class_slot(value, klass)
+      if value.is_a?(klass)
+        value.to_h
+      elsif value.is_a?(Hash)
+        klass.from_h(value)
+      else
+        value
+      end
+    end
+
+    sig { params(value: T.untyped, spec: T.untyped).returns(T.untyped) }
+    def self.coerce_spec(value, spec)
+      case spec[0]
+      when :coerce
+        spec[1].coerce(value)
+      when :class
+        coerce_class_slot(value, spec[1])
+      when :array
+        return value unless value.is_a?(Array)
+
+        if spec[1][0] == :tuple
+          prefix, tail = spec[1][1], spec[1][2]
+          value.each_with_index.map do |element, index|
+            sub = index < prefix.size ? prefix[index] : tail
+            sub.nil? ? element : coerce_spec(element, sub)
+          end
+        else
+          value.map { |element| coerce_spec(element, spec[1]) }
+        end
+      when :map
+        return value unless value.is_a?(Hash)
+
+        value.transform_values { |entry| coerce_spec(entry, spec[1]) }
+      when :union
+        result = value
+        spec[1].each do |sub|
+          case sub[0]
+          when :class
+            result = coerce_class_slot(result, sub[1])
+          when :array
+            if result.is_a?(Array)
+              result = result.map { |element| coerce_spec(element, sub[1]) }
+            end
+          when :map
+            if result.is_a?(Hash)
+              result =
+                result.transform_values { |entry| coerce_spec(entry, sub[1]) }
+            end
+          when :coerce
+            result = sub[1].coerce(result)
+          end
+        end
+        result
+      end
+    end
+
+    sig { params(value: T.untyped).returns(T.untyped) }
+    def self.coerce_pair(value)
+      coerce_spec(
+        value,
+        [:array, [:tuple, [nil, [:class, M::Schema::Defs::Address]], nil]]
+      )
+    end
+
+    sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }
+    def self.from_h(hash)
+      instance = new(pair: coerce_pair(hash["pair"]))
+
+      hash.each do |key, value|
+        next if ORIGINAL_KEYS.key?(key)
+
+        instance[key] = value
+      end
+      instance
+    end
+
+    sig { returns(T::Hash[String, T.untyped]) }
+    def to_h
+      result = {}
+      result["pair"] = self.class.coerce_pair(@pair) unless @pair.nil?
+      @_extra.each { |key, value| result[key] = value }
+      result
+    end
+  end
+end

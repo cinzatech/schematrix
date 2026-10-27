@@ -13,9 +13,8 @@ module SchematrixTestHelper
 
   private
 
-  # Fixtures are hand-authored target state (hard rule, D15 in the
-  # worklog): never write the expected files from generator output, and
-  # never add a mode here that does.
+  # Fixtures are hand-authored target state: never write the expected
+  # files from generator output, and never add a mode here that does.
   def assert_fixture(
     fixture_name,
     generator_name,

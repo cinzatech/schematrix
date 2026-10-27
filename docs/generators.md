@@ -31,15 +31,15 @@ For each object schema the compiler found, one file per class:
 - Catch-all accessors `[]` and `[]=` when the class accepts extra keys.
 - `from_h` and `to_h` for loading and dumping, with one `coerce_`
   method per property whose values carry a nested class or a coercing
-  scalar format. Class-shaped properties delegate to one of three
-  shared slot helpers (`coerce_class_slot`, `coerce_array_slot`,
-  `coerce_map_slot`) that carry the symmetric load/dump dispatch once
-  per shape; coercing formats convert through a spec interpreter
-  (`coerce_spec`) that mirrors the slot's type structure, so arrays,
-  tuples, maps, catch-all values, and union branches all convert, and
-  delegates to the coercer directly when the slot is one scalar. The
-  built-in coercers the file calls are emitted next to the helpers (a
-  project coercer is referenced by name).
+  scalar format. Each conversion is a frozen literal mirroring the
+  slot's type structure, interpreted by one `coerce_spec` method the
+  class emits next to the delegations, so arrays, tuples, maps,
+  catch-all values, and union branches all convert; class entries
+  dispatch through a shared `coerce_class_slot` that carries the
+  symmetric load/dump dispatch once, and a slot that is one scalar
+  coercer delegates to it directly. The built-in coercers the file
+  calls are emitted next to the helpers (a project coercer is
+  referenced by name).
 
 The details live in [Generated code](generated-code.md).
 

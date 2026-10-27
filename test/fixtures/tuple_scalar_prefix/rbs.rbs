@@ -1,0 +1,23 @@
+module M
+  class Schema
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
+    attr_accessor tagged: Array[(String | Schema::Defs::Address)]?
+
+    def initialize: (?tagged: Array[(String | Schema::Defs::Address)]?) -> void
+
+    def []: (String) -> top
+
+    def []=: (String, top) -> top
+
+    def self.coerce_class_slot: (top value, top klass) -> top
+
+    def self.coerce_spec: (top value, top spec) -> top
+
+    def self.coerce_tagged: (top value) -> top
+
+    def self.from_h: (Hash[String, top] hash) -> Schema
+
+    def to_h: -> Hash[String, top]
+  end
+end

@@ -90,7 +90,7 @@ module M
         if spec[1][0] == :tuple
           prefix, tail = spec[1][1], spec[1][2]
           value.each_with_index.map do |element, index|
-            sub = prefix[index] || tail
+            sub = index < prefix.size ? prefix[index] : tail
             sub.nil? ? element : coerce_spec(element, sub)
           end
         else

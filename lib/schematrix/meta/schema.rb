@@ -276,100 +276,133 @@ module Schematrix::Meta
       end
     end
 
-    def self.coerce_array_slot(value, klass)
-      return value unless value.is_a?(Array)
+    def self.coerce_spec(value, spec)
+      case spec[0]
+      when :coerce
+        spec[1].coerce(value)
+      when :class
+        coerce_class_slot(value, spec[1])
+      when :array
+        return value unless value.is_a?(Array)
 
-      value.map { |element| coerce_class_slot(element, klass) }
-    end
+        if spec[1][0] == :tuple
+          prefix, tail = spec[1][1], spec[1][2]
+          value.each_with_index.map do |element, index|
+            sub = index < prefix.size ? prefix[index] : tail
+            sub.nil? ? element : coerce_spec(element, sub)
+          end
+        else
+          value.map { |element| coerce_spec(element, spec[1]) }
+        end
+      when :map
+        return value unless value.is_a?(Hash)
 
-    def self.coerce_map_slot(value, klass)
-      return value unless value.is_a?(Hash)
-
-      value.transform_values { |entry| coerce_class_slot(entry, klass) }
+        value.transform_values { |entry| coerce_spec(entry, spec[1]) }
+      when :union
+        result = value
+        spec[1].each do |sub|
+          case sub[0]
+          when :class
+            result = coerce_class_slot(result, sub[1])
+          when :array
+            if result.is_a?(Array)
+              result = result.map { |element| coerce_spec(element, sub[1]) }
+            end
+          when :map
+            if result.is_a?(Hash)
+              result =
+                result.transform_values { |entry| coerce_spec(entry, sub[1]) }
+            end
+          when :coerce
+            result = sub[1].coerce(result)
+          end
+        end
+        result
+      end
     end
 
     def self.coerce_definitions(value)
-      coerce_map_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:map, [:class, Schematrix::Meta::Schema]])
     end
 
     def self.coerce_dependencies(value)
-      coerce_map_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:map, [:class, Schematrix::Meta::Schema]])
     end
 
     def self.coerce_defs(value)
-      coerce_map_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:map, [:class, Schematrix::Meta::Schema]])
     end
 
     def self.coerce_prefix_items(value)
-      coerce_array_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:array, [:class, Schematrix::Meta::Schema]])
     end
 
     def self.coerce_items(value)
-      coerce_class_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:class, Schematrix::Meta::Schema])
     end
 
     def self.coerce_contains(value)
-      coerce_class_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:class, Schematrix::Meta::Schema])
     end
 
     def self.coerce_additional_properties(value)
-      coerce_class_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:class, Schematrix::Meta::Schema])
     end
 
     def self.coerce_properties(value)
-      coerce_map_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:map, [:class, Schematrix::Meta::Schema]])
     end
 
     def self.coerce_pattern_properties(value)
-      coerce_map_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:map, [:class, Schematrix::Meta::Schema]])
     end
 
     def self.coerce_dependent_schemas(value)
-      coerce_map_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:map, [:class, Schematrix::Meta::Schema]])
     end
 
     def self.coerce_property_names(value)
-      coerce_class_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:class, Schematrix::Meta::Schema])
     end
 
     def self.coerce_if_(value)
-      coerce_class_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:class, Schematrix::Meta::Schema])
     end
 
     def self.coerce_then_(value)
-      coerce_class_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:class, Schematrix::Meta::Schema])
     end
 
     def self.coerce_else_(value)
-      coerce_class_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:class, Schematrix::Meta::Schema])
     end
 
     def self.coerce_all_of(value)
-      coerce_array_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:array, [:class, Schematrix::Meta::Schema]])
     end
 
     def self.coerce_any_of(value)
-      coerce_array_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:array, [:class, Schematrix::Meta::Schema]])
     end
 
     def self.coerce_one_of(value)
-      coerce_array_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:array, [:class, Schematrix::Meta::Schema]])
     end
 
     def self.coerce_not_(value)
-      coerce_class_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:class, Schematrix::Meta::Schema])
     end
 
     def self.coerce_unevaluated_items(value)
-      coerce_class_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:class, Schematrix::Meta::Schema])
     end
 
     def self.coerce_unevaluated_properties(value)
-      coerce_class_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:class, Schematrix::Meta::Schema])
     end
 
     def self.coerce_content_schema(value)
-      coerce_class_slot(value, Schematrix::Meta::Schema)
+      coerce_spec(value, [:class, Schematrix::Meta::Schema])
     end
 
     def self.from_h(hash)

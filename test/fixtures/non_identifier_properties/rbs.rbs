@@ -16,9 +16,7 @@ module M
 
     def self.coerce_class_slot: (top value, top klass) -> top
 
-    def self.coerce_array_slot: (top value, top klass) -> top
-
-    def self.coerce_map_slot: (top value, top klass) -> top
+    def self.coerce_spec: (top value, top spec) -> top
 
     def self.coerce_first_name: (top value) -> top
 

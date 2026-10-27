@@ -44,12 +44,8 @@ module M
     def self.coerce_class_slot(value, klass)
     end
 
-    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
-    def self.coerce_array_slot(value, klass)
-    end
-
-    sig { params(value: T.anything, klass: T.anything).returns(T.anything) }
-    def self.coerce_map_slot(value, klass)
+    sig { params(value: T.anything, spec: T.anything).returns(T.anything) }
+    def self.coerce_spec(value, spec)
     end
 
     sig { params(value: T.anything).returns(T.anything) }
