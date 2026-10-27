@@ -13,10 +13,16 @@ module Schematrix
     module_function
 
     # Percent-encodes one key for use as a fragment token. The URI
-    # parser escapes "%" but leaves "/" and "~", so those two are
-    # forced explicitly after it.
+    # parser escapes "%" and the characters no URI parser accepts in
+    # a fragment, but leaves "/", "~" and the brackets its older
+    # grammar tolerated, so those are forced explicitly after it.
     def escape(token)
-      URI::RFC2396_PARSER.escape(token).gsub("/", "%2F").gsub("~", "%7E")
+      escaped = URI::RFC2396_PARSER.escape(token)
+      escaped
+        .gsub("/", "%2F")
+        .gsub("~", "%7E")
+        .gsub("[", "%5B")
+        .gsub("]", "%5D")
     end
 
     # Decodes one fragment token back to its key. "~1" and "~0" are

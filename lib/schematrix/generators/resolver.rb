@@ -39,7 +39,7 @@ module Schematrix
             next "Defs" if segment == "$defs"
 
             clean = segment.delete("$").gsub(/[^a-zA-Z\d\s_-]/, " ")
-            clean = clean.strip.sub(/_+\z/, "")
+            clean = clean.strip.sub(/[\s_-]+\z/, "")
             clean = segment.unpack1("H*") if clean.empty?
             next if clean.empty?
 

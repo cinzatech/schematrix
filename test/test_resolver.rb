@@ -102,6 +102,10 @@ class TestResolver < Minitest::Test
       "pct%" => "pct%25",
       "名前" => "%E5%90%8D%E5%89%8D",
       "web.hook" => "web.hook",
+      "foo-" => "foo-",
+      "-" => "-",
+      "_-" => "_-",
+      "filter[name]" => "filter%5Bname%5D",
     }.each do |key, escaped|
       from_locator =
         generator.class_name_from_path(
