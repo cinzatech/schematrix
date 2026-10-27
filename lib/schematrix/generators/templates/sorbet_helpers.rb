@@ -43,6 +43,13 @@ module Schematrix
             type_of(@path, "additional_properties", @additional_properties)
         end
 
+        # The type of the catch-all keyword wherever a signature
+        # names it: constructor, copier, and the protected reader all
+        # share it.
+        def sorbet_catch_all_type
+          "T::Hash[String, #{sorbet_additional_properties_type}]"
+        end
+
         def sorbet_coercion_signature
           "sig { params(value: #{SORBET_TYPE_ANYTHING}).returns(#{
             SORBET_TYPE_ANYTHING
@@ -79,16 +86,50 @@ module Schematrix
         end
 
         def sorbet_constructor_signature_params
-          return "" if @properties.nil? || @properties.empty?
+          groups = []
+          unless @properties.nil? || @properties.empty?
+            groups << constructor_properties.map do |name, property|
+              "#{name}: #{property_type_of(@path, name, property)}"
+            end
+          end
+          if immutable? && !@additional_properties.nil?
+            groups << "_extra: #{sorbet_catch_all_type}"
+          end
+          return "" if groups.empty?
 
-          params =
-            constructor_properties
-              .map do |name, property|
-                "#{name}: #{property_type_of(@path, name, property)}"
-              end
-              .join(", ")
+          "params(#{groups.join(", ")})."
+        end
 
-          "params(#{params})."
+        # The copier's signature: one optional keyword per property
+        # and one for the catch-all, returning the receiver's own
+        # class so subclasses copy as themselves. A keyword-less
+        # copier omits params, which Sorbet refuses empty.
+        def sorbet_with_signature
+          entries =
+            property_names.map do |name|
+              type = property_type_of(@path, name, @properties.fetch(name))
+              "#{name}: #{type}"
+            end
+          unless @additional_properties.nil?
+            entries << "_extra: #{sorbet_catch_all_type}"
+          end
+          return "sig { returns(T.self_type) }" if entries.empty?
+
+          "sig { params(#{entries.join(", ")}).returns(T.self_type) }"
+        end
+
+        # The equality signature: the other side stays top, since the
+        # body narrows it with the is_a? guard.
+        def sorbet_equality_signature
+          "sig { params(other: #{SORBET_TYPE_ANYTHING}).returns(T::Boolean) }"
+        end
+
+        def sorbet_hash_signature
+          "sig { returns(Integer) }"
+        end
+
+        def sorbet_extra_reader_signature
+          "sig { returns(#{sorbet_catch_all_type}) }"
         end
 
         def sorbet_attr_accessors

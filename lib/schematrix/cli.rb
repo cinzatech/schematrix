@@ -85,6 +85,13 @@ module Schematrix
              "with no catch-all, instead of the spec default"
     end
 
+    flag :immutable do
+      optional
+      long "--immutable"
+      desc "Generate data classes as frozen value objects: readers, a " \
+             "with copier, and value equality; data generators only"
+    end
+
     flag :verbose do
       optional
       arity zero_or_more
@@ -156,11 +163,14 @@ module Schematrix
           output_dirs
             .zip(generator_names)
             .map do |(output_dir, name)|
-              GENERATORS.fetch(name).new(
+              generator_class = GENERATORS.fetch(name)
+              generator_class.new(
                 output_dir,
                 module_name,
                 format: true,
                 command: "schematrix",
+                immutable:
+                  params[:immutable] && generator_class.immutable_supported?,
               )
             end
 

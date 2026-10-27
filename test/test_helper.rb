@@ -22,7 +22,8 @@ module SchematrixTestHelper
     path: "",
     closed_shapes: false,
     schema_dirs: [],
-    locator: nil
+    locator: nil,
+    immutable: false
   )
     actual =
       generate_fixture(
@@ -32,6 +33,7 @@ module SchematrixTestHelper
         closed_shapes:,
         schema_dirs:,
         locator:,
+        immutable:,
       )
 
     expected_file = expected_path(fixture_name, generator_name, path)
@@ -49,7 +51,8 @@ module SchematrixTestHelper
     path: "",
     closed_shapes: false,
     schema_dirs: [],
-    locator: nil
+    locator: nil,
+    immutable: false
   )
     schema_file = File.join(FIXTURES_DIR, fixture_name, "schema.json")
     objects =
@@ -65,6 +68,7 @@ module SchematrixTestHelper
         "/tmp",
         MODULE_NAME,
         format: true,
+        immutable:,
       )
     generator.transform(uri, generator.class_name_from_path(uri), node)
   end

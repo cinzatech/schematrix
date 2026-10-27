@@ -9,7 +9,7 @@ module <%= @module_name %>
     <% end %>    sig { <%= sorbet_constructor_signature_params %>void }
     def initialize<%= constructor_arguments %>
       <%= constructor_assignments %>
-      <% unless @additional_properties.nil? %>
+      <% unless immutable? || @additional_properties.nil? %>
       @_extra = T.let({}, T::Hash[String, <%= sorbet_additional_properties_type %>])
       <% end %>
     end
@@ -21,11 +21,23 @@ module <%= @module_name %>
     def [](key)
       @_extra[key]
     end
+    <% unless immutable? %>
 
     sig { params(key: String, value: <%= sorbet_additional_properties_type %>).returns(<%= sorbet_additional_properties_type %>) }
     def []=(key, value)
       @_extra[key] = value
     end
+    <% end %>
+    <% end %>
+    <% if immutable? %>
+
+    <%= sorbet_with_signature %>
+    <%= with_method %>
+
+    <%= sorbet_equality_signature %>
+    <%= equality_method %>
+    <%= sorbet_hash_signature %>
+    <%= hash_method %>
     <% end %>
 <% unless coercion_helpers.empty? %>
 
@@ -47,6 +59,13 @@ module <%= @module_name %>
 
     <%= sorbet_to_h_signature %>
     <%= to_h_method %>
+    <% if immutable? && !@additional_properties.nil? %>
+
+    protected
+
+    <%= sorbet_extra_reader_signature %>
+    attr_reader :_extra
+    <% end %>
 <%= declaration_close %>
 <% coercer_block = coercer_modules_block(sig: sorbet_coercion_signature) %>
 <% unless coercer_block.empty? %>

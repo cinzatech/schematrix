@@ -5,7 +5,7 @@ module <%= @module_name %>
 
     <% end %>    def initialize<%= constructor_arguments %>
       <%= constructor_assignments %>
-      <% unless @additional_properties.nil? %>
+      <% unless immutable? || @additional_properties.nil? %>
       @_extra = {}
       <% end %>
     end
@@ -16,10 +16,16 @@ module <%= @module_name %>
     def [](key)
       @_extra[key]
     end
+    <% unless immutable? %>
 
     def []=(key, value)
       @_extra[key] = value
     end
+    <% end %>
+    <% end %>
+    <% if immutable? %>
+
+    <%= immutable_surface %>
     <% end %>
 <% unless coercion_helpers.empty? %>
 
@@ -34,6 +40,10 @@ module <%= @module_name %>
     <%= from_h_method %>
 
     <%= to_h_method %>
+    <% if immutable? && !@additional_properties.nil? %>
+
+    <%= protected_extra_reader %>
+    <% end %>
 <%= declaration_close %>
 <% coercer_block = coercer_modules_block %>
 <% unless coercer_block.empty? %>

@@ -12,8 +12,22 @@ module <%= @module_name %>
     <% unless @additional_properties.nil? %>
 
     def []: (String) -> <%= rbs_additional_properties_type %>
+    <% unless immutable? %>
 
     def []=: (String, <%= rbs_additional_properties_type %>) -> <%= rbs_additional_properties_type %>
+    <% end %>
+    <% end %>
+    <% if immutable? %>
+
+    def with: (<%= rbs_with_params %>) -> instance
+
+    def ==: (<%= untyped %> other) -> bool
+
+    def hash: () -> Integer
+    <% unless @additional_properties.nil? %>
+
+    def _extra: () -> Hash[String, <%= rbs_additional_properties_type %>]
+    <% end %>
     <% end %>
     <% if legacy_conversions? %>
 

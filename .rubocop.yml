@@ -53,6 +53,11 @@ Style/FrozenStringLiteralComment:
 
 Metrics/ParameterLists:
   Max: 8
+  # The template constructor threads every rendering input a
+  # generator passes down; splitting it would obscure what a
+  # template reads.
+  Exclude:
+    - "lib/schematrix/generators/templates/base.rb"
 
 Metrics/CyclomaticComplexity:
   Max: 40

@@ -13,9 +13,24 @@ module <%= @module_name %>
 
     sig { params(key: String).returns(<%= sorbet_additional_properties_type %>) }
     def [](key); end
+    <% unless immutable? %>
 
     sig { params(key: String, value: <%= sorbet_additional_properties_type %>).returns(<%= sorbet_additional_properties_type %>) }
     def []=(key, value); end
+    <% end %>
+    <% end %>
+    <% if immutable? %>
+
+    <%= sorbet_with_signature %>
+    def with(<%= rbi_with_parameters %>); end
+
+    <%= sorbet_equality_signature %>
+    def ==(other); end
+
+    alias eql? ==
+
+    <%= sorbet_hash_signature %>
+    def hash; end
     <% end %>
 <% if legacy_conversions? %>
 
@@ -55,6 +70,13 @@ module <%= @module_name %>
 
     <%= sorbet_to_h_signature %>
     def to_h; end
+    <% if immutable? && !@additional_properties.nil? %>
+
+    protected
+
+    <%= sorbet_extra_reader_signature %>
+    def _extra; end
+    <% end %>
 <%= declaration_close %>
 <% coercer_block = coercer_modules_block(sig: sorbet_coercion_signature, requires: false, stub: true) %>
 <% unless coercer_block.empty? %>

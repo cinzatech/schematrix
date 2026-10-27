@@ -10,21 +10,21 @@ module Schematrix
         include Coercions
 
         def constructor_arguments
-          return "" if @properties.nil? || @properties.empty?
-
-          args =
-            constructor_properties
-              .map do |name, schema|
-                unless schema.default.nil?
-                  next "#{name}: #{schema.default.inspect}"
-                end
-                next "#{name}: nil" unless schema.constructor_required?
-
-                "#{name}:"
+          groups = []
+          unless @properties.nil? || @properties.empty?
+            groups << constructor_properties.map do |name, schema|
+              unless schema.default.nil?
+                next "#{name}: #{schema.default.inspect}"
               end
-              .join(", ")
+              next "#{name}: nil" unless schema.constructor_required?
 
-          "(#{args})"
+              "#{name}:"
+            end
+          end
+          groups << "_extra: {}" if immutable? && !@additional_properties.nil?
+          return "" if groups.empty?
+
+          "(#{groups.join(", ")})"
         end
 
         # Constructor kwargs in the order Ruby reports for the method:
@@ -41,9 +41,106 @@ module Schematrix
         end
 
         def constructor_assignments
-          return "" if @properties.nil?
+          lines =
+            if @properties.nil?
+              []
+            else
+              @properties.map { |name, _schema| "@#{name} = #{name}" }
+            end
+          return lines.join("\n") unless immutable?
 
-          @properties.map { |name, _schema| "@#{name} = #{name}" }.join("\n")
+          unless @additional_properties.nil?
+            lines << immutable_catch_all_assignment
+          end
+          lines << "freeze"
+          lines.join("\n")
+        end
+
+        # The catch-all slot assignment of an immutable constructor:
+        # the keyword's value, frozen so the instance stays deep
+        # enough to share.
+        def immutable_catch_all_assignment
+          "@_extra = _extra.freeze"
+        end
+
+        # The value-object methods of an immutable class: the
+        # copier and the equality trio. The protected catch-all
+        # reader renders last in the class body, where the
+        # visibility marker cannot leak onto later methods.
+        def immutable_surface
+          [with_method, equality_method, hash_method].join("\n")
+        end
+
+        # The copier: one optional keyword per property and one for
+        # the catch-all as a whole, each defaulting to the value the
+        # receiver holds.
+        def with_method
+          <<~RUBY
+            def with(#{with_parameters})
+              #{with_body}
+            end
+          RUBY
+        end
+
+        def with_parameters
+          parameters = property_names.map { |name| "#{name}: @#{name}" }
+          parameters << "_extra: @_extra" unless @additional_properties.nil?
+          parameters.join(", ")
+        end
+
+        def with_body
+          arguments = property_names.map { |name| "#{name}: #{name}" }
+          arguments << "_extra: _extra" unless @additional_properties.nil?
+          return "self.class.new" if arguments.empty?
+
+          "self.class.new(#{arguments.join(", ")})"
+        end
+
+        # Value equality: the class, every property, and the
+        # catch-all. The protected _extra reader answers for the
+        # other side, which the is_a? guard narrows to instances.
+        def equality_method
+          terms = ["other.is_a?(self.class)"]
+          terms.concat(
+            property_names.map { |name| "other.#{name} == @#{name}" },
+          )
+          terms << "other._extra == @_extra" unless @additional_properties.nil?
+          <<~RUBY
+            def ==(other)
+              #{terms.join(" && ")}
+            end
+
+            alias eql? ==
+          RUBY
+        end
+
+        # The hash pair of the equality trio: the class keeps
+        # subclasses with equal properties from colliding in Hashes.
+        def hash_method
+          values = property_names.map { |name| "@#{name}" }
+          values << "@_extra" unless @additional_properties.nil?
+          <<~RUBY
+            def hash
+              [self.class, #{values.join(", ")}].hash
+            end
+          RUBY
+        end
+
+        # The catch-all reader equality compares through: protected,
+        # so only instances reach it, and underscored like the
+        # keyword to stay clear of property readers.
+        def protected_extra_reader
+          <<~RUBY
+            protected
+
+            attr_reader :_extra
+          RUBY
+        end
+
+        def property_names
+          return [] if @properties.nil?
+
+          @properties.keys
         end
 
         # The original-name key map the class carries: known
@@ -74,6 +171,8 @@ module Schematrix
         end
 
         def from_h_body
+          return immutable_from_h_body if immutable?
+
           kwargs = load_kwargs
           assignments = load_assignments
           construction = kwargs.empty? ? "new" : "new(#{kwargs.join(",\n")})"
@@ -94,6 +193,36 @@ module Schematrix
             lines << "end"
           end
           lines << "instance"
+          lines.join("\n")
+        end
+
+        # The immutable from_h: one construction call, every slot
+        # through the constructor keyword it owns. Defaulted
+        # properties assign only when the document carries their key,
+        # so absence keeps the default, and the unknown keys gather
+        # into the _extra: keyword.
+        def immutable_from_h_body
+          lines = ["kwargs = {}"]
+          defaulted_free_properties.each do |name|
+            lines << "kwargs[:#{name}] = #{load_value(name)}"
+          end
+          defaulted_properties.each do |name|
+            lines << "kwargs[:#{name}] = #{load_value(name)} " \
+              "if hash.key?(#{original_key_of(name).inspect})"
+          end
+          if @additional_properties
+            lines << "kwargs[:_extra] = " \
+              "hash.each_with_object({}) do |(key, value), extras|"
+            unless @property_keys.empty?
+              lines << "  next if ORIGINAL_KEYS.key?(key)"
+            end
+            rider = extra_conversion? ? "coerce_extra(value)" : "value"
+            lines << "  extras[key] = #{rider}"
+            lines << "end"
+          end
+          return "new" if lines.size == 1
+
+          lines << "new(**kwargs)"
           lines.join("\n")
         end
 
