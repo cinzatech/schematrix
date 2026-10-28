@@ -107,6 +107,12 @@ call into. The pipeline hands it the whole compiled record set through
 static paths it claims for collision detection:
 
 ```ruby
+objects =
+  Schematrix.generate(
+    generators: [],
+    input_files: ["person.schema.json"],
+  )
+
 helper = Schematrix::Generators::AuxiliaryFiles.new("out", "MyApp")
 helper.run_once_target_paths
 # => ["out/coercion_helper.rb", "out/coercion_helper.rbs"]

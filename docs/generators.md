@@ -32,14 +32,15 @@ For each object schema the compiler found, one file per class:
 - `from_h` and `to_h` for loading and dumping, with one `coerce_`
   method per property whose values carry a nested class or a coercing
   scalar format. Each conversion is a frozen literal mirroring the
-  slot's type structure, interpreted by one `coerce_spec` method the
-  class emits next to the delegations, so arrays, tuples, maps,
-  catch-all values, and union branches all convert; class entries
-  dispatch through a shared `coerce_class_slot` that carries the
-  symmetric load/dump dispatch once, and a slot that is one scalar
-  coercer delegates to it directly. The built-in coercers the file
-  calls are emitted next to the helpers (a project coercer is
-  referenced by name).
+  slot's type structure. The property methods hand their literals to
+  `CoercionHelper.coerce_spec`, the interpreter the `auxiliary_files`
+  generator writes once per output directory, so arrays, tuples,
+  maps, catch-all values, and union branches all convert; class
+  entries dispatch through `CoercionHelper.coerce_class_slot`, which
+  carries the symmetric load/dump dispatch once, and a slot that is
+  one scalar coercer calls it directly. The built-in coercers the
+  file calls are emitted next to the delegations (a project coercer
+  is referenced by name).
 
 The details live in [Generated code](generated-code.md).
 
