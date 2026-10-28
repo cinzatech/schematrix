@@ -132,7 +132,7 @@ module Schematrix
         input_files = Array(params[:input])
         module_name = params[:module]
 
-        generator_names = Array(params[:generators]).uniq
+        generator_names = Array(params[:generators])
 
         unknown = generator_names - GENERATORS.keys
         unless unknown.empty?
@@ -162,6 +162,7 @@ module Schematrix
         generators =
           output_dirs
             .zip(generator_names)
+            .uniq
             .map do |(output_dir, name)|
               generator_class = GENERATORS.fetch(name)
               generator_class.new(
