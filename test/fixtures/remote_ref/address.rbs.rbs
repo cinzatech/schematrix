@@ -11,10 +11,6 @@ module M
 
     def []=: (String, top) -> top
 
-    def self.coerce_class_slot: (top value, top klass) -> top
-
-    def self.coerce_spec: (top value, top spec) -> top
-
     def self.coerce_zip: (top value) -> top
 
     def self.from_h: (Hash[String, top] hash) -> Address

@@ -84,8 +84,12 @@ Rules:
   the coercer, an instance dumps through it, arrays convert
   elementwise (tuple positions each through their own coercer), maps
   and catch-all riders convert their values, and union branches
-  dispatch on the value's class. The converter is emitted into the
-  file, so these slots need no gem at runtime.
+  dispatch on the value's class. Every conversion is a frozen literal
+  that the property's `coerce_` method hands to the shared
+  `CoercionHelper` module: the file the `coercion_helper` generator
+  writes once per output directory, and that every converting class
+  file requires. Generated code depends on nothing but the generated
+  set itself.
 - A property with a schema `default` keeps that default when the key is
   absent from the hash. `from_h` assigns defaulted properties only when
   the key is present.

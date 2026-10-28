@@ -45,8 +45,10 @@ any file is written. See [Names and files](naming.md).
 
 Required. One or more generator names, given as repeated flags or as a
 comma-separated list. The names are `plain_ruby`, `sorbet_ruby`, `rbi`,
-`rbs`, and the `dsl_` prefixed builders of each (`dsl_plain_ruby`,
-`dsl_sorbet_ruby`, `dsl_rbi`, `dsl_rbs`). An unknown name stops the run
+`rbs`, the `dsl_` prefixed builders of each (`dsl_plain_ruby`,
+`dsl_sorbet_ruby`, `dsl_rbi`, `dsl_rbs`), and `coercion_helper`, the
+run-once auxiliary generator behind the shared coercion module (see
+[generators](generators.md)). An unknown name stops the run
 with a fatal log message and exit status 1.
 
 ```sh

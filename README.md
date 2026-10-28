@@ -58,10 +58,12 @@ Given this JSON Schema (`person.schema.json`):
 Run:
 
 ```sh
-schematrix -g plain_ruby -m MyApp -o app/generated person.schema.json
+schematrix -g plain_ruby -g coercion_helper -m MyApp -o app/generated person.schema.json
 ```
 
-This produces `app/generated/person.rb`:
+This produces `app/generated/person.rb` plus the shared
+`app/generated/coercion_helper.rb` module (see
+[generators](docs/generators.md)):
 
 ```ruby
 # DO NOT EDIT MANUALLY
@@ -147,7 +149,7 @@ Options:
                            classes with no catch-all, instead of the spec
                            default
   -g, --generators list    Output generators to use, e.g.: plain_ruby,
-                           dsl_plain_ruby
+                           coercion_helper
   -h, --help               Print usage
       --immutable          Generate data classes as frozen value objects:
                            readers, a with copier, and value equality; data
@@ -174,7 +176,7 @@ in the [command line manual](docs/cli.md).
 Generate plain Ruby classes for a single schema:
 
 ```sh
-schematrix -g plain_ruby -m MyApp -o app/generated schema.json
+schematrix -g plain_ruby -g coercion_helper -m MyApp -o app/generated schema.json
 ```
 
 Process multiple schemas at once:
@@ -186,13 +188,13 @@ schematrix -g rbs -m Contracts user.schema.json order.schema.json
 Or even:
 
 ```sh
-schematrix -g plain_ruby -m Contracts *.schema.json
+schematrix -g plain_ruby -g coercion_helper -m Contracts *.schema.json
 ```
 
 You might specify different output directories for different generators like so:
 
 ```sh
-schematrix -g plain_ruby -o generated -g rbi -o rbi *.schema.json
+schematrix -g plain_ruby -o generated -g rbi -o rbi -g coercion_helper -o generated *.schema.json
 ```
 
 ### Resolving remote schemas

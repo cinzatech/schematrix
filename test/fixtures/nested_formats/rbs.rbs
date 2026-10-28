@@ -20,10 +20,6 @@ module M
 
     def []=: (String, Date?) -> Date?
 
-    def self.coerce_class_slot: (top value, top klass) -> top
-
-    def self.coerce_spec: (top value, top spec) -> top
-
     def self.coerce_extra: (top value) -> top
 
     def self.coerce_log: (top value) -> top

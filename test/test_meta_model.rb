@@ -24,6 +24,11 @@ class TestMetaModel < Minitest::Test
             "Schematrix::Meta",
             command: "rake meta:generate",
           ),
+          Schematrix::Generators::CoercionHelper.new(
+            dir,
+            "Schematrix::Meta",
+            command: "rake meta:generate",
+          ),
         ],
         input_files: [METASCHEMA],
       )
@@ -32,7 +37,7 @@ class TestMetaModel < Minitest::Test
         Dir["#{COMMITTED}/**/*.rb"].map { |path| path.delete_prefix(COMMITTED) }
       fresh = Dir["#{dir}/**/*.rb"].map { |path| path.delete_prefix(dir) }
 
-      assert_equal ["/schema.rb"], committed
+      assert_equal %w[/coercion_helper.rb /schema.rb], committed
       assert_equal committed, fresh
 
       committed.each_with_index do |relative, index|
@@ -63,7 +68,7 @@ class TestMetaModel < Minitest::Test
 
   def test_model_is_one_recursive_class
     assert_kind_of Class, Schematrix::Meta::Schema
-    assert_empty Schematrix::Meta.constants - %i[Schema]
+    assert_empty Schematrix::Meta.constants - %i[Schema CoercionHelper]
   end
 
   private

@@ -26,10 +26,6 @@ module M
 
     def []=: (String, top) -> top
 
-    def self.coerce_class_slot: (top value, top klass) -> top
-
-    def self.coerce_spec: (top value, top spec) -> top
-
     def self.coerce_refonly: (top value) -> top
 
     def self.coerce_both: (top value) -> top

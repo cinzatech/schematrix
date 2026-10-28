@@ -1,3 +1,7 @@
+<% if uses_coercion_helper? %>
+<%= coercion_helper_require %>
+
+<% end %>
 module <%= @module_name %>
 <%= declaration_open %>
     <% unless @property_keys.empty? %>
@@ -27,10 +31,6 @@ module <%= @module_name %>
 
     <%= immutable_surface %>
     <% end %>
-<% unless coercion_helpers.empty? %>
-
-    <%= coercion_helpers %>
-<% end %>
 <% property_coercions.each do |name, plan| %>
 <% next if plan.nil? %>
 
@@ -40,6 +40,10 @@ module <%= @module_name %>
     <%= from_h_method %>
 
     <%= to_h_method %>
+    <% if catch_all_spec %>
+
+    <%= extra_helper_body %>
+    <% end %>
     <% if immutable? && !@additional_properties.nil? %>
 
     <%= protected_extra_reader %>

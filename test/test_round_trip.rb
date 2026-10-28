@@ -132,7 +132,10 @@ class TestRoundTrip < Minitest::Test
       File.write(schema, schema_source)
       output = File.join(dir, "out")
       Schematrix.generate(
-        generators: [Schematrix::Generators::PlainRuby.new(output, "Gen")],
+        generators: [
+          Schematrix::Generators::PlainRuby.new(output, "Gen"),
+          Schematrix::Generators::CoercionHelper.new(output, "Gen"),
+        ],
         input_files: [schema],
       )
 

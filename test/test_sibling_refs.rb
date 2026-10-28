@@ -106,6 +106,7 @@ class TestSiblingRefs < Minitest::Test
       Schematrix.generate(
         generators: [
           Schematrix::Generators::PlainRuby.new(output, MODULE_NAME),
+          Schematrix::Generators::CoercionHelper.new(output, MODULE_NAME),
         ],
         input_files: [schema],
       )
@@ -117,6 +118,7 @@ class TestSiblingRefs < Minitest::Test
           .sort
       assert_equal(
         %w[
+          coercion_helper.rb
           sibling_refs.rb
           sibling_refs/defs/contact.rb
           sibling_refs/defs/info.rb

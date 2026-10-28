@@ -1,7 +1,7 @@
 require "minitest/autorun"
 require "uri"
 require_relative "../lib/schematrix"
-require_relative "../lib/schematrix/generators/base"
+require_relative "../lib/schematrix/generators"
 
 module SchematrixTestHelper
   MODULE_NAME = "M"
@@ -119,5 +119,21 @@ module SchematrixTestHelper
       filename = "#{prefix}.#{generator_name}#{ext}"
     end
     File.join(FIXTURES_DIR, fixture_name, filename)
+  end
+
+  # The auxiliary coercion helper module is identical for every run:
+  # compare it against the fixture's hand-authored copy.
+  def assert_aux_golden(fixture_name, filename)
+    generator =
+      Schematrix::Generators::CoercionHelper.new(
+        "/tmp",
+        MODULE_NAME,
+        command: "schematrix",
+      )
+    expected = File.read(File.join(FIXTURES_DIR, fixture_name, filename))
+
+    assert_equal expected,
+                 generator.run_once_render.fetch(filename),
+                 "Output mismatch for auxiliary file #{filename}"
   end
 end

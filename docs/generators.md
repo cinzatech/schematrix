@@ -158,6 +158,31 @@ module MyApp
 end
 ```
 
+## coercion_helper
+
+A run-once auxiliary generator. It writes no classes: it writes one
+`coercion_helper.rb` (plus `coercion_helper.rbs` declarations) per
+output directory, holding the `CoercionHelper` module the data
+formats' coercion methods call into. `coerce_class_slot` is the
+class-shaped dispatch (a `Hash` loads through the target class's
+`from_h`, an instance dumps through its `to_h`, anything else passes
+through); `coerce_spec` is the interpreter that walks a conversion
+literal and handles arrays, tuple positions, maps, union branches and
+formatted scalars.
+
+Any run that selects a data generator selects `coercion_helper`
+alongside it, pointed at the same output directory:
+
+```sh
+schematrix -g plain_ruby -g coercion_helper -m MyApp -o app/generated person.schema.json
+```
+
+Every generated class whose slots convert `require_relative`s the
+module and calls into it through qualified names, so the files still
+load in any order and generated code depends on nothing but the
+generated set itself. A run that omits the helper leaves those
+requires dangling, which fails at load time.
+
 ## Type mappings
 
 How a JSON Schema type renders per notation:

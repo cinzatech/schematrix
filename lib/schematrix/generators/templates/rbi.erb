@@ -32,18 +32,6 @@ module <%= @module_name %>
     <%= sorbet_hash_signature %>
     def hash; end
     <% end %>
-<% if conversions? %>
-<% if spec_uses_class_slot? %>
-
-    <%= sorbet_coercion_helper_signature %>
-    def self.coerce_class_slot(value, klass); end
-<% end %>
-<% if interpreter? %>
-
-    <%= sorbet_spec_helper_signature %>
-    def self.coerce_spec(value, spec); end
-<% end %>
-<% end %>
 <% if catch_all_spec %>
 
     <%= sorbet_coercion_signature %>

@@ -155,11 +155,12 @@ class TestGenerate < Minitest::Test
     {
       "type": "object",
       "properties": {
-        "class_slot": {
+        "extra": {
           "type": "object",
           "properties": { "value": { "type": "string" } }
         }
-      }
+      },
+      "additionalProperties": { "type": "string", "format": "date" }
     }
   JSON
   def test_coerced_helper_named_property_raises
@@ -180,7 +181,7 @@ class TestGenerate < Minitest::Test
           )
         end
 
-      assert_includes error.message, "class_slot"
+      assert_includes error.message, "extra"
     end
   end
 

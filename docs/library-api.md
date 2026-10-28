@@ -97,6 +97,21 @@ generator.write(locator, node) # renders, formats, writes, returns the path
   equality. The data generators accept it; the `dsl_` builders refuse
   it. See [Immutable classes](generated-code.md).
 
+Run-once generators write auxiliary files once per run instead of one
+file per locator. `Schematrix::Generators::CoercionHelper` is the one
+built-in: it takes the same constructor arguments and writes the
+shared `CoercionHelper` module that the data formats' coercion methods
+call into. The pipeline hands it the whole compiled record set through
+`write_run_once(objects)`, and `run_once_target_paths` lists the
+static paths it claims for collision detection:
+
+```ruby
+helper = Schematrix::Generators::CoercionHelper.new("out", "MyApp")
+helper.run_once_target_paths
+# => ["out/coercion_helper.rb", "out/coercion_helper.rbs"]
+helper.write_run_once(objects)
+```
+
 ## Scalar types
 
 `scalar_types` customizes how scalar slots render, per notation, and

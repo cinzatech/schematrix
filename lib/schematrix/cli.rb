@@ -1,6 +1,6 @@
 require "tty-option"
 
-require_relative "generators/base"
+require_relative "generators"
 
 # Splits a comma-separated option value into its elements. A custom
 # conversion instead of the built-in `:list`: tty-option treats every
@@ -52,7 +52,7 @@ module Schematrix
       short "-g"
       long "--generators list"
       convert :comma
-      desc "Output generators to use, e.g.: plain_ruby, dsl_plain_ruby"
+      desc "Output generators to use, e.g.: plain_ruby, coercion_helper"
     end
 
     option :output do

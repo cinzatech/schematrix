@@ -48,7 +48,10 @@ class TestScalarTypes < Minitest::Test
       JSON
       output = File.join(dir, "out")
       Schematrix.generate(
-        generators: [Schematrix::Generators::PlainRuby.new(output, "Events")],
+        generators: [
+          Schematrix::Generators::PlainRuby.new(output, "Events"),
+          Schematrix::Generators::CoercionHelper.new(output, "Events"),
+        ],
         input_files: [schema],
       )
 
@@ -88,7 +91,10 @@ class TestScalarTypes < Minitest::Test
       JSON
       output = File.join(dir, "out")
       Schematrix.generate(
-        generators: [Schematrix::Generators::PlainRuby.new(output, "Stamps")],
+        generators: [
+          Schematrix::Generators::PlainRuby.new(output, "Stamps"),
+          Schematrix::Generators::CoercionHelper.new(output, "Stamps"),
+        ],
         input_files: [schema],
       )
       load File.join(output, "stamp.rb")
@@ -336,7 +342,10 @@ class TestScalarTypes < Minitest::Test
       JSON
       output = File.join(dir, "out")
       Schematrix.generate(
-        generators: [Schematrix::Generators::PlainRuby.new(output, "Nested")],
+        generators: [
+          Schematrix::Generators::PlainRuby.new(output, "Nested"),
+          Schematrix::Generators::CoercionHelper.new(output, "Nested"),
+        ],
         input_files: [schema],
       )
       load File.join(output, "nested.rb")
@@ -395,7 +404,10 @@ class TestScalarTypes < Minitest::Test
       JSON
       output = File.join(dir, "out")
       Schematrix.generate(
-        generators: [Schematrix::Generators::PlainRuby.new(output, "Unions")],
+        generators: [
+          Schematrix::Generators::PlainRuby.new(output, "Unions"),
+          Schematrix::Generators::CoercionHelper.new(output, "Unions"),
+        ],
         input_files: [schema],
       )
       load File.join(output, "union/defs/money.rb")
@@ -451,7 +463,10 @@ class TestScalarTypes < Minitest::Test
       JSON
       output = File.join(dir, "out")
       Schematrix.generate(
-        generators: [Schematrix::Generators::PlainRuby.new(output, "Riders")],
+        generators: [
+          Schematrix::Generators::PlainRuby.new(output, "Riders"),
+          Schematrix::Generators::CoercionHelper.new(output, "Riders"),
+        ],
         input_files: [schema],
       )
       load File.join(output, "rider.rb")
@@ -492,9 +507,9 @@ class TestScalarTypes < Minitest::Test
       )
       code = File.read(File.join(output, "rider.rbi"))
 
-      assert_includes code, "def self.coerce_class_slot(value, klass)"
-      assert_includes code, "def self.coerce_spec(value, spec)"
       assert_includes code, "def self.coerce_extra(value)"
+      refute_includes code, "def self.coerce_class_slot(value, klass)"
+      refute_includes code, "def self.coerce_spec(value, spec)"
     end
   end
 
@@ -532,7 +547,10 @@ class TestScalarTypes < Minitest::Test
       JSON
       output = File.join(dir, "out")
       Schematrix.generate(
-        generators: [Schematrix::Generators::PlainRuby.new(output, "Nesteds")],
+        generators: [
+          Schematrix::Generators::PlainRuby.new(output, "Nesteds"),
+          Schematrix::Generators::CoercionHelper.new(output, "Nesteds"),
+        ],
         input_files: [schema],
       )
       load File.join(output, "nested_union/defs/money.rb")
