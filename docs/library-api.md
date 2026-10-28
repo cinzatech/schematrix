@@ -11,6 +11,7 @@ Schematrix.generate(
   generators: [
     Schematrix::Generators::PlainRuby.new("generated", "MyApp"),
     Schematrix::Generators::Rbs.new("sig", "MyApp"),
+    Schematrix::Generators::AuxiliaryFiles.new("generated", "MyApp"),
   ],
   input_files: ["person.schema.json"],
 )
