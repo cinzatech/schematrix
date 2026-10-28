@@ -186,12 +186,6 @@ a class with only such slots emits no reference to the module. A run
 that omits the auxiliary generator leaves the requires dangling,
 which fails at load time.
 
-Every generated class whose slots convert `require_relative`s the
-module and calls into it through qualified names, so the files still
-load in any order and generated code depends on nothing but the
-generated set itself. A run that omits the helper leaves those
-requires dangling, which fails at load time.
-
 ## Type mappings
 
 How a JSON Schema type renders per notation:
