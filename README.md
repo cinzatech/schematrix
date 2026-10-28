@@ -149,7 +149,7 @@ Options:
                            classes with no catch-all, instead of the spec
                            default
   -g, --generators list    Output generators to use, e.g.: plain_ruby,
-                           coercion_helper
+                           auxiliary_files
   -h, --help               Print usage
       --immutable          Generate data classes as frozen value objects:
                            readers, a with copier, and value equality; data

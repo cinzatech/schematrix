@@ -86,7 +86,7 @@ Rules:
   and catch-all riders convert their values, and union branches
   dispatch on the value's class. Every conversion is a frozen literal
   that the property's `coerce_` method hands to the shared
-  `CoercionHelper` module: the file the `coercion_helper` generator
+  `CoercionHelper` module: the file the `auxiliary_files` generator
   writes once per output directory, and that every converting class
   file requires. Generated code depends on nothing but the generated
   set itself.

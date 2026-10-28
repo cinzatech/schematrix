@@ -158,19 +158,20 @@ module MyApp
 end
 ```
 
-## coercion_helper
+## auxiliary_files
 
-A run-once auxiliary generator. It writes no classes: it writes one
-`coercion_helper.rb` (plus `coercion_helper.rbs` declarations) per
-output directory, holding the `CoercionHelper` module the data
-formats' coercion methods call into. `coerce_class_slot` is the
+The auxiliary-files generator. It is run-once: it writes no classes;
+it writes one `coercion_helper.rb` (plus `coercion_helper.rbs`
+declarations) per output directory, holding the `CoercionHelper`
+module the data formats' coercion methods call into. Later auxiliary
+files join the same run. `coerce_class_slot` is the
 class-shaped dispatch (a `Hash` loads through the target class's
 `from_h`, an instance dumps through its `to_h`, anything else passes
 through); `coerce_spec` is the interpreter that walks a conversion
 literal and handles arrays, tuple positions, maps, union branches and
 formatted scalars.
 
-Any run that selects a data generator selects `coercion_helper`
+Any run that selects a data generator selects `auxiliary_files`
 alongside it, pointed at the same output directory:
 
 ```sh
