@@ -34,7 +34,7 @@ namespace :meta do
           "Schematrix::Meta",
           command: "rake meta:generate",
         ),
-        Schematrix::Generators::CoercionHelper.new(
+        Schematrix::Generators::AuxiliaryFiles.new(
           output,
           "Schematrix::Meta",
           command: "rake meta:generate",

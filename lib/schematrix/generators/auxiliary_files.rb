@@ -6,7 +6,7 @@ module Schematrix
     # A run-once generator: the pipeline hands it the whole compiled
     # record set instead of one locator at a time, and the files land
     # next to the class files that require_relative them.
-    class CoercionHelper < Base
+    class AuxiliaryFiles < Base
       def self.run_once? = true
 
       def self.immutable_supported? = false

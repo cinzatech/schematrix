@@ -260,7 +260,7 @@ class TestImmutable < Minitest::Test
       Schematrix.generate(
         generators: [
           Schematrix::Generators::PlainRuby.new(output, "Gen", immutable: true),
-          Schematrix::Generators::CoercionHelper.new(output, "Gen"),
+          Schematrix::Generators::AuxiliaryFiles.new(output, "Gen"),
         ],
         input_files: [schema],
       )

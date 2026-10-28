@@ -52,7 +52,7 @@ module Schematrix
       short "-g"
       long "--generators list"
       convert :comma
-      desc "Output generators to use, e.g.: plain_ruby, coercion_helper"
+      desc "Output generators to use, e.g.: plain_ruby, auxiliary_files"
     end
 
     option :output do

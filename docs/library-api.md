@@ -5,7 +5,7 @@ The CLI wraps one entry point. Require the gem and call
 
 ```ruby
 require "schematrix"
-require "schematrix/generators/base"
+require "schematrix/generators"
 
 Schematrix.generate(
   generators: [
@@ -98,7 +98,7 @@ generator.write(locator, node) # renders, formats, writes, returns the path
   it. See [Immutable classes](generated-code.md).
 
 Run-once generators write auxiliary files once per run instead of one
-file per locator. `Schematrix::Generators::CoercionHelper` is the one
+file per locator. `Schematrix::Generators::AuxiliaryFiles` is the one
 built-in: it takes the same constructor arguments and writes the
 shared `CoercionHelper` module that the data formats' coercion methods
 call into. The pipeline hands it the whole compiled record set through
@@ -106,7 +106,7 @@ call into. The pipeline hands it the whole compiled record set through
 static paths it claims for collision detection:
 
 ```ruby
-helper = Schematrix::Generators::CoercionHelper.new("out", "MyApp")
+helper = Schematrix::Generators::AuxiliaryFiles.new("out", "MyApp")
 helper.run_once_target_paths
 # => ["out/coercion_helper.rb", "out/coercion_helper.rbs"]
 helper.write_run_once(objects)

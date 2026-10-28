@@ -50,7 +50,7 @@ class TestScalarTypes < Minitest::Test
       Schematrix.generate(
         generators: [
           Schematrix::Generators::PlainRuby.new(output, "Events"),
-          Schematrix::Generators::CoercionHelper.new(output, "Events"),
+          Schematrix::Generators::AuxiliaryFiles.new(output, "Events"),
         ],
         input_files: [schema],
       )
@@ -93,7 +93,7 @@ class TestScalarTypes < Minitest::Test
       Schematrix.generate(
         generators: [
           Schematrix::Generators::PlainRuby.new(output, "Stamps"),
-          Schematrix::Generators::CoercionHelper.new(output, "Stamps"),
+          Schematrix::Generators::AuxiliaryFiles.new(output, "Stamps"),
         ],
         input_files: [schema],
       )
@@ -344,7 +344,7 @@ class TestScalarTypes < Minitest::Test
       Schematrix.generate(
         generators: [
           Schematrix::Generators::PlainRuby.new(output, "Nested"),
-          Schematrix::Generators::CoercionHelper.new(output, "Nested"),
+          Schematrix::Generators::AuxiliaryFiles.new(output, "Nested"),
         ],
         input_files: [schema],
       )
@@ -406,7 +406,7 @@ class TestScalarTypes < Minitest::Test
       Schematrix.generate(
         generators: [
           Schematrix::Generators::PlainRuby.new(output, "Unions"),
-          Schematrix::Generators::CoercionHelper.new(output, "Unions"),
+          Schematrix::Generators::AuxiliaryFiles.new(output, "Unions"),
         ],
         input_files: [schema],
       )
@@ -465,7 +465,7 @@ class TestScalarTypes < Minitest::Test
       Schematrix.generate(
         generators: [
           Schematrix::Generators::PlainRuby.new(output, "Riders"),
-          Schematrix::Generators::CoercionHelper.new(output, "Riders"),
+          Schematrix::Generators::AuxiliaryFiles.new(output, "Riders"),
         ],
         input_files: [schema],
       )
@@ -549,7 +549,7 @@ class TestScalarTypes < Minitest::Test
       Schematrix.generate(
         generators: [
           Schematrix::Generators::PlainRuby.new(output, "Nesteds"),
-          Schematrix::Generators::CoercionHelper.new(output, "Nesteds"),
+          Schematrix::Generators::AuxiliaryFiles.new(output, "Nesteds"),
         ],
         input_files: [schema],
       )

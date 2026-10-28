@@ -174,7 +174,7 @@ Any run that selects a data generator selects `coercion_helper`
 alongside it, pointed at the same output directory:
 
 ```sh
-schematrix -g plain_ruby -g coercion_helper -m MyApp -o app/generated person.schema.json
+schematrix -g plain_ruby -g auxiliary_files -m MyApp -o app/generated person.schema.json
 ```
 
 Every generated class whose slots convert `require_relative`s the

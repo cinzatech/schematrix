@@ -134,7 +134,7 @@ class TestRoundTrip < Minitest::Test
       Schematrix.generate(
         generators: [
           Schematrix::Generators::PlainRuby.new(output, "Gen"),
-          Schematrix::Generators::CoercionHelper.new(output, "Gen"),
+          Schematrix::Generators::AuxiliaryFiles.new(output, "Gen"),
         ],
         input_files: [schema],
       )

@@ -459,18 +459,4 @@ module Schematrix
       def format_code(code) = @format ? SyntaxTree::RBS.format(code) : code
     end
   end
-
-  # The generator registry the CLI resolves `-g` names against:
-  # `plain_ruby`, `rbs`, `sorbet_ruby`, `rbi`, and the dsl_ prefixed
-  # builders of each.
-  GENERATORS = {
-    "plain_ruby" => Generators::PlainRuby,
-    "rbs" => Generators::Rbs,
-    "sorbet_ruby" => Generators::SorbetRuby,
-    "rbi" => Generators::Rbi,
-    "dsl_plain_ruby" => Generators::DslPlainRuby,
-    "dsl_sorbet_ruby" => Generators::DslSorbetRuby,
-    "dsl_rbi" => Generators::DslRbi,
-    "dsl_rbs" => Generators::DslRbs,
-  }.freeze
 end

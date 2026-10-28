@@ -125,7 +125,7 @@ module SchematrixTestHelper
   # compare it against the fixture's hand-authored copy.
   def assert_aux_golden(fixture_name, filename)
     generator =
-      Schematrix::Generators::CoercionHelper.new(
+      Schematrix::Generators::AuxiliaryFiles.new(
         "/tmp",
         MODULE_NAME,
         command: "schematrix",

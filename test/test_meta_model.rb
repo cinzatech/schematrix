@@ -24,7 +24,7 @@ class TestMetaModel < Minitest::Test
             "Schematrix::Meta",
             command: "rake meta:generate",
           ),
-          Schematrix::Generators::CoercionHelper.new(
+          Schematrix::Generators::AuxiliaryFiles.new(
             dir,
             "Schematrix::Meta",
             command: "rake meta:generate",
