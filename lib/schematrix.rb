@@ -89,6 +89,8 @@ module Schematrix
       logger&.info "Writing auxiliary output for #{generator.class}"
       generator.write_run_once(objects)
     end
+
+    objects
   end
 
   # Checks that every generator writing every compiled locator lands
