@@ -51,8 +51,8 @@ the auxiliary files (see [generators](generators.md)). An unknown name stops the
 with a fatal log message and exit status 1.
 
 ```sh
-schematrix -g plain_ruby,rbs -m MyApp schema.json
-schematrix -g plain_ruby -g rbs -m MyApp schema.json
+schematrix -g plain_ruby,rbs,auxiliary_files -m MyApp schema.json
+schematrix -g plain_ruby -g rbs -g auxiliary_files -m MyApp schema.json
 ```
 
 ### `-m, --module`
