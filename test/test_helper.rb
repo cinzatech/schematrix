@@ -1,7 +1,7 @@
 require "minitest/autorun"
 require "uri"
 require_relative "../lib/schematrix"
-require_relative "../lib/schematrix/generators/base"
+require_relative "../lib/schematrix/generators"
 
 module SchematrixTestHelper
   MODULE_NAME = "M"
@@ -13,9 +13,8 @@ module SchematrixTestHelper
 
   private
 
-  # Fixtures are hand-authored target state (hard rule, D15 in the
-  # worklog): never write the expected files from generator output, and
-  # never add a mode here that does.
+  # Fixtures are hand-authored target state: never write the expected
+  # files from generator output, and never add a mode here that does.
   def assert_fixture(
     fixture_name,
     generator_name,
@@ -120,5 +119,21 @@ module SchematrixTestHelper
       filename = "#{prefix}.#{generator_name}#{ext}"
     end
     File.join(FIXTURES_DIR, fixture_name, filename)
+  end
+
+  # The auxiliary coercion helper module is identical for every run:
+  # compare it against the fixture's hand-authored copy.
+  def assert_aux_golden(fixture_name, filename)
+    generator =
+      Schematrix::Generators::AuxiliaryFiles.new(
+        "/tmp",
+        MODULE_NAME,
+        command: "schematrix",
+      )
+    expected = File.read(File.join(FIXTURES_DIR, fixture_name, filename))
+
+    assert_equal expected,
+                 generator.run_once_render.fetch(filename),
+                 "Output mismatch for auxiliary file #{filename}"
   end
 end

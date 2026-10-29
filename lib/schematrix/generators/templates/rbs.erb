@@ -29,22 +29,6 @@ module <%= @module_name %>
     def _extra: () -> Hash[String, <%= rbs_additional_properties_type %>]
     <% end %>
     <% end %>
-    <% if legacy_conversions? %>
-
-    def self.coerce_class_slot: (<%= untyped %> value, <%= untyped %> klass) -> <%= untyped %>
-
-    def self.coerce_array_slot: (<%= untyped %> value, <%= untyped %> klass) -> <%= untyped %>
-
-    def self.coerce_map_slot: (<%= untyped %> value, <%= untyped %> klass) -> <%= untyped %>
-    <% end %>
-    <% if spec_conversions? || catch_all_spec %>
-    <% if spec_uses_class_slot? %>
-
-    def self.coerce_class_slot: (<%= untyped %> value, <%= untyped %> klass) -> <%= untyped %>
-    <% end %>
-
-    def self.coerce_spec: (<%= untyped %> value, <%= untyped %> spec) -> <%= untyped %>
-    <% end %>
     <% if catch_all_spec %>
 
     def self.coerce_extra: (<%= untyped %> value) -> <%= untyped %>

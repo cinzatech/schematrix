@@ -62,7 +62,7 @@ end
 $LOAD_PATH.unshift File.expand_path("lib", __dir__)
 
 require "schematrix"
-require "schematrix/generators/base"
+require "schematrix/generators"
 
 output =
   (

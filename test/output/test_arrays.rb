@@ -51,6 +51,38 @@ class TestArrays < Minitest::Test
     assert_fixture("array_of_objects", "rbi")
   end
 
+  def test_mixed_tuple_plain_ruby
+    assert_fixture("mixed_tuple", "plain_ruby")
+  end
+
+  def test_mixed_tuple_rbs
+    assert_fixture("mixed_tuple", "rbs")
+  end
+
+  def test_mixed_tuple_sorbet_ruby
+    assert_fixture("mixed_tuple", "sorbet_ruby")
+  end
+
+  def test_mixed_tuple_rbi
+    assert_fixture("mixed_tuple", "rbi")
+  end
+
+  def test_tuple_scalar_prefix_plain_ruby
+    assert_fixture("tuple_scalar_prefix", "plain_ruby")
+  end
+
+  def test_tuple_scalar_prefix_rbs
+    assert_fixture("tuple_scalar_prefix", "rbs")
+  end
+
+  def test_tuple_scalar_prefix_sorbet_ruby
+    assert_fixture("tuple_scalar_prefix", "sorbet_ruby")
+  end
+
+  def test_tuple_scalar_prefix_rbi
+    assert_fixture("tuple_scalar_prefix", "rbi")
+  end
+
   def test_array_no_items_plain_ruby
     assert_fixture("array_no_items", "plain_ruby")
   end

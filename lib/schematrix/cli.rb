@@ -1,6 +1,6 @@
 require "tty-option"
 
-require_relative "generators/base"
+require_relative "generators"
 
 # Splits a comma-separated option value into its elements. A custom
 # conversion instead of the built-in `:list`: tty-option treats every
@@ -52,7 +52,7 @@ module Schematrix
       short "-g"
       long "--generators list"
       convert :comma
-      desc "Output generators to use, e.g.: plain_ruby, dsl_plain_ruby"
+      desc "Output generators to use, e.g.: plain_ruby, auxiliary_files"
     end
 
     option :output do
@@ -132,7 +132,7 @@ module Schematrix
         input_files = Array(params[:input])
         module_name = params[:module]
 
-        generator_names = Array(params[:generators]).uniq
+        generator_names = Array(params[:generators])
 
         unknown = generator_names - GENERATORS.keys
         unless unknown.empty?
@@ -162,6 +162,7 @@ module Schematrix
         generators =
           output_dirs
             .zip(generator_names)
+            .uniq
             .map do |(output_dir, name)|
               generator_class = GENERATORS.fetch(name)
               generator_class.new(

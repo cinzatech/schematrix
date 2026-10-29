@@ -1,3 +1,5 @@
+require_relative "coercion_helper"
+
 module M
   class Schema
     ORIGINAL_KEYS = { "first name" => :first_name, "a/b" => :a_b }.freeze
@@ -19,34 +21,15 @@ module M
       @_extra[key] = value
     end
 
-    def self.coerce_class_slot(value, klass)
-      if value.is_a?(klass)
-        value.to_h
-      elsif value.is_a?(Hash)
-        klass.from_h(value)
-      else
-        value
-      end
-    end
-
-    def self.coerce_array_slot(value, klass)
-      return value unless value.is_a?(Array)
-
-      value.map { |element| coerce_class_slot(element, klass) }
-    end
-
-    def self.coerce_map_slot(value, klass)
-      return value unless value.is_a?(Hash)
-
-      value.transform_values { |entry| coerce_class_slot(entry, klass) }
-    end
-
     def self.coerce_first_name(value)
-      coerce_class_slot(value, M::Schema::Props::FirstName)
+      ::M::CoercionHelper.coerce_spec(
+        value,
+        [:class, M::Schema::Props::FirstName]
+      )
     end
 
     def self.coerce_a_b(value)
-      coerce_class_slot(value, M::Schema::Props::AB)
+      ::M::CoercionHelper.coerce_spec(value, [:class, M::Schema::Props::AB])
     end
 
     def self.from_h(hash)

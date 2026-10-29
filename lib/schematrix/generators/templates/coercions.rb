@@ -4,37 +4,20 @@ module Schematrix
   module Generators
     module Templates
       # Computes and renders the from_h/to_h round-trip machinery of
-      # a generated class. The symmetric dispatch (a Hash loads
-      # through the target class's from_h, an instance dumps through
-      # its to_h, everything else such as booleans and scalars passes
-      # through unchanged) is emitted once per slot shape as a shared
-      # class helper taking the target class, and one delegating
-      # class method per class-shaped property pins its own target.
-      # Map slots coerce their values, array slots their elements.
-      #
-      # A slot carrying a coercing scalar format converts through a
-      # spec: a frozen tree mirroring the type algebra of the slot
-      # (scalar leaves, arrays, maps, tuples, unions of branches),
-      # interpreted by a coerce_spec helper emitted next to the shared
-      # ones. Every rendered formatted type then converts on load and
-      # dump. A union whose branches would convert the same JSON type
-      # through different coercers cannot be attributed from the value
-      # alone and fails the run with CoercionConflictError.
+      # a generated class. Every conversion is a frozen literal
+      # mirroring the type algebra of its slot (scalar leaves,
+      # arrays, maps, tuples, unions, classes); the literals travel
+      # with the per-property delegations, and the interpreter and
+      # the class-slot dispatcher they run through live in the
+      # shared CoercionHelper module the coercion_helper generator
+      # writes once per output directory. A literal carrying a
+      # coercing scalar format claims its JSON class through a
+      # coercer, so every rendered formatted type converts on load
+      # and dump. A union whose branches would convert the same JSON
+      # type through different coercers cannot be attributed from
+      # the value alone and fails the run with CoercionConflictError.
       module Coercions
         include Resolver
-
-        # The helper a plan's kind delegates to.
-        SLOT_HELPERS = {
-          class: "class_slot",
-          array_of: "array_slot",
-          map_of: "map_slot",
-        }.freeze
-
-        # The plan kinds backed by the shared slot helpers.
-        LEGACY_KINDS = SLOT_HELPERS.keys.freeze
-
-        # The plan kinds the coerce_spec interpreter reads.
-        INTERPRETER_KINDS = %i[array map tuple union].freeze
 
         # The JSON value classes a document value has when its schema
         # type claims a coercing entry.
@@ -46,35 +29,31 @@ module Schematrix
           TYPE_NULL => [NilClass].freeze,
         }.freeze
 
-        # The coercion plan of every property, as [mangled name,
-        # plan] pairs. A plan is [kind, target] with a legacy kind
-        # (:class, :array_of, :map_of, target the relative class name)
-        # or a spec kind (target the spec subtree), or nil for
-        # properties whose values never need conversion.
+        # The conversion literal of every property, as [mangled name,
+        # literal] pairs: the nested arrays the emitted coerce_spec
+        # interpreter reads, or nil for properties whose values never
+        # need conversion.
         def property_coercions
-          @property_coercions ||=
-            coercion_plans.tap { |plans| assert_helper_names_free(plans) }
+          @property_coercions ||= compute_property_coercions
         end
 
-        def coercion_plans
-          @properties.to_h.map do |name, schema|
-            [name, coercion_plan(@path, "properties/#{name}", schema)]
-          end
-        end
-
-        # Property methods and helpers share the coerce_ namespace: a
-        # property whose mangled name is a helper name would override
-        # the helper it and its siblings delegate to. The interpreter
-        # and the catch-all join the namespace when the class emits
-        # them.
-        def assert_helper_names_free(plans)
-          coerced = plans.select { |_name, plan| plan }.map(&:first)
-          names = SLOT_HELPERS.values
-          interpreter =
-            plans.any? do |_name, plan|
-              plan && INTERPRETER_KINDS.include?(plan[0])
+        def compute_property_coercions
+          specs =
+            @properties.map do |name, schema|
+              [name, conversion_spec(@path, "properties/#{name}", schema)]
             end
-          names << "spec" if interpreter || catch_all_spec
+          assert_helper_names_free(specs)
+          specs
+        end
+
+        # Property methods and the catch-all delegation share the
+        # coerce_ namespace: a property named "extra" would override
+        # the catch-all delegation the class emits when its riders
+        # convert. The other coercion methods moved to the shared
+        # helper module, where no property name can reach them.
+        def assert_helper_names_free(specs)
+          coerced = specs.select { |_name, literal| literal }.map(&:first)
+          names = []
           names << "extra" if catch_all_spec
           clash = coerced & names
           return if clash.empty?
@@ -82,44 +61,6 @@ module Schematrix
           raise CoercionHelperCollisionError,
                 "#{@path}: properties #{clash.inspect} would override " \
                   "generated coercion helpers; rename them in the schema"
-        end
-
-        # The plan of one property: a spec tree when a coercing format
-        # appears anywhere in the slot's structure, the legacy
-        # class-shaped plan otherwise, so output for format-free
-        # schemas stays exactly as it has always been.
-        def coercion_plan(path, name, schema)
-          return nil if schema.nil?
-          return conversion_spec(path, name, schema) if format_coerced?(schema)
-
-          shaped_plan(path, name, schema)
-        end
-
-        # The first class-shaped term of the schema, mirroring the
-        # type algebra's approximations (a union of distinct refs
-        # keeps the first one; map-shaped objects coerce as maps, not
-        # classes). Order: the ref, then an object-typed class, then
-        # the variant branches in document order.
-        def shaped_plan(path, name, schema)
-          if schema.map_shaped?
-            value =
-              class_term(
-                nested_locator(path, name),
-                "additionalProperties",
-                schema.additional_properties,
-              )
-            return :map_of, value unless value.nil?
-
-            return nil
-          end
-
-          own = class_term(path, name, schema)
-          return :class, own unless own.nil?
-
-          element = element_class_term(path, name, schema)
-          return :array_of, element unless element.nil?
-
-          nil
         end
 
         # The conversion spec of a schema node, mirroring bare_type's
@@ -180,13 +121,19 @@ module Schematrix
         end
 
         # The element spec of an array term: prefix positions convert
-        # through their own specs, the tail through the items spec,
-        # and an open tail passes through.
+        # through their own specs (inline object entries have no class
+        # and convert through nothing, like the type algebra), the
+        # tail through the items spec, and an open tail passes
+        # through. Positions that convert nothing keep a nil
+        # placeholder, so every spec stays at its schema index, and
+        # the tuple form is kept whenever the schema declares prefix
+        # positions: the tail never reaches a constrained position.
         def array_spec(path, name, schema)
           nested = nested_locator(path, name)
           prefix =
-            schema.prefix_items.filter_map do |item|
+            schema.prefix_items.map do |item|
               next if item.type.include?(TYPE_BOTTOM)
+              next if item.type.include?(TYPE_OBJECT) && !item.map_shaped?
 
               conversion_spec(nested, "prefixItems", item)
             end
@@ -196,7 +143,7 @@ module Schematrix
             else
               conversion_spec(nested, "items", schema.items)
             end
-          return nil if prefix.empty? && tail.nil?
+          return nil if prefix.compact.empty? && tail.nil?
 
           element = prefix.empty? ? tail : [:tuple, prefix, tail]
           [:array, element]
@@ -339,213 +286,61 @@ module Schematrix
           class_term(nested, "items", schema.items)
         end
 
-        # The class the property's coercion dispatches through,
-        # qualified from the output module root so nested module
-        # declarations can never shadow it.
-        def coercion_class(plan)
-          "#{@module_name}::#{plan.last}"
-        end
-
-        # The shared coercion machinery, emitted once per class: the
-        # slot helpers a legacy plan delegates to, the spec
-        # interpreter when a coercing format appears in a property or
-        # in the catch-all (the extra delegation runs its subtree
-        # through the same interpreter), and the catch-all delegation
-        # when the extra riders convert. `sig` prefixes each helper
-        # when the output format annotates signatures; the spec
-        # interpreter and the catch-all take their own spellings.
-        # Classes with no conversions emit nothing.
-        def coercion_helpers(sig = nil, spec_sig: sig, leaf_sig: sig)
-          parts = []
-          if legacy_conversions?
-            prefix = sig ? "#{sig}\n" : ""
-            parts.concat(helper_bodies.map { |body| "#{prefix}#{body}" })
-          end
-          if spec_conversions? || catch_all_spec
-            if spec_uses_class_slot?
-              prefix = sig ? "#{sig}\n" : ""
-              parts << "#{prefix}#{class_slot_body}"
-            end
-            parts << spec_helper_body(spec_sig)
-          end
-          parts << extra_helper_body(leaf_sig) if catch_all_spec
-          return "" if parts.empty?
-
-          parts.join("\n\n")
-        end
-
-        # Whether any property converts through a legacy slot helper.
-        def legacy_conversions?
-          property_coercions.any? do |_name, plan|
-            plan && LEGACY_KINDS.include?(plan[0])
-          end
-        end
-
-        # Whether any property converts through the spec interpreter.
-        def spec_conversions?
-          property_coercions.any? do |_name, plan|
-            plan && INTERPRETER_KINDS.include?(plan[0])
-          end
-        end
-
-        # Whether a spec tree dispatches through coerce_class_slot,
-        # which then has to be emitted next to the interpreter.
-        def spec_uses_class_slot?
-          specs =
-            property_coercions.filter_map do |_name, plan|
-              plan if plan && spec_plan?(plan)
-            end
-          specs << catch_all_spec if catch_all_spec
-          specs.any? { |spec| spec_has_class?(spec) }
-        end
-
-        def spec_has_class?(spec)
-          case spec[0]
-          when :class
-            true
-          when :array
-            element = spec[1]
-            if element[0] == :tuple
-              element[1].any? { |sub| spec_has_class?(sub) } ||
-                (element[2] && spec_has_class?(element[2]))
-            else
-              spec_has_class?(element)
-            end
-          when :map
-            spec_has_class?(spec[1])
-          when :union
-            spec[1].any? { |sub| spec_has_class?(sub) }
-          end
-        end
-
-        def helper_bodies
-          [class_slot_body, array_slot_body, map_slot_body]
-        end
-
-        def class_slot_body
-          <<~RUBY.rstrip
-            def self.coerce_class_slot(value, klass)
-              if value.is_a?(klass)
-                value.to_h
-              elsif value.is_a?(Hash)
-                klass.from_h(value)
-              else
-                value
-              end
-            end
-          RUBY
-        end
-
-        def array_slot_body
-          <<~RUBY.rstrip
-            def self.coerce_array_slot(value, klass)
-              return value unless value.is_a?(Array)
-
-              value.map { |element| coerce_class_slot(element, klass) }
-            end
-          RUBY
-        end
-
-        def map_slot_body
-          <<~RUBY.rstrip
-            def self.coerce_map_slot(value, klass)
-              return value unless value.is_a?(Hash)
-
-              value.transform_values { |entry| coerce_class_slot(entry, klass) }
-            end
-          RUBY
-        end
-
-        # The spec interpreter: one fixed body per class carrying a
-        # coercing format, reading the frozen spec literal its
-        # delegations pass. The structural branches dispatch on the
-        # value's class; the scalar coercers apply in sequence and
-        # pass every value they do not own through.
-        def spec_helper_body(sig = nil)
-          body = <<~RUBY.rstrip
-            def self.coerce_spec(value, spec)
-              case spec[0]
-              when :coerce
-                spec[1].coerce(value)
-              when :class
-                coerce_class_slot(value, spec[1])
-              when :array
-                return value unless value.is_a?(Array)
-
-                if spec[1][0] == :tuple
-                  prefix, tail = spec[1][1], spec[1][2]
-                  value.each_with_index.map do |element, index|
-                    sub = prefix[index] || tail
-                    sub.nil? ? element : coerce_spec(element, sub)
-                  end
-                else
-                  value.map { |element| coerce_spec(element, spec[1]) }
-                end
-              when :map
-                return value unless value.is_a?(Hash)
-
-                value.transform_values { |entry| coerce_spec(entry, spec[1]) }
-              when :union
-                result = value
-                spec[1].each do |sub|
-                  case sub[0]
-                  when :class
-                    result = coerce_class_slot(result, sub[1])
-                  when :array
-                    if result.is_a?(Array)
-                      result =
-                        result.map { |element| coerce_spec(element, sub[1]) }
-                    end
-                  when :map
-                    if result.is_a?(Hash)
-                      result =
-                        result.transform_values do |entry|
-                          coerce_spec(entry, sub[1])
-                        end
-                    end
-                  when :coerce
-                    result = sub[1].coerce(result)
-                  end
-                end
-                result
-              end
-            end
-          RUBY
-          sig ? "#{sig}\n#{body}" : body
-        end
-
-        # The delegation of the extra riders to the catch-all spec.
+        # The delegation of the extra riders to the shared coercion
+        # helper module: the class's own catch-all literal, read by
+        # the module's interpreter. A property named "extra" would
+        # override this delegation and fails the collision check
+        # above.
         def extra_helper_body(sig = nil)
           body = <<~RUBY.rstrip
             def self.coerce_extra(value)
-              coerce_spec(value, #{spec_literal(catch_all_spec)})
+              ::#{@module_name}::CoercionHelper.coerce_spec(
+                value,
+                #{spec_literal(catch_all_spec)}
+              )
             end
           RUBY
           sig ? "#{sig}\n#{body}" : body
         end
 
-        # The delegation of one property to its slot: scalar leaves
-        # call the coercer directly, legacy plans delegate to the
-        # shared slot helper, and spec trees run through the
-        # interpreter with their literal.
-        def coercion_delegation(name, plan)
-          case plan[0]
-          when :coerce
+        # Whether the class references the shared coercion helper
+        # module: every delegation whose literal is more than a
+        # scalar coercer leaf runs through it, and so does the
+        # catch-all delegation.
+        def uses_coercion_helper?
+          literals = property_coercions.filter_map { |_name, literal| literal }
+          literals.any? { |literal| literal[0] != :coerce } ||
+            !catch_all_spec.nil?
+        end
+
+        # The require of the shared coercion helper module, emitted
+        # by class files that reference it. The relative path climbs
+        # one level per namespace segment of the class.
+        def coercion_helper_require
+          return "" unless uses_coercion_helper?
+
+          prefix = [".."] * (@class_name.split("::").size - 1)
+          path = (prefix + ["coercion_helper"]).join("/")
+          "require_relative #{path.inspect}"
+        end
+
+        # The delegation of one property: scalar leaves call the
+        # coercer directly, every other literal runs through the
+        # shared helper module's interpreter.
+        def coercion_delegation(name, literal)
+          if literal[0] == :coerce
             <<~RUBY.rstrip
               def self.coerce_#{name}(value)
-                #{coercion_target(plan[1])}.coerce(value)
-              end
-            RUBY
-          when :class, :array_of, :map_of
-            <<~RUBY.rstrip
-              def self.coerce_#{name}(value)
-                coerce_#{slot_helper(plan)}(value, #{coercion_class(plan)})
+                #{coercion_target(literal[1])}.coerce(value)
               end
             RUBY
           else
             <<~RUBY.rstrip
               def self.coerce_#{name}(value)
-                coerce_spec(value, #{spec_literal(plan)})
+                ::#{@module_name}::CoercionHelper.coerce_spec(
+                  value,
+                  #{spec_literal(literal)}
+                )
               end
             RUBY
           end
@@ -576,7 +371,8 @@ module Schematrix
             when :array, :map
               spec_literal(spec[1])
             when :tuple
-              "[#{spec[1].map { |sub| spec_literal(sub) }.join(", ")}], " \
+              positions = spec[1].map { |sub| sub ? spec_literal(sub) : "nil" }
+              "[#{positions.join(", ")}], " \
                 "#{spec[2] ? spec_literal(spec[2]) : "nil"}"
             when :union
               "[#{spec[1].map { |sub| spec_literal(sub) }.join(", ")}]"
@@ -585,25 +381,18 @@ module Schematrix
         end
 
         # The built-in coercers this class's conversions call through,
-        # in first-use order: the scalar leaves of every property spec
-        # and of the catch-all spec.
+        # in first-use order: the scalar leaves of every property
+        # literal and of the catch-all literal.
         def used_builtin_coercers
-          specs =
-            property_coercions.filter_map do |_name, plan|
-              plan if plan && spec_plan?(plan)
-            end
-          specs << catch_all_spec if catch_all_spec
+          literals = property_coercions.filter_map { |_name, literal| literal }
+          literals << catch_all_spec if catch_all_spec
           coercers = []
-          specs.each { |spec| collect_coercers(spec, coercers) }
+          literals.each { |literal| collect_coercers(literal, coercers) }
           coercers
             .select do |coercer|
               Schematrix::Coercers::BUILTIN.include?(coercer)
             end
             .uniq
-        end
-
-        def spec_plan?(plan)
-          plan[0] != :class && !SLOT_HELPERS.key?(plan[0])
         end
 
         def collect_coercers(spec, out)
@@ -613,7 +402,7 @@ module Schematrix
           when :array
             element = spec[1]
             if element[0] == :tuple
-              element[1].each { |sub| collect_coercers(sub, out) }
+              element[1].each { |sub| collect_coercers(sub, out) if sub }
               collect_coercers(element[2], out) if element[2]
             else
               collect_coercers(element, out)
@@ -674,9 +463,6 @@ module Schematrix
 
           "#{coercer::GENERATED_BODY.lines.first.strip}; end"
         end
-
-        # The helper implementing a plan's slot shape.
-        def slot_helper(plan) = SLOT_HELPERS.fetch(plan.first)
 
         def indented(code, levels)
           code

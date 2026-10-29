@@ -18,12 +18,6 @@ module M
 
     def []=: (String, top) -> top
 
-    def self.coerce_class_slot: (top value, top klass) -> top
-
-    def self.coerce_array_slot: (top value, top klass) -> top
-
-    def self.coerce_map_slot: (top value, top klass) -> top
-
     def self.coerce_shipping_address: (top value) -> top
 
     def self.coerce_billing_address: (top value) -> top

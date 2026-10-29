@@ -189,6 +189,7 @@ class TestDslRuntime < Minitest::Test
         generators: [
           Schematrix::Generators::PlainRuby.new(dir, "Co"),
           Schematrix::Generators::DslPlainRuby.new(dir, "Co"),
+          Schematrix::Generators::AuxiliaryFiles.new(dir, "Co"),
         ],
         input_files: [schema_file],
       )

@@ -155,11 +155,12 @@ class TestGenerate < Minitest::Test
     {
       "type": "object",
       "properties": {
-        "class_slot": {
+        "extra": {
           "type": "object",
           "properties": { "value": { "type": "string" } }
         }
-      }
+      },
+      "additionalProperties": { "type": "string", "format": "date" }
     }
   JSON
   def test_coerced_helper_named_property_raises
@@ -180,7 +181,7 @@ class TestGenerate < Minitest::Test
           )
         end
 
-      assert_includes error.message, "class_slot"
+      assert_includes error.message, "extra"
     end
   end
 
@@ -190,6 +191,37 @@ class TestGenerate < Minitest::Test
       "properties": { "class_slot": { "type": "string" } }
     }
   JSON
+
+  def test_generate_returns_the_compiled_records
+    Dir.mktmpdir do |dir|
+      schema = File.join(dir, "schema.json")
+      File.write(schema, SCALAR_HELPER_SCHEMA)
+      output = File.join(dir, "out")
+
+      result =
+        Schematrix.generate(
+          generators: [
+            Schematrix::Generators::PlainRuby.new(output, MODULE_NAME),
+            Schematrix::Generators::AuxiliaryFiles.new(output, MODULE_NAME),
+          ],
+          input_files: [schema],
+        )
+      assert_kind_of Hash, result
+      locator, node = result.first
+      assert locator.start_with?("file://")
+      assert_kind_of Schematrix::Schema, node
+
+      result =
+        Schematrix.generate(
+          generators: [
+            Schematrix::Generators::PlainRuby.new(output, MODULE_NAME),
+          ],
+          input_files: [schema],
+        )
+      assert_kind_of Hash, result
+      assert_equal 1, result.size
+    end
+  end
 
   def test_scalar_helper_named_property_generates
     Dir.mktmpdir do |dir|

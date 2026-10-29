@@ -45,13 +45,14 @@ any file is written. See [Names and files](naming.md).
 
 Required. One or more generator names, given as repeated flags or as a
 comma-separated list. The names are `plain_ruby`, `sorbet_ruby`, `rbi`,
-`rbs`, and the `dsl_` prefixed builders of each (`dsl_plain_ruby`,
-`dsl_sorbet_ruby`, `dsl_rbi`, `dsl_rbs`). An unknown name stops the run
+`rbs`, the `dsl_` prefixed builders of each (`dsl_plain_ruby`,
+`dsl_sorbet_ruby`, `dsl_rbi`, `dsl_rbs`), and `auxiliary_files`, the run-once generator that writes
+the auxiliary files (see [generators](generators.md)). An unknown name stops the run
 with a fatal log message and exit status 1.
 
 ```sh
-schematrix -g plain_ruby,rbs -m MyApp schema.json
-schematrix -g plain_ruby -g rbs -m MyApp schema.json
+schematrix -g plain_ruby,rbs,auxiliary_files -m MyApp schema.json
+schematrix -g plain_ruby -g rbs -g auxiliary_files -m MyApp schema.json
 ```
 
 ### `-m, --module`

@@ -38,10 +38,14 @@ module Schematrix
   end
 
   # Compiles every schema reachable from `input_files` and writes one
-  # file per compiled object schema per generator.
+  # file per compiled object schema per generator, plus each run-once
+  # generator's auxiliary files.
   #
   # - `generators`: generator instances, one per output format. Each
-  #   receives a `write(locator, node)` call per compiled class.
+  #   per-locator generator receives a `write(locator, node)` call
+  #   per compiled class; a run-once generator (one answering
+  #   `run_once?`) receives a single `write_run_once(objects)` call
+  #   with the whole compiled record set.
   # - `input_files`: paths to JSON or YAML schema documents. Each is a
   #   compilation root; `$ref` edges reachable from it are followed.
   # - `closed_shapes`: when true, an absent `additionalProperties`
@@ -76,25 +80,33 @@ module Schematrix
 
     assert_distinct_targets(generators, objects)
 
+    per_locator, run_once = generators.partition { |g| !g.class.run_once? }
     objects.each do |locator, node|
       logger&.info "Writing output for #{locator}"
-      generators.each { |generator| generator.write(locator, node) }
+      per_locator.each { |generator| generator.write(locator, node) }
     end
+    run_once.each do |generator|
+      logger&.info "Writing auxiliary output for #{generator.class}"
+      generator.write_run_once(objects)
+    end
+
+    objects
   end
 
-  # Checks that every generator writing every compiled locator lands on
-  # a distinct file, and raises Schematrix::OutputCollisionError when
-  # two outputs share a path. Container provenance is part of every
-  # class name, so distinct locators almost always map to distinct
-  # files; this check catches what name folding cannot express (two
-  # input files with the same basename, property names that normalize
-  # to one identifier, two same-extension generators in one directory)
-  # before any file is written.
+  # Checks that every generator writing every compiled locator lands
+  # on a distinct file, and that run-once generators' auxiliary paths
+  # stay clear of everything else, and raises
+  # Schematrix::OutputCollisionError when two outputs share a path.
+  # Container provenance is part of every class name, so distinct
+  # locators almost always map to distinct files; this check catches
+  # what name folding cannot express (two input files with the same
+  # basename, property names that normalize to one identifier, two
+  # same-extension generators in one directory, an auxiliary file a
+  # class would fold onto) before any file is written.
   def self.assert_distinct_targets(generators, objects)
     claimed = {}
-    generators.each do |generator|
-      objects.each_key do |locator|
-        path = generator.target_path(locator)
+    claim =
+      lambda do |generator, path, locator|
         if claimed.key?(path)
           raise OutputCollisionError,
                 "#{generator.class} writes #{locator} to #{path}, " \
@@ -102,6 +114,16 @@ module Schematrix
         end
 
         claimed[path] = locator
+      end
+    generators.each do |generator|
+      if generator.class.run_once?
+        generator.run_once_target_paths.each do |path|
+          claim.call(generator, path, "auxiliary output")
+        end
+      else
+        objects.each_key do |locator|
+          claim.call(generator, generator.target_path(locator), locator)
+        end
       end
     end
   end

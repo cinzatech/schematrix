@@ -18,7 +18,7 @@ namespace :meta do
   desc "Regenerate lib/schematrix/meta from the vendored 2020-12 metaschema"
   task :generate do
     require_relative "lib/schematrix"
-    require_relative "lib/schematrix/generators/base"
+    require_relative "lib/schematrix/generators"
     require "fileutils"
 
     root = __dir__
@@ -30,6 +30,11 @@ namespace :meta do
     Schematrix.generate(
       generators: [
         Schematrix::Generators::PlainRuby.new(
+          output,
+          "Schematrix::Meta",
+          command: "rake meta:generate",
+        ),
+        Schematrix::Generators::AuxiliaryFiles.new(
           output,
           "Schematrix::Meta",
           command: "rake meta:generate",

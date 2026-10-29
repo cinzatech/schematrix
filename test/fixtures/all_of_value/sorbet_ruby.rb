@@ -1,5 +1,7 @@
 # typed: strict
 
+require_relative "coercion_helper"
+
 module M
   class Schema
     extend T::Sig
@@ -87,49 +89,27 @@ module M
       @_extra[key] = value
     end
 
-    sig { params(value: T.untyped, klass: T.untyped).returns(T.untyped) }
-    def self.coerce_class_slot(value, klass)
-      if value.is_a?(klass)
-        value.to_h
-      elsif value.is_a?(Hash)
-        klass.from_h(value)
-      else
-        value
-      end
-    end
-
-    sig { params(value: T.untyped, klass: T.untyped).returns(T.untyped) }
-    def self.coerce_array_slot(value, klass)
-      return value unless value.is_a?(Array)
-
-      value.map { |element| coerce_class_slot(element, klass) }
-    end
-
-    sig { params(value: T.untyped, klass: T.untyped).returns(T.untyped) }
-    def self.coerce_map_slot(value, klass)
-      return value unless value.is_a?(Hash)
-
-      value.transform_values { |entry| coerce_class_slot(entry, klass) }
-    end
-
     sig { params(value: T.untyped).returns(T.untyped) }
     def self.coerce_refonly(value)
-      coerce_class_slot(value, M::Schema::Defs::Base)
+      ::M::CoercionHelper.coerce_spec(value, [:class, M::Schema::Defs::Base])
     end
 
     sig { params(value: T.untyped).returns(T.untyped) }
     def self.coerce_both(value)
-      coerce_class_slot(value, M::Schema::Defs::Base)
+      ::M::CoercionHelper.coerce_spec(value, [:class, M::Schema::Defs::Base])
     end
 
     sig { params(value: T.untyped).returns(T.untyped) }
     def self.coerce_typed(value)
-      coerce_class_slot(value, M::Schema::Props::Typed)
+      ::M::CoercionHelper.coerce_spec(value, [:class, M::Schema::Props::Typed])
     end
 
     sig { params(value: T.untyped).returns(T.untyped) }
     def self.coerce_null_object(value)
-      coerce_class_slot(value, M::Schema::Props::NullObject)
+      ::M::CoercionHelper.coerce_spec(
+        value,
+        [:class, M::Schema::Props::NullObject]
+      )
     end
 
     sig { params(hash: T::Hash[String, T.untyped]).returns(Schema) }

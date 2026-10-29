@@ -58,10 +58,12 @@ Given this JSON Schema (`person.schema.json`):
 Run:
 
 ```sh
-schematrix -g plain_ruby -m MyApp -o app/generated person.schema.json
+schematrix -g plain_ruby -g auxiliary_files -m MyApp -o app/generated person.schema.json
 ```
 
-This produces `app/generated/person.rb`:
+This produces `app/generated/person.rb` plus the shared
+`app/generated/coercion_helper.rb` module (see
+[generators](docs/generators.md)):
 
 ```ruby
 # DO NOT EDIT MANUALLY
@@ -147,7 +149,7 @@ Options:
                            classes with no catch-all, instead of the spec
                            default
   -g, --generators list    Output generators to use, e.g.: plain_ruby,
-                           dsl_plain_ruby
+                           auxiliary_files
   -h, --help               Print usage
       --immutable          Generate data classes as frozen value objects:
                            readers, a with copier, and value equality; data
@@ -174,7 +176,7 @@ in the [command line manual](docs/cli.md).
 Generate plain Ruby classes for a single schema:
 
 ```sh
-schematrix -g plain_ruby -m MyApp -o app/generated schema.json
+schematrix -g plain_ruby -g auxiliary_files -m MyApp -o app/generated schema.json
 ```
 
 Process multiple schemas at once:
@@ -186,13 +188,13 @@ schematrix -g rbs -m Contracts user.schema.json order.schema.json
 Or even:
 
 ```sh
-schematrix -g plain_ruby -m Contracts *.schema.json
+schematrix -g plain_ruby -g auxiliary_files -m Contracts *.schema.json
 ```
 
 You might specify different output directories for different generators like so:
 
 ```sh
-schematrix -g plain_ruby -o generated -g rbi -o rbi *.schema.json
+schematrix -g plain_ruby -o generated -g rbi -o rbi -g auxiliary_files -o generated *.schema.json
 ```
 
 ### Resolving remote schemas
@@ -266,12 +268,13 @@ and call `Schematrix.generate`:
 
 ```ruby
 require "schematrix"
-require "schematrix/generators/base"
+require "schematrix/generators"
 
 Schematrix.generate(
   generators: [
     Schematrix::Generators::PlainRuby.new("generated", "MyApp"),
     Schematrix::Generators::Rbs.new("sig", "MyApp"),
+    Schematrix::Generators::AuxiliaryFiles.new("generated", "MyApp"),
   ],
   input_files: ["person.schema.json"],
 )

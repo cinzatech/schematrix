@@ -5,12 +5,13 @@ The CLI wraps one entry point. Require the gem and call
 
 ```ruby
 require "schematrix"
-require "schematrix/generators/base"
+require "schematrix/generators"
 
 Schematrix.generate(
   generators: [
     Schematrix::Generators::PlainRuby.new("generated", "MyApp"),
     Schematrix::Generators::Rbs.new("sig", "MyApp"),
+    Schematrix::Generators::AuxiliaryFiles.new("generated", "MyApp"),
   ],
   input_files: ["person.schema.json"],
 )
@@ -96,6 +97,27 @@ generator.write(locator, node) # renders, formats, writes, returns the path
   objects: readers instead of accessors, a `with` copier, and value
   equality. The data generators accept it; the `dsl_` builders refuse
   it. See [Immutable classes](generated-code.md).
+
+Run-once generators write auxiliary files once per run instead of one
+file per locator. `Schematrix::Generators::AuxiliaryFiles` is the one
+built-in: it takes the same constructor arguments and writes the
+shared `CoercionHelper` module that the data formats' coercion methods
+call into. The pipeline hands it the whole compiled record set through
+`write_run_once(objects)`, and `run_once_target_paths` lists the
+static paths it claims for collision detection:
+
+```ruby
+objects =
+  Schematrix.generate(
+    generators: [],
+    input_files: ["person.schema.json"],
+  )
+
+helper = Schematrix::Generators::AuxiliaryFiles.new("out", "MyApp")
+helper.run_once_target_paths
+# => ["out/coercion_helper.rb", "out/coercion_helper.rbs"]
+helper.write_run_once(objects)
+```
 
 ## Scalar types
 

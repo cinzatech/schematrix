@@ -31,15 +31,16 @@ For each object schema the compiler found, one file per class:
 - Catch-all accessors `[]` and `[]=` when the class accepts extra keys.
 - `from_h` and `to_h` for loading and dumping, with one `coerce_`
   method per property whose values carry a nested class or a coercing
-  scalar format. Class-shaped properties delegate to one of three
-  shared slot helpers (`coerce_class_slot`, `coerce_array_slot`,
-  `coerce_map_slot`) that carry the symmetric load/dump dispatch once
-  per shape; coercing formats convert through a spec interpreter
-  (`coerce_spec`) that mirrors the slot's type structure, so arrays,
-  tuples, maps, catch-all values, and union branches all convert, and
-  delegates to the coercer directly when the slot is one scalar. The
-  built-in coercers the file calls are emitted next to the helpers (a
-  project coercer is referenced by name).
+  scalar format. Each conversion is a frozen literal mirroring the
+  slot's type structure. The property methods hand their literals to
+  `CoercionHelper.coerce_spec`, the interpreter the `auxiliary_files`
+  generator writes once per output directory, so arrays, tuples,
+  maps, catch-all values, and union branches all convert; class
+  entries dispatch through `CoercionHelper.coerce_class_slot`, which
+  carries the symmetric load/dump dispatch once, and a slot that is
+  one scalar coercer calls it directly. The built-in coercers the
+  file calls are emitted next to the delegations (a project coercer
+  is referenced by name).
 
 The details live in [Generated code](generated-code.md).
 
@@ -157,6 +158,33 @@ module MyApp
   end
 end
 ```
+
+## auxiliary_files
+
+The auxiliary-files generator. It is run-once: it writes no classes;
+it writes one `coercion_helper.rb` (plus `coercion_helper.rbs`
+declarations) per output directory, holding the `CoercionHelper`
+module the data formats' coercion methods call into. Later auxiliary
+files join the same run. `coerce_class_slot` is the
+class-shaped dispatch (a `Hash` loads through the target class's
+`from_h`, an instance dumps through its `to_h`, anything else passes
+through); `coerce_spec` is the interpreter that walks a conversion
+literal and handles arrays, tuple positions, maps, union branches and
+formatted scalars.
+
+Any run that selects a data generator selects `auxiliary_files`
+alongside it, pointed at the same output directory:
+
+```sh
+schematrix -g plain_ruby -g auxiliary_files -m MyApp -o app/generated person.schema.json
+```
+
+A class requires the module when any of its conversions is
+structured: a nested class, an array, a map, a tuple, or a union. A
+slot whose conversion is one coercer calls the coercer directly, and
+a class with only such slots emits no reference to the module. A run
+that omits the auxiliary generator leaves the requires dangling,
+which fails at load time.
 
 ## Type mappings
 

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "pair": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "string" },
+        { "$ref": "#/$defs/Address" }
+      ],
+      "items": false
+    }
+  },
+  "$defs": {
+    "Address": {
+      "type": "object",
+      "properties": {
+        "city": { "type": "string" }
+      }
+    }
+  }
+}
