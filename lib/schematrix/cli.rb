@@ -85,13 +85,6 @@ module Schematrix
              "with no catch-all, instead of the spec default"
     end
 
-    option :optionals do
-      optional
-      long "--optionals string"
-      desc "How optional slots type: nilable (the default) or maybe, " \
-             "the Maybe type that keeps absent and null apart"
-    end
-
     flag :immutable do
       optional
       long "--immutable"
@@ -166,15 +159,6 @@ module Schematrix
             end
           )
 
-        optionals = (params[:optionals] || "nilable").to_sym
-        unless %i[nilable maybe].include?(optionals)
-          Schematrix.logger&.fatal(
-            "Unknown optionals mode: #{params[:optionals]} " \
-              "(use nilable or maybe)",
-          )
-          exit 1
-        end
-
         generators =
           output_dirs
             .zip(generator_names)
@@ -188,7 +172,6 @@ module Schematrix
                 command: "schematrix",
                 immutable:
                   params[:immutable] && generator_class.immutable_supported?,
-                optionals:,
               )
             end
 

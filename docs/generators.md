@@ -182,7 +182,7 @@ app/generated/person.rb          # MyApp::Person, the data class
 app/generated/partial/person.rb  # MyApp::Partial::Person
 ```
 
-The partial family always runs with the maybe optionals; see
+The partial family types every slot with the Maybe type; see
 [Maybe optionals](generated-code.md) for the type and the loading and
 dumping rules, which the partial classes follow for every slot.
 

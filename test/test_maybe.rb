@@ -227,32 +227,32 @@ class TestMaybe < Minitest::Test
         generators: [
           Schematrix::Generators::PlainRuby.new(
             output,
-            "Gen",
+            "Mb",
             optionals: :maybe,
           ),
-          Schematrix::Generators::PartialPlainRuby.new(output, "Gen"),
-          Schematrix::Generators::AuxiliaryFiles.new(output, "Gen"),
+          Schematrix::Generators::PartialPlainRuby.new(output, "Mb"),
+          Schematrix::Generators::AuxiliaryFiles.new(output, "Mb"),
         ],
         input_files: [schema],
       )
 
       Dir["#{output}/**/*.rb"].each { |path| require(path) }
-      maybe = Gen::Maybe
+      maybe = Mb::Maybe
 
-      cleared = Gen::Person.from_h("firstName" => "Ada", "age" => nil)
+      cleared = Mb::Person.from_h("firstName" => "Ada", "age" => nil)
       assert_equal maybe.from(nil), cleared.age
       assert_equal({ "firstName" => "Ada", "age" => nil }, cleared.to_h)
 
-      untouched = Gen::Person.from_h("firstName" => "Ada")
+      untouched = Mb::Person.from_h("firstName" => "Ada")
       assert_equal maybe.empty, untouched.address
       assert_equal({ "firstName" => "Ada", "age" => 42 }, untouched.to_h)
 
-      defaulted = Gen::Person.from_h("firstName" => "Ada")
+      defaulted = Mb::Person.from_h("firstName" => "Ada")
       assert_equal maybe.from(42), defaulted.age
       assert_equal({ "firstName" => "Ada", "age" => 42 }, defaulted.to_h)
 
       loaded =
-        Gen::Person.from_h(
+        Mb::Person.from_h(
           "firstName" => "Ada",
           "address" => {
             "street" => "Main",
@@ -270,12 +270,12 @@ class TestMaybe < Minitest::Test
         loaded.to_h,
       )
 
-      partial = Gen::Partial::Person.from_h("firstName" => "Ada", "age" => nil)
+      partial = Mb::Partial::Person.from_h("firstName" => "Ada", "age" => nil)
       assert_equal maybe.from("Ada"), partial.first_name
       assert_equal maybe.from(nil), partial.age
       assert_equal maybe.empty, partial.address
       assert_equal({ "firstName" => "Ada", "age" => nil }, partial.to_h)
-      assert_equal({}, Gen::Partial::Person.from_h({}).to_h)
+      assert_equal({}, Mb::Partial::Person.from_h({}).to_h)
 
       assert_equal 36, maybe.from(36).value
       assert_equal 36, maybe.from(36).or_default(0)

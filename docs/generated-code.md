@@ -155,10 +155,9 @@ distinct: `{"color": null}` sets `nil`, an absent key keeps `"blue"`.
 
 ## Maybe optionals
 
-With `optionals: :maybe` on a generator instance, or `--optionals maybe`
-on the command line, every property not listed in `required` types as
-`Maybe[T]` instead of a nilable type, and required properties keep
-their type. The default, `:nilable`, is the historical output.
+With `optionals: :maybe` on a generator instance, every property not
+listed in `required` types as `Maybe[T]` instead of a nilable type,
+and required properties keep their type.
 
 The Maybe type has two cases, `Present(value)` and `Absent`, and
 carries nullability inside the type: `Maybe[T.nilable(Integer)]` has
@@ -171,7 +170,7 @@ document:
 - `to_h` writes nothing for `Absent` and writes the value for
   `Present`, `null` included.
 - A schema `default` is the constructor default, as `Present(default)`,
-  so an absent key still loads the default and dumps it, as today.
+  so an absent key still loads the default and dumps it.
 
 The distinction is the content of a partial update: `{"age": null}`
 means "clear the age", an omitted `age` means "leave it alone".
@@ -179,10 +178,11 @@ means "clear the age", an omitted `age` means "leave it alone".
 Without further options the generator writes its own `MyApp::Maybe`
 into the output module, once per output directory, so generated code
 keeps its property of depending on nothing but `sorbet-runtime` in the
-Sorbet formats. The generated module is `interface!` and `sealed!`, so
-a `case` over a `Maybe` checks for exhaustiveness and `T.absurd`
-works; `value` is deliberately not on the interface, so calling it on
-an `Absent` does not type check; `Absent` is one frozen instance.
+Sorbet formats. The generated module declares `interface!` and
+`sealed!`, so a `case` over a `Maybe` checks for exhaustiveness and
+`T.absurd` works; `value` is deliberately not on the interface, so
+calling it on an `Absent` does not type check; `Absent` is one frozen
+instance.
 
 A project that already has a Maybe passes it with `maybe:`:
 

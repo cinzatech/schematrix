@@ -99,12 +99,12 @@ generator.write(locator, node) # renders, formats, writes, returns the path
   it. See [Immutable classes](generated-code.md).
 - Pass `optionals: :maybe` to type every optional property as
   `Maybe[T]` instead of a nilable type, keeping absent and null apart
-  through dump. The default, `:nilable`, is the historical output.
-  Pass `maybe:` with a project module that answers `from(value)` and
-  `empty`, and whose instances answer `present?` and `when_present`,
-  to supply the type; without it the generator writes its own `Maybe`
-  module once per output directory. The `dsl_` builders refuse the
-  option. See [Maybe optionals](generated-code.md).
+  through dump. Pass `maybe:` with a project module that answers
+  `from(value)` and `empty`, and whose instances answer `present?` and
+  `when_present`, and the generated code calls through it; without it
+  the generator writes its own `Maybe` module once per output
+  directory. The `dsl_` builders refuse the option. See
+  [Maybe optionals](generated-code.md).
 
 Run-once generators write auxiliary files once per run instead of one
 file per locator. `Schematrix::Generators::AuxiliaryFiles` is the one

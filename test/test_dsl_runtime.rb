@@ -54,7 +54,7 @@ class TestDslRuntime < Minitest::Test
   JSON
 
   def test_build_produces_the_document_the_dsl_declares
-    with_dsl_builders(SCHEMA, "M") do |mod|
+    with_dsl_builders(SCHEMA, "L") do |mod|
       document =
         mod::Dsl::Schema.build do |schema|
           schema.name "Ada"

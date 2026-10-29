@@ -88,8 +88,8 @@ Each item below widens acceptance. None of them narrows it.
   nothing; but a slot with a schema default that was set to `nil`
   explicitly is also omitted. Absent and explicit `nil` stay distinct
   on load, not on dump. The `optionals: :maybe` mode closes this gap
-  for every slot it wraps (absent stays absent, null stays null
-  through dump); the nilable default keeps the approximation.
+  for every slot it wraps: absent stays absent and null stays null
+  through dump.
 - Type names inside RBS and RBI signatures are relative
   (`Schema::Props::Child`, not `MyApp::Schema::Props::Child`), which
   resolves lexically. A schema whose property names shadow an enclosing

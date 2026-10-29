@@ -156,9 +156,6 @@ Options:
                            generators only
   -m, --module string      Module where the output code will be placed
   -o, --output string      Directory where the output will be written
-      --optionals string   How optional slots type: nilable (the default) or
-                           maybe, the Maybe type that keeps absent and null
-                           apart
       --schema-dir string  Directory where remote schema URIs resolve to local
                            files; may be given multiple times, defaults to
                            vendor/schemas
