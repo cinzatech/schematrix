@@ -54,7 +54,7 @@ class TestDslRuntime < Minitest::Test
   JSON
 
   def test_build_produces_the_document_the_dsl_declares
-    with_dsl_builders(SCHEMA) do |mod|
+    with_dsl_builders(SCHEMA, "M") do |mod|
       document =
         mod::Dsl::Schema.build do |schema|
           schema.name "Ada"
@@ -121,7 +121,7 @@ class TestDslRuntime < Minitest::Test
   end
 
   def test_object_blocks_merge_when_the_slot_holds_a_hash
-    with_dsl_builders(SCHEMA) do |mod|
+    with_dsl_builders(SCHEMA, "N") do |mod|
       document =
         mod::Dsl::Schema.build do |schema|
           schema.address { |address| address.street "1 Main St" }
@@ -133,7 +133,7 @@ class TestDslRuntime < Minitest::Test
   end
 
   def test_setters_chain_outside_blocks
-    with_dsl_builders(SCHEMA) do |mod|
+    with_dsl_builders(SCHEMA, "P") do |mod|
       builder = mod::Dsl::Schema.new
       result = builder.name("Ada").age(36).hobbies("chess")
 
@@ -211,9 +211,11 @@ class TestDslRuntime < Minitest::Test
   private
 
   # Generates the DSL builders for the schema into a temp directory,
-  # loads them, and yields the module they landed in. Each call uses
-  # its own module so tests never reopen each other's classes.
-  def with_dsl_builders(schema_source, module_name = "M")
+  # loads them, and yields the module they landed in. The module name
+  # is required: `require` dedupes by path, so a second call under a
+  # name already loaded would reopen and redefine those classes, with
+  # a warning per method.
+  def with_dsl_builders(schema_source, module_name)
     Dir.mktmpdir do |dir|
       schema_file = File.join(dir, "schema.json")
       File.write(schema_file, schema_source)

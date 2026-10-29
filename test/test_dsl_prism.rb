@@ -257,7 +257,7 @@ class TestDslPrism < Minitest::Test
       File.write(schema_file, schema_source)
 
       Schematrix.generate(
-        generators: [Schematrix::Generators::DslPlainRuby.new(dir, "M")],
+        generators: [Schematrix::Generators::DslPlainRuby.new(dir, "Q")],
         input_files: [schema_file],
       )
       Dir.glob("#{dir}/**/*.rb").each { |file| require file }
