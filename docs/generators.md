@@ -1,6 +1,6 @@
 # Generators
 
-A generator renders compiled schema records as source files. Eight exist:
+A generator renders compiled schema records as source files. Twelve exist:
 
 | Name | Files | Contents |
 | ------------- | ----- | -------- |
@@ -12,9 +12,13 @@ A generator renders compiled schema records as source files. Eight exist:
 | `dsl_sorbet_ruby` | `.rb` | Instance DSL builders with inline Sorbet `sig` blocks, `# typed: strict`. |
 | `dsl_rbi` | `.rbi` | Sorbet interface files for the instance DSL builders. |
 | `dsl_rbs` | `.rbs` | RBS signature files for the instance DSL builders. |
+| `partial_plain_ruby` | `.rb` | Partial classes, no type annotations. |
+| `partial_sorbet_ruby` | `.rb` | Partial classes with inline Sorbet `sig` blocks, `# typed: strict`. |
+| `partial_rbi` | `.rbi` | Sorbet interface files for the partial classes. |
+| `partial_rbs` | `.rbs` | RBS signature files for the partial classes. |
 
-All eight walk the same compiled records, so one schema produces the same
-classes under every format. All eight format their output with SyntaxTree
+All twelve walk the same compiled records, so one schema produces the same
+classes under every format. All twelve format their output with SyntaxTree
 (`syntax_tree` for Ruby, `syntax_tree-rbs` for RBS). Pass `format:`
 false to [a generator instance](library-api.md) to skip that step.
 
@@ -158,6 +162,32 @@ module MyApp
   end
 end
 ```
+
+The `dsl_` generators write builders instead of data classes: classes
+whose methods define one instance of the schema. They nest under a `Dsl`
+module level and a `dsl/` file prefix, so both families can share an
+output directory. The call grammar, the parse contract, and the Sorbet
+story live in [The instance DSL](dsl.md); the rest of this page is about
+the data classes.
+
+The `partial_` generators write partial classes: every property wraps in
+the Maybe type, required ones included, so the class records which keys
+its document carried. They nest under a `Partial` module level and a
+`partial/` file prefix, the way the builders nest under `Dsl`, so a data
+generator and a partial generator can write to one directory and one
+module:
+
+```text
+app/generated/person.rb          # MyApp::Person, the data class
+app/generated/partial/person.rb  # MyApp::Partial::Person
+```
+
+The partial family always runs with the maybe optionals; see
+[Maybe optionals](generated-code.md) for the type and the loading and
+dumping rules, which the partial classes follow for every slot.
+
+A partial is the natural type of a patch document, of a projection, and
+of any record of which only some fields are known.
 
 ## auxiliary_files
 

@@ -26,6 +26,18 @@ module Schematrix
 
         private
 
+        # The generated Sorbet Maybe is sealed, so the to_h case over
+        # Present and Absent exhausts and T.absurd checks it.
+        def exhaustive_maybe_dump? = @maybe.nil?
+
+        # from_h reads T.untyped document values, and a generic
+        # constructor applied to an untyped argument widens to
+        # T.anything, which no covariant Maybe accepts; erase the
+        # loaded slot back to untyped so it assigns where it must.
+        def maybe_loaded(expression, _name)
+          "T.unsafe(#{expression})"
+        end
+
         def slot_type(type)
           return "T.untyped" if UNTYPABLE_SLOT_TYPES.include?(type)
           return "T.untyped" if type.start_with?("T.all(", "T.nilable(T.all(")

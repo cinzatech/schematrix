@@ -22,7 +22,8 @@ module SchematrixTestHelper
     closed_shapes: false,
     schema_dirs: [],
     locator: nil,
-    immutable: false
+    immutable: false,
+    optionals: :nilable
   )
     actual =
       generate_fixture(
@@ -33,6 +34,7 @@ module SchematrixTestHelper
         schema_dirs:,
         locator:,
         immutable:,
+        optionals:,
       )
 
     expected_file = expected_path(fixture_name, generator_name, path)
@@ -51,7 +53,8 @@ module SchematrixTestHelper
     closed_shapes: false,
     schema_dirs: [],
     locator: nil,
-    immutable: false
+    immutable: false,
+    optionals: :nilable
   )
     schema_file = File.join(FIXTURES_DIR, fixture_name, "schema.json")
     objects =
@@ -68,6 +71,7 @@ module SchematrixTestHelper
         MODULE_NAME,
         format: true,
         immutable:,
+        optionals:,
       )
     generator.transform(uri, generator.class_name_from_path(uri), node)
   end
@@ -135,5 +139,22 @@ module SchematrixTestHelper
     assert_equal expected,
                  generator.run_once_render.fetch(filename),
                  "Output mismatch for auxiliary file #{filename}"
+  end
+
+  # The generated Maybe module is identical for every run of a
+  # flavor: compare it against the fixture's hand-authored copy.
+  def assert_maybe_golden(fixture_name, flavor, filename)
+    generator =
+      Schematrix::Generators::Maybe.new(
+        "/tmp",
+        MODULE_NAME,
+        flavor:,
+        format: true,
+      )
+    expected = File.read(File.join(FIXTURES_DIR, fixture_name, filename))
+
+    assert_equal expected,
+                 generator.run_once_render.values.first,
+                 "Output mismatch for generated Maybe (flavor: #{flavor})"
   end
 end

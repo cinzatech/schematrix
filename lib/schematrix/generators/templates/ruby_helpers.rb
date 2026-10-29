@@ -13,9 +13,15 @@ module Schematrix
           groups = []
           unless @properties.nil? || @properties.empty?
             groups << constructor_properties.map do |name, schema|
-              unless schema.default.nil?
+              defaulted = !schema.default.nil? && !maybe_partial_slot?(name)
+              if defaulted
+                if maybe_slot?(name)
+                  next "#{name}: #{maybe_constructor_default(schema)}"
+                end
+
                 next "#{name}: #{schema.default.inspect}"
               end
+              next "#{name}: #{maybe_type_name}.empty" if maybe_slot?(name)
               next "#{name}: nil" unless schema.constructor_required?
 
               "#{name}:"
@@ -25,6 +31,18 @@ module Schematrix
           return "" if groups.empty?
 
           "(#{groups.join(", ")})"
+        end
+
+        # The constructor default of a maybe slot: the schema default
+        # wraps as Present, so an absent key still loads the default
+        # and dumps it.
+        def maybe_constructor_default(schema)
+          "#{maybe_type_name}.from(#{schema.default.inspect})"
+        end
+
+        # Whether one slot wraps in the Maybe type.
+        def maybe_slot?(name)
+          maybe_wrapped?(@properties.fetch(name.to_s))
         end
 
         # Constructor kwargs in the order Ruby reports for the method:
@@ -197,18 +215,19 @@ module Schematrix
         end
 
         # The immutable from_h: one construction call, every slot
-        # through the constructor keyword it owns. Defaulted
-        # properties assign only when the document carries their key,
-        # so absence keeps the default, and the unknown keys gather
-        # into the _extra: keyword.
+        # through the constructor keyword it owns. Maybe slots build
+        # Absent when the document lacks the key and Present(value)
+        # when it carries it, null included; defaulted properties
+        # assign only when the document carries their key, so absence
+        # keeps the Present(default) the constructor supplied; and
+        # the unknown keys gather into the _extra: keyword.
         def immutable_from_h_body
           lines = ["kwargs = {}"]
           defaulted_free_properties.each do |name|
             lines << "kwargs[:#{name}] = #{load_value(name)}"
           end
           defaulted_properties.each do |name|
-            lines << "kwargs[:#{name}] = #{load_value(name)} " \
-              "if hash.key?(#{original_key_of(name).inspect})"
+            lines << load_assignment(name, kwargs: true)
           end
           if @additional_properties
             lines << "kwargs[:_extra] = " \
@@ -234,22 +253,59 @@ module Schematrix
         # constructor default. Absent keys pass nil, which is what
         # those kwargs default to anyway; required kwargs receive nil
         # rather than an ArgumentError, the loader stays
-        # over-accepting.
+        # over-accepting. Maybe slots read the key instead: Absent
+        # when it is missing, Present(value) when it is there.
         def load_kwargs
           defaulted_free_properties.map do |name|
-            "#{name}: #{load_value(name)}"
+            if maybe_slot?(name)
+              "#{name}: #{maybe_load_expression(name)}"
+            else
+              "#{name}: #{load_value(name)}"
+            end
           end
         end
 
         # Post-construction assignments of from_h: properties with a
-        # constructor default, assigned only when the document carries
-        # the key, so absence keeps the default.
+        # constructor default, assigned only when the document
+        # carries the key, so absence keeps the default.
         def load_assignments
-          defaulted_properties.map do |name|
-            "instance.#{name} = #{load_value(name)} " \
-              "if hash.key?(#{original_key_of(name).inspect})"
-          end
+          defaulted_properties.map { |name| load_assignment(name) }
         end
+
+        # The assignment of one defaulted property, guarded on the
+        # document key. A maybe slot wraps the loaded value as
+        # Present; the constructor default, Present(default) itself,
+        # survives an absent key untouched. The immutable loader
+        # writes into its kwargs hash, the mutable one onto the
+        # instance.
+        def load_assignment(name, kwargs: false)
+          value =
+            if maybe_slot?(name)
+              maybe_loaded("#{maybe_reference}.from(#{load_value(name)})", name)
+            else
+              load_value(name)
+            end
+          place = kwargs ? "kwargs[:#{name}]" : "instance.#{name}"
+          "#{place} = #{value} " \
+            "if hash.key?(#{original_key_of(name).inspect})"
+        end
+
+        # The from_h expression of one maybe slot: Absent when the
+        # document lacks the key, Present of the loaded (and, where
+        # the slot coerces, converted) value when it is there.
+        def maybe_load_expression(name)
+          inner =
+            "hash.key?(#{original_key_of(name).inspect}) ? " \
+              "#{maybe_reference}.from(#{load_value(name)}) : " \
+              "#{maybe_reference}.empty"
+          maybe_loaded(inner, name)
+        end
+
+        # The escape hatch a notation applies to a loaded maybe slot.
+        # from_h reads T.untyped document values, and a generic
+        # constructor applied to an untyped argument widens to
+        # T.anything, which no covariant Maybe accepts; the Sorbet
+        # formats erase the slot's load expression back to untyped.
 
         # The from_h value expression of one property: the raw hash
         # lookup, or the lookup wrapped in its coercion when the
@@ -263,14 +319,31 @@ module Schematrix
 
         def defaulted_free_properties
           @property_keys.filter_map do |_original, name|
-            name.to_s if @properties[name.to_s].default.nil?
+            next name.to_s if maybe_partial_slot?(name)
+
+            schema = @properties[name.to_s]
+            name.to_s if schema.default.nil?
           end
         end
 
         def defaulted_properties
           @property_keys.filter_map do |_original, name|
-            name.to_s unless @properties[name.to_s].default.nil?
+            next if maybe_partial_slot?(name)
+
+            schema = @properties[name.to_s]
+            name.to_s unless schema.default.nil?
           end
+        end
+
+        # Whether one slot is a partial-class slot carrying a schema
+        # default. A partial records which keys the document carried,
+        # so a default never materializes from nothing: the slot
+        # starts Absent and loads Present(default) only when the key
+        # is there, unlike a data class, where absence loads the
+        # default.
+        def maybe_partial_slot?(name)
+          @all_slots_maybe && maybe_slot?(name) &&
+            !@properties.fetch(name.to_s).default.nil?
         end
 
         def coerced_property_names
@@ -296,6 +369,10 @@ module Schematrix
 
           lines = ["result = {}"]
           property_coercions.each do |name, plan|
+            if maybe_slot?(name)
+              lines << maybe_dump_line(name, plan)
+              next
+            end
             value =
               (plan.nil? ? "@#{name}" : "self.class.coerce_#{name}(@#{name})")
             lines << "result[#{original_key_of(name).inspect}] = #{value} " \
@@ -304,6 +381,31 @@ module Schematrix
           lines << extra_dump_line if @additional_properties
           lines << "result"
           lines.join("\n")
+        end
+
+        # The dump of one maybe slot: Absent writes nothing, Present
+        # writes its value, null included; a coerced slot converts
+        # the inner value. The generated Sorbet output dispatches
+        # through the sealed case, where a missed case is a type
+        # error; every other combination answers through the
+        # interface's when_present.
+        def maybe_dump_line(name, plan)
+          key = original_key_of(name).inspect
+          unwrapped = "@#{name}.value"
+          converted =
+            plan.nil? ? unwrapped : "self.class.coerce_#{name}(#{unwrapped})"
+          if exhaustive_maybe_dump?
+            <<~RUBY.rstrip
+              case @#{name}
+              when #{maybe_reference}::Present then result[#{key}] = #{converted}
+              when #{maybe_reference}::Absent then nil
+              else T.absurd(@#{name})
+              end
+            RUBY
+          else
+            inner = plan.nil? ? "value" : "self.class.coerce_#{name}(value)"
+            "@#{name}.when_present { |value| result[#{key}] = #{inner} }"
+          end
         end
 
         # The catch-all dump line: rider values convert through the

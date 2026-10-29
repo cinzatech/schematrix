@@ -106,6 +106,17 @@ flag applies to every data generator of the run; the `dsl_` builders
 are unaffected, since a builder is mutable by construction. See
 [Immutable classes](generated-code.md).
 
+### `--optionals`
+
+Chooses how optional properties type. `--optionals nilable` (the
+default) types every property not listed in `required` as nilable, the
+historical output. `--optionals maybe` types them as `Maybe[T]`, a type
+with two cases, `Present(value)` and `Absent`, so a loaded document
+keeps the missing-key versus null distinction through dump. Without a
+supplied type the command writes the generated `Maybe` module into the
+each output directory that needs it. See
+[Maybe optionals](generated-code.md).
+
 ### `--schema-dir`
 
 Remote schema URIs (`http`/`https` `$ref` targets) never touch the

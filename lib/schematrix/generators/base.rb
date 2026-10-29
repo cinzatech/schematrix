@@ -13,6 +13,7 @@ require_relative "templates/dsl_plain_ruby"
 require_relative "templates/dsl_sorbet_ruby"
 require_relative "templates/dsl_rbi"
 require_relative "templates/dsl_rbs"
+require_relative "templates/partial"
 
 module Schematrix
   module Generators
@@ -96,13 +97,25 @@ module Schematrix
       # objects: readers instead of accessors, a `with` copier, and
       # value equality. It applies to the data generators only; the
       # DSL builders refuse it.
+      # `optionals: :maybe` types every property not listed in
+      # `required` with the Maybe type instead of a nilable one, so a
+      # loaded document keeps the missing-key versus null distinction
+      # through dump. The default, `:nilable`, is the historical
+      # output. `maybe:` supplies the project's own Maybe module; it
+      # must answer `.from(value)` and `.empty`, and its instances
+      # `present?` and `when_present`. Without it the generator needs
+      # the generated Maybe written into the output directory, which
+      # the pipeline does once per directory through the run-once
+      # machinery the auxiliary files generator established.
       def initialize(
         output_dir,
         module_name,
         format: true,
         command: nil,
         scalar_types: {},
-        immutable: false
+        immutable: false,
+        optionals: :nilable,
+        maybe: nil
       )
         assert_immutable_supported if immutable
         @output_dir = output_dir
@@ -111,8 +124,14 @@ module Schematrix
         @command = command
         @scalar_types = Schematrix::BUILTIN_SCALAR_TYPES.merge(scalar_types)
         @immutable = immutable
+        @optionals = self.class.partial? ? :maybe : optionals
+        @maybe = maybe
+        assert_optionals_valid
+        assert_maybe_valid
         assert_coercers_valid(@scalar_types)
       end
+
+      attr_reader :output_dir, :module_name, :format, :command
 
       # Whether this generator's output honors the immutable option.
       # The data generators do; the DSL builders answer through
@@ -124,6 +143,22 @@ module Schematrix
       # pipeline iterates locators for the former and hands the whole
       # compiled record set once to the latter.
       def self.run_once? = false
+
+      # Whether the generator emits the partial class family: every
+      # slot wraps in the Maybe type, required ones included. The
+      # option is the whole point of those generators, so it is not
+      # configurable there.
+      def self.partial? = false
+
+      # Which rendering of the generated Maybe module the generator's
+      # output needs: with Sorbet signatures, without, or as RBS
+      # signatures alone.
+      def self.maybe_flavor = :sorbet
+
+      # Whether the generator family accepts the maybe optionals. The
+      # DSL builders do not: absence is expressed by never calling a
+      # setter, so a Maybe slot has no builder surface to fill.
+      def self.maybe_supported? = true
 
       # The file this locator's class writes to, without writing it:
       # callers that batch many schemas check every target up front.
@@ -183,6 +218,13 @@ module Schematrix
         raise NotImplementedError, "#{name} must implement #file_extension"
       end
 
+      # Whether the generator needs the generated Maybe module in its
+      # output directory: the maybe option is on and no project Maybe
+      # was supplied.
+      def maybe_needed?
+        @optionals == :maybe && @maybe.nil?
+      end
+
       private
 
       # The immutable option only reshapes data classes: a builder
@@ -195,6 +237,41 @@ module Schematrix
         raise ArgumentError,
               "#{self.class.name} generates mutable DSL builders; " \
                 "immutable applies to data generators"
+      end
+
+      # The optionals spelling is fixed; a supplied Maybe only
+      # travels with the maybe option, since the nilable option never
+      # references the type.
+      def assert_optionals_valid
+        return if %i[nilable maybe].include?(@optionals)
+
+        raise ArgumentError,
+              "optionals must be :nilable or :maybe, not #{@optionals.inspect}"
+      end
+
+      # The optionals spelling is fixed; a supplied Maybe only
+      # travels with the maybe option, since the nilable option never
+      # references the type. Generator families without a Maybe
+      # surface (the DSL builders) refuse the option here, at
+      # construction, before any file can be written.
+      def assert_maybe_valid
+        if @maybe.nil?
+          return if @optionals != :maybe || self.class.maybe_supported?
+
+          raise ArgumentError,
+                "#{self.class.name} does not support optionals: :maybe"
+        end
+        return if maybe_contract_fulfilled?
+
+        raise ArgumentError,
+              "maybe #{@maybe.inspect} must answer .from(value) and " \
+                ".empty, and its instances present? and when_present"
+      end
+
+      def maybe_contract_fulfilled?
+        @maybe.respond_to?(:from) && @maybe.respond_to?(:empty) &&
+          @maybe.method_defined?(:present?) &&
+          @maybe.method_defined?(:when_present)
       end
 
       # Every coercer the merged table carries, checked whenever the
@@ -262,6 +339,10 @@ module Schematrix
           documentation_comment: documentation_comment(object),
           scalar_types: @scalar_types,
           immutable: @immutable,
+          optionals: @optionals,
+          maybe: @maybe,
+          all_slots_maybe: self.class.partial?,
+          namespace_prefix: ("Partial" if self.class.partial?),
         )
       end
 
@@ -353,6 +434,7 @@ module Schematrix
       def self.template_name = "plain_ruby.erb"
       def self.file_extension = ".rb"
       def self.template_class = Templates::PlainRuby
+      def self.maybe_flavor = :plain
     end
 
     # Outputs RBS type signatures matching a JSON Schema object.
@@ -360,6 +442,7 @@ module Schematrix
       def self.template_name = "rbs.erb"
       def self.file_extension = ".rbs"
       def self.template_class = Templates::Rbs
+      def self.maybe_flavor = :rbs
 
       private
 
@@ -381,6 +464,7 @@ module Schematrix
       def self.template_name = "rbi.erb"
       def self.file_extension = ".rbi"
       def self.template_class = Templates::Rbi
+      def self.maybe_flavor = :rbi
     end
 
     # Naming overrides shared by the DSL generators: builder classes
@@ -399,9 +483,13 @@ module Schematrix
         base.extend(ClassMethods)
       end
 
-      # Builders accumulate a document, so no builder is immutable.
+      # Builders accumulate a document, so no builder is immutable,
+      # and none carries a Maybe slot: absence is expressed by never
+      # calling a setter.
       module ClassMethods
         def immutable_supported? = false
+
+        def maybe_supported? = false
       end
 
       def class_name_from_path(uri, name = nil)
@@ -413,6 +501,74 @@ module Schematrix
         name = "#{name}_" if RESERVED_METHOD_NAMES.include?(name)
         name
       end
+    end
+
+    # Naming overrides shared by the partial generators: partial
+    # classes nest under a Partial module level and their files under
+    # a partial directory, so a partial family and the data-class
+    # family can write to one directory and one module without
+    # colliding, the way the builders nest under Dsl.
+    module PartialNaming
+      def class_name_from_path(uri, name = nil)
+        "Partial::#{super}"
+      end
+    end
+
+    # Outputs the schema's partial classes: every slot wraps in the
+    # Maybe type, required ones included, as plain, mutable Ruby
+    # classes with no type annotations.
+    class PartialPlainRuby < Base
+      include PartialNaming
+
+      def self.template_name = "plain_ruby.erb"
+      def self.file_extension = ".rb"
+      def self.template_class = Templates::PartialPlainRuby
+      def self.partial? = true
+      def self.maybe_flavor = :plain
+      def self.immutable_supported? = false
+    end
+
+    # Outputs the schema's partial classes with inline Sorbet
+    # signatures and real method bodies, under `# typed: strict`.
+    class PartialSorbetRuby < Base
+      include PartialNaming
+
+      def self.template_name = "sorbet_ruby.erb"
+      def self.file_extension = ".rb"
+      def self.template_class = Templates::PartialSorbetRuby
+      def self.partial? = true
+      def self.maybe_flavor = :sorbet
+      def self.immutable_supported? = false
+    end
+
+    # Outputs the partial classes as an RBI Sorbet signature file:
+    # signatures only, empty bodies.
+    class PartialRbi < Base
+      include PartialNaming
+
+      def self.template_name = "rbi.erb"
+      def self.file_extension = ".rbi"
+      def self.template_class = Templates::PartialRbi
+      def self.partial? = true
+      def self.maybe_flavor = :rbi
+      def self.immutable_supported? = false
+    end
+
+    # Outputs the partial classes as RBS signature files.
+    class PartialRbs < Base
+      include PartialNaming
+
+      def self.template_name = "rbs.erb"
+      def self.file_extension = ".rbs"
+      def self.template_class = Templates::PartialRbs
+      def self.partial? = true
+      def self.maybe_flavor = :rbs
+      def self.immutable_supported? = false
+
+      private
+
+      # Formats with syntax_tree-rbs instead of plain SyntaxTree.
+      def format_code(code) = @format ? SyntaxTree::RBS.format(code) : code
     end
 
     # Outputs the schema's DSL builders as plain, mutable Ruby

@@ -97,6 +97,14 @@ generator.write(locator, node) # renders, formats, writes, returns the path
   objects: readers instead of accessors, a `with` copier, and value
   equality. The data generators accept it; the `dsl_` builders refuse
   it. See [Immutable classes](generated-code.md).
+- Pass `optionals: :maybe` to type every optional property as
+  `Maybe[T]` instead of a nilable type, keeping absent and null apart
+  through dump. The default, `:nilable`, is the historical output.
+  Pass `maybe:` with a project module that answers `from(value)` and
+  `empty`, and whose instances answer `present?` and `when_present`,
+  to supply the type; without it the generator writes its own `Maybe`
+  module once per output directory. The `dsl_` builders refuse the
+  option. See [Maybe optionals](generated-code.md).
 
 Run-once generators write auxiliary files once per run instead of one
 file per locator. `Schematrix::Generators::AuxiliaryFiles` is the one
@@ -165,12 +173,14 @@ anonymous module, a nameless value, or a missing method raises
 `ArgumentError` at generator construction, before any file is
 written.
 
-Eight generator classes exist: `PlainRuby`, `SorbetRuby`, `Rbi`, and
+Twelve generator classes exist: `PlainRuby`, `SorbetRuby`, `Rbi`, and
 `Rbs` for the data classes, plus `DslPlainRuby`, `DslSorbetRuby`,
-`DslRbi`, and `DslRbs` for the instance builders. They share the
-rendering described in [Generators](generators.md); the builders place
-every class under a `Dsl` module level, so a data generator and a DSL
-generator can write to one directory.
+`DslRbi`, and `DslRbs` for the instance builders, plus `PartialPlainRuby`,
+`PartialSorbetRuby`, `PartialRbi`, and `PartialRbs` for the partial
+classes. They share the rendering described in
+[Generators](generators.md); the builders place every class under a
+`Dsl` module level and the partials under a `Partial` module level, so
+the families can write to one directory without colliding.
 
 ## The generated loading model
 

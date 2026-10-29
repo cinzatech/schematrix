@@ -4,7 +4,7 @@
 
 `schematrix` is a Ruby gem and CLI tool that reads [JSON Schema](https://json-schema.org/) files and produces idiomatic Ruby source code. Point it at a schema, choose a generator, and get ready-to-use Ruby classes and type signatures written into your project.
 
-Eight output formats share one compiler: plain Ruby classes, Ruby classes with inline Sorbet signatures, Sorbet RBI files, RBS signature files, and each of those four notations again as a builder DSL. The DSL classes define instances of the schema through plain method calls; running one builds the document as a Hash, and parsing one reconstructs the same document statically.
+Twelve output formats share one compiler: plain Ruby classes, Ruby classes with inline Sorbet signatures, Sorbet RBI files, RBS signature files, and each of those four notations again as a builder DSL and as a partial class family. The DSL classes define instances of the schema through plain method calls; running one builds the document as a Hash, and parsing one reconstructs the same document statically.
 
 ---
 
@@ -156,6 +156,9 @@ Options:
                            generators only
   -m, --module string      Module where the output code will be placed
   -o, --output string      Directory where the output will be written
+      --optionals string   How optional slots type: nilable (the default) or
+                           maybe, the Maybe type that keeps absent and null
+                           apart
       --schema-dir string  Directory where remote schema URIs resolve to local
                            files; may be given multiple times, defaults to
                            vendor/schemas
@@ -239,19 +242,23 @@ running from the repository root.
 
 ## Generators
 
-All eight generators walk the same compiled records and write one file
+All twelve generators walk the same compiled records and write one file
 per object schema. They differ only in notation:
 
-| Name             | Writes                                                          |
-| ---------------- | --------------------------------------------------------------- |
-| `plain_ruby`     | Mutable Ruby classes, no annotations                            |
-| `sorbet_ruby`    | Mutable Ruby classes with inline Sorbet `sig` blocks            |
-| `rbi`            | Sorbet signature files: signatures only, empty bodies           |
-| `rbs`            | RBS signature files                                             |
-| `dsl_plain_ruby` | Instance DSL builders, no annotations                           |
-| `dsl_sorbet_ruby` | Instance DSL builders with inline Sorbet `sig` blocks          |
-| `dsl_rbi`        | Sorbet signature files for the instance DSL builders            |
-| `dsl_rbs`        | RBS signature files for the instance DSL builders               |
+| Name                | Writes                                                          |
+| ------------------- | --------------------------------------------------------------- |
+| `plain_ruby`        | Mutable Ruby classes, no annotations                            |
+| `sorbet_ruby`       | Mutable Ruby classes with inline Sorbet `sig` blocks            |
+| `rbi`               | Sorbet signature files: signatures only, empty bodies           |
+| `rbs`               | RBS signature files                                             |
+| `dsl_plain_ruby`    | Instance DSL builders, no annotations                           |
+| `dsl_sorbet_ruby`   | Instance DSL builders with inline Sorbet `sig` blocks           |
+| `dsl_rbi`           | Sorbet signature files for the instance DSL builders            |
+| `dsl_rbs`           | RBS signature files for the instance DSL builders               |
+| `partial_plain_ruby` | Partial classes, every property wrapped in the Maybe type       |
+| `partial_sorbet_ruby` | Partial classes with inline Sorbet `sig` blocks                |
+| `partial_rbi`       | Sorbet signature files for the partial classes                  |
+| `partial_rbs`       | RBS signature files for the partial classes                     |
 
 See the [generator guide](docs/generators.md) for sample output and the
 type mapping tables per notation. Class names, module nesting, and file

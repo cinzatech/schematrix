@@ -7,25 +7,47 @@ module Schematrix
       # computing the type of a schema, its variants, array
       # elements and intersections is one algorithm; only the syntax
       # of the target notation differs. Formats including this module
-      # supply that syntax through the hook methods below:
-      # untyped, scalar_type, array_of, string_keyed_hash,
-      # null_only_type, nilable_type, element_union, join_union and
-      # join_intersection.
+      # The spelling hooks every notation supplies: untyped, scalar
+      # type, array_of, string_keyed_hash, null_only_type,
+      # nilable_type, maybe_type, element_union, join_union and
+      # join_intersection. Maybe mode itself is read off the template
+      # (Templates::Base#maybe_wrapped?).
       module TypeComposer
         include Resolver
 
         # The full type of a schema: the bare type underneath,
-        # wrapped for absence wherever the property is optional.
+        # wrapped for absence wherever the property is optional. When
+        # the maybe option is on, the optional wrap is the Maybe type
+        # with the nilability kept inside, so a slot carries three
+        # states: Absent for a missing key, Present(nil) for a null,
+        # Present(value) for a value. Partial classes wrap every
+        # slot, required ones included, since absence is the partial's
+        # whole content.
         def type_of(path, name, schema)
           return untyped if schema.nil?
 
           # A null-only record is just nil, unless it carries more
           # terms: a ref to a target typed ["object", "null"] keeps
           # its class and renders nilable instead.
-          return null_only_type if null_only?(schema)
+          if null_only?(schema)
+            if @optionals == :maybe
+              return maybe_absence_type(null_only_type, schema)
+            end
+
+            return null_only_type
+          end
 
           combined = bare_type(path, name, schema)
           return combined if combined == untyped
+
+          maybe_absence_type(combined, schema)
+        end
+
+        # The absence wrap of one slot under the current optionals
+        # mode: the Maybe type over the bare type, nilability inside
+        # wherever the value itself may be null.
+        def maybe_absence_type(combined, schema)
+          return maybe_type(combined) if maybe_wrapped?(schema)
           return combined if schema.strictly_required?
 
           nilable_type(combined)
