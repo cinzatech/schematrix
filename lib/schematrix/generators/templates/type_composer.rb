@@ -23,7 +23,7 @@ module Schematrix
         # Present(value) for a value. Partial classes wrap every
         # slot, required ones included, since absence is the partial's
         # whole content.
-        def type_of(path, name, schema)
+        def type_of(path, name, schema, slot: false)
           return untyped if schema.nil?
 
           # A null-only record is just nil, unless it carries more
@@ -31,7 +31,7 @@ module Schematrix
           # its class and renders nilable instead.
           if null_only?(schema)
             if @optionals == :maybe
-              return maybe_absence_type(null_only_type, schema)
+              return maybe_absence_type(null_only_type, schema, slot:)
             end
 
             return null_only_type
@@ -40,14 +40,18 @@ module Schematrix
           combined = bare_type(path, name, schema)
           return combined if combined == untyped
 
-          maybe_absence_type(combined, schema)
+          maybe_absence_type(combined, schema, slot:)
         end
 
         # The absence wrap of one slot under the current optionals
         # mode: the Maybe type over the bare type, nilability inside
-        # wherever the value itself may be null.
-        def maybe_absence_type(combined, schema)
-          return maybe_type(combined) if maybe_wrapped?(schema)
+        # wherever the value itself may be null. Only property slots
+        # wrap: array elements, catch-all values, and every other
+        # nested position loads and dumps as a plain value, so they
+        # follow the nilable mode's spelling wherever the schema does
+        # not demand the keyword.
+        def maybe_absence_type(combined, schema, slot:)
+          return maybe_type(combined) if slot && maybe_wrapped?(schema)
           return combined if schema.strictly_required?
 
           nilable_type(combined)
@@ -58,7 +62,7 @@ module Schematrix
         # encode that segment as the Props module level, so a reference
         # built from the property name alone would miss it and dangle.
         def property_type_of(path, name, schema)
-          type_of(path, "properties/#{name}", schema)
+          type_of(path, "properties/#{name}", schema, slot: true)
         end
 
         # Whether the schema says null and nothing else: no ref, no

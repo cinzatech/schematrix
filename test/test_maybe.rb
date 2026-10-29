@@ -148,6 +148,36 @@ class TestMaybe < Minitest::Test
     end
   end
 
+  def test_supplied_maybe_must_be_a_named_module
+    anonymous =
+      Class.new do
+        def self.from(value) = value
+
+        def self.empty = nil
+
+        def present? = true
+
+        def when_present(...) = nil
+      end
+    assert_raises(ArgumentError) do
+      Schematrix::Generators::PlainRuby.new(
+        "/tmp",
+        "Gen",
+        optionals: :maybe,
+        maybe: anonymous,
+      )
+    end
+
+    assert_raises(ArgumentError) do
+      Schematrix::Generators::PlainRuby.new(
+        "/tmp",
+        "Gen",
+        optionals: :maybe,
+        maybe: Object.new,
+      )
+    end
+  end
+
   def test_optionals_rejects_unknown_modes
     assert_raises(ArgumentError) do
       Schematrix::Generators::PlainRuby.new("/tmp", "Gen", optionals: :bang)

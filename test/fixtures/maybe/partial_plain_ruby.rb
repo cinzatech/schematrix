@@ -7,24 +7,30 @@ module M
         "firstName" => :first_name,
         "age" => :age,
         "tag" => :tag,
-        "address" => :address
+        "address" => :address,
+        "tags" => :tags,
+        "labels" => :labels
       }.freeze
 
       def initialize(
         first_name: Maybe.empty,
         age: Maybe.empty,
         tag: Maybe.empty,
-        address: Maybe.empty
+        address: Maybe.empty,
+        tags: Maybe.empty,
+        labels: Maybe.empty
       )
         @first_name = first_name
         @age = age
         @tag = tag
         @address = address
+        @tags = tags
+        @labels = labels
 
         @_extra = {}
       end
 
-      attr_accessor :first_name, :age, :tag, :address
+      attr_accessor :first_name, :age, :tag, :address, :tags, :labels
 
       def [](key)
         @_extra[key]
@@ -61,6 +67,16 @@ module M
                 else
                   M::Maybe.empty
                 end
+              ),
+            tags:
+              hash.key?("tags") ? M::Maybe.from(hash["tags"]) : M::Maybe.empty,
+            labels:
+              (
+                if hash.key?("labels")
+                  M::Maybe.from(hash["labels"])
+                else
+                  M::Maybe.empty
+                end
               )
           )
 
@@ -80,6 +96,8 @@ module M
         @address.when_present do |value|
           result["address"] = self.class.coerce_address(value)
         end
+        @tags.when_present { |value| result["tags"] = value }
+        @labels.when_present { |value| result["labels"] = value }
         @_extra.each { |key, value| result[key] = value }
         result
       end

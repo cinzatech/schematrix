@@ -264,12 +264,14 @@ module Schematrix
         return if maybe_contract_fulfilled?
 
         raise ArgumentError,
-              "maybe #{@maybe.inspect} must answer .from(value) and " \
-                ".empty, and its instances present? and when_present"
+              "maybe #{@maybe.inspect} must be a named module that " \
+                "answers .from(value) and .empty, and whose instances " \
+                "answer present? and when_present"
       end
 
       def maybe_contract_fulfilled?
-        @maybe.respond_to?(:from) && @maybe.respond_to?(:empty) &&
+        @maybe.is_a?(Module) && !@maybe.name.nil? &&
+          @maybe.respond_to?(:from) && @maybe.respond_to?(:empty) &&
           @maybe.method_defined?(:present?) &&
           @maybe.method_defined?(:when_present)
       end

@@ -12,7 +12,9 @@ module M
           "firstName" => :first_name,
           "age" => :age,
           "tag" => :tag,
-          "address" => :address
+          "address" => :address,
+          "tags" => :tags,
+          "labels" => :labels
         }.freeze,
         T::Hash[String, Symbol]
       )
@@ -22,19 +24,25 @@ module M
         first_name: String,
         age: Maybe[Integer],
         tag: Maybe[String],
-        address: Maybe[Schema::Props::Address]
+        address: Maybe[Schema::Props::Address],
+        tags: Maybe[T::Array[String]],
+        labels: Maybe[T::Hash[String, Integer]]
       ).void
     end
     def initialize(
       first_name:,
       age: Maybe.empty,
       tag: Maybe.from("none"),
-      address: Maybe.empty
+      address: Maybe.empty,
+      tags: Maybe.empty,
+      labels: Maybe.empty
     )
       @first_name = first_name
       @age = age
       @tag = tag
       @address = address
+      @tags = tags
+      @labels = labels
 
       @_extra = T.let({}, T::Hash[String, T.anything])
     end
@@ -50,6 +58,12 @@ module M
 
     sig { returns(Maybe[Schema::Props::Address]) }
     attr_accessor :address
+
+    sig { returns(Maybe[T::Array[String]]) }
+    attr_accessor :tags
+
+    sig { returns(Maybe[T::Hash[String, Integer]]) }
+    attr_accessor :labels
 
     sig { params(key: String).returns(T.anything) }
     def [](key)
@@ -83,6 +97,20 @@ module M
               (
                 if hash.key?("address")
                   M::Maybe.from(coerce_address(hash["address"]))
+                else
+                  M::Maybe.empty
+                end
+              )
+            ),
+          tags:
+            T.unsafe(
+              hash.key?("tags") ? M::Maybe.from(hash["tags"]) : M::Maybe.empty
+            ),
+          labels:
+            T.unsafe(
+              (
+                if hash.key?("labels")
+                  M::Maybe.from(hash["labels"])
                 else
                   M::Maybe.empty
                 end
@@ -126,6 +154,22 @@ module M
         nil
       else
         T.absurd(@address)
+      end
+      case @tags
+      when M::Maybe::Present
+        result["tags"] = @tags.value
+      when M::Maybe::Absent
+        nil
+      else
+        T.absurd(@tags)
+      end
+      case @labels
+      when M::Maybe::Present
+        result["labels"] = @labels.value
+      when M::Maybe::Absent
+        nil
+      else
+        T.absurd(@labels)
       end
       @_extra.each { |key, value| result[key] = value }
       result

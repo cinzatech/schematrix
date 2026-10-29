@@ -6,7 +6,9 @@ module M
       "firstName" => :first_name,
       "age" => :age,
       "tag" => :tag,
-      "address" => :address
+      "address" => :address,
+      "tags" => :tags,
+      "labels" => :labels
     }.freeze
 
     sig do
@@ -14,14 +16,18 @@ module M
         first_name: String,
         age: Maybe[Integer],
         tag: Maybe[String],
-        address: Maybe[Schema::Props::Address]
+        address: Maybe[Schema::Props::Address],
+        tags: Maybe[T::Array[String]],
+        labels: Maybe[T::Hash[String, Integer]]
       ).void
     end
     def initialize(
       first_name:,
       age: Maybe.empty,
       tag: Maybe.from("none"),
-      address: Maybe.empty
+      address: Maybe.empty,
+      tags: Maybe.empty,
+      labels: Maybe.empty
     )
     end
 
@@ -55,6 +61,22 @@ module M
 
     sig { params(address: Maybe[Schema::Props::Address]).void }
     def address=(address)
+    end
+
+    sig { returns(Maybe[T::Array[String]]) }
+    def tags
+    end
+
+    sig { params(tags: Maybe[T::Array[String]]).void }
+    def tags=(tags)
+    end
+
+    sig { returns(Maybe[T::Hash[String, Integer]]) }
+    def labels
+    end
+
+    sig { params(labels: Maybe[T::Hash[String, Integer]]).void }
+    def labels=(labels)
     end
 
     sig { params(key: String).returns(T.anything) }

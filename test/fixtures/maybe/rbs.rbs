@@ -6,12 +6,16 @@ module M
     attr_accessor age: M::Maybe[Integer]
     attr_accessor tag: M::Maybe[String]
     attr_accessor address: M::Maybe[Schema::Props::Address]
+    attr_accessor tags: M::Maybe[Array[String]]
+    attr_accessor labels: M::Maybe[Hash[String, Integer]]
 
     def initialize: (
       first_name: String,
       ?age: M::Maybe[Integer],
       ?tag: M::Maybe[String],
-      ?address: M::Maybe[Schema::Props::Address]
+      ?address: M::Maybe[Schema::Props::Address],
+      ?tags: M::Maybe[Array[String]],
+      ?labels: M::Maybe[Hash[String, Integer]]
     ) -> void
 
     def []: (String) -> top

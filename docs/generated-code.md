@@ -212,13 +212,15 @@ included, under a `Partial` module level:
 
 ```ruby
 sig { params(first_name: Maybe[String], age: Maybe[T.nilable(Integer)]).void }
-def initialize(first_name:, age: Maybe.empty)
+def initialize(first_name: Maybe.empty, age: Maybe.empty)
 ```
 
-A nested object property types as `Maybe[Partial::Address]`. A schema
-`default` does not materialize from nothing in a partial: the slot
-starts `Absent` and loads `Present(default)` only when the document
-carries the key, so an empty patch document dumps as an empty hash.
+Every keyword carries a `Maybe.empty` default, so an empty partial is
+one constructor call away. A nested object property types as
+`Maybe[Partial::Address]`. A schema `default` does not materialize
+from nothing in a partial: the slot starts `Absent` when the document
+lacks the key, and wraps the document's value as `Present(value)` when
+it carries it, so an empty patch document dumps as an empty hash.
 
 ## Closed shapes
 
