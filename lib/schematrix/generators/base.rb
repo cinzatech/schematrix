@@ -253,18 +253,37 @@ module Schematrix
       # travels with the maybe option, since the nilable option never
       # references the type. Generator families without a Maybe
       # surface (the DSL builders) refuse the option here, at
-      # construction, before any file can be written.
+      # construction, before any file can be written. A supplied
+      # Maybe must be a named module answering the four-method
+      # contract, and, wherever the output spells type names, one
+      # that applies its value type: the typed formats render
+      # `Maybe[...]` and the sig blocks of the Sorbet formats
+      # evaluate that application when the generated file loads.
       def assert_maybe_valid
         if @optionals == :maybe && !self.class.maybe_supported?
           raise ArgumentError,
                 "#{self.class.name} does not support optionals: :maybe"
         end
-        return if @maybe.nil? || maybe_contract_fulfilled?
+        return if @maybe.nil?
+
+        unless maybe_contract_fulfilled?
+          raise ArgumentError,
+                "maybe #{@maybe.inspect} must be a named module that " \
+                  "answers .from(value) and .empty, and whose instances " \
+                  "answer present? and when_present"
+        end
+        return if !typed_output? || @maybe.respond_to?(:[])
 
         raise ArgumentError,
-              "maybe #{@maybe.inspect} must be a named module that " \
-                "answers .from(value) and .empty, and whose instances " \
-                "answer present? and when_present"
+              "maybe #{@maybe.inspect} must apply its value type (a " \
+                "type_member, like the generated Maybe); the typed " \
+                "formats render Maybe[...] signatures"
+      end
+
+      # Whether this generator's output spells type names, where a
+      # supplied Maybe appears applied to its value type.
+      def typed_output?
+        self.class.maybe_flavor != :plain
       end
 
       def maybe_contract_fulfilled?

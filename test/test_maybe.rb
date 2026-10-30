@@ -14,6 +14,20 @@ module ProjectMaybe
   def when_present(...) = raise NotImplementedError
 end
 
+# A supplied Maybe with a generic surface, as a Sorbet-generic module
+# answers `[]`; the generator only checks that application resolves.
+module ProjectGenericMaybe
+  def self.[](_) = nil
+
+  def self.from(value) = [:present, value]
+
+  def self.empty = :absent
+
+  def present? = raise NotImplementedError
+
+  def when_present(...) = raise NotImplementedError
+end
+
 class TestMaybe < Minitest::Test
   include SchematrixTestHelper
 
@@ -176,6 +190,32 @@ class TestMaybe < Minitest::Test
         maybe: Object.new,
       )
     end
+  end
+
+  def test_typed_generators_require_a_generic_supplied_maybe
+    error =
+      assert_raises(ArgumentError) do
+        Schematrix::Generators::SorbetRuby.new(
+          "/tmp",
+          "Gen",
+          optionals: :maybe,
+          maybe: ProjectMaybe,
+        )
+      end
+    assert_includes error.message, "apply its value type"
+
+    Schematrix::Generators::PlainRuby.new(
+      "/tmp",
+      "Gen",
+      optionals: :maybe,
+      maybe: ProjectMaybe,
+    )
+    Schematrix::Generators::SorbetRuby.new(
+      "/tmp",
+      "Gen",
+      optionals: :maybe,
+      maybe: ProjectGenericMaybe,
+    )
   end
 
   def test_optionals_rejects_unknown_modes
