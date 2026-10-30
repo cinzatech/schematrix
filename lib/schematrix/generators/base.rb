@@ -272,18 +272,23 @@ module Schematrix
                   "answers .from(value) and .empty, and whose instances " \
                   "answer present? and when_present"
         end
-        return if !typed_output? || @maybe.respond_to?(:[])
+        return if !executable_output? || @maybe.respond_to?(:[])
 
         raise ArgumentError,
               "maybe #{@maybe.inspect} must apply its value type (a " \
-                "type_member, like the generated Maybe); the typed " \
-                "formats render Maybe[...] signatures"
+                "type_member, like the generated Maybe); the Sorbet " \
+                "Ruby output evaluates Maybe[...] applications in " \
+                "its sig blocks"
       end
 
-      # Whether this generator's output spells type names, where a
-      # supplied Maybe appears applied to its value type.
-      def typed_output?
-        self.class.maybe_flavor != :plain
+      # Only the Sorbet Ruby flavor executes the Maybe[...] type
+      # applications it spells: its sig blocks run when the generated
+      # file loads. The RBS and RBI flavors only declare signatures,
+      # so a supplied Maybe that is plain at runtime but generic in
+      # its .rbs or .rbi declaration is acceptable there, and the
+      # plain formats spell no type names at all.
+      def executable_output?
+        self.class.maybe_flavor == :sorbet
       end
 
       def maybe_contract_fulfilled?

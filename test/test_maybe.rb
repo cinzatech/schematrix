@@ -218,6 +218,17 @@ class TestMaybe < Minitest::Test
     )
   end
 
+  def test_signature_formats_accept_a_plain_supplied_maybe
+    %w[Rbs Rbi PartialRbs PartialRbi].each do |name|
+      Schematrix::Generators.const_get(name).new(
+        "/tmp",
+        "Gen",
+        optionals: :maybe,
+        maybe: ProjectMaybe,
+      )
+    end
+  end
+
   def test_optionals_rejects_unknown_modes
     assert_raises(ArgumentError) do
       Schematrix::Generators::PlainRuby.new("/tmp", "Gen", optionals: :bang)
