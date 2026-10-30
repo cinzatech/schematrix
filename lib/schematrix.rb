@@ -99,17 +99,21 @@ module Schematrix
     objects
   end
 
-  # One generated Maybe per output directory and flavor, for every
-  # per-locator generator that runs with optionals: :maybe and no
-  # supplied maybe module. Several generators sharing a directory
-  # (a data family and its partials, say) share one file; two
-  # flavors in one directory collide in assert_distinct_targets.
+  # One generated Maybe per output directory, flavor, and module:
+  # generators sharing all three share one file; anything less (two
+  # flavors, or two modules in one directory) collides in
+  # assert_distinct_targets, because one maybe.rb declares one
+  # namespace and every other module's Maybe reference would dangle.
   def self.maybe_writers(_objects, generators)
     writers = {}
     generators.each do |generator|
       next unless generator.maybe_needed?
 
-      key = [generator.output_dir, generator.class.maybe_flavor]
+      key = [
+        generator.output_dir,
+        generator.class.maybe_flavor,
+        generator.module_name,
+      ]
       writers[key] ||= Generators::Maybe.new(
         generator.output_dir,
         generator.module_name,
@@ -155,7 +159,11 @@ module Schematrix
         end
         next unless generator.maybe_needed?
 
-        maybe_key = [generator.output_dir, generator.class.maybe_flavor]
+        maybe_key = [
+          generator.output_dir,
+          generator.class.maybe_flavor,
+          generator.module_name,
+        ]
         next if claimed_maybe.key?(maybe_key)
 
         claimed_maybe[maybe_key] = true

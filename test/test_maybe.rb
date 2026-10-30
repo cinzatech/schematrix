@@ -190,6 +190,42 @@ class TestMaybe < Minitest::Test
     end
   end
 
+  def test_dsl_generators_reject_the_maybe_option_even_with_a_supplied_maybe
+    assert_raises(ArgumentError) do
+      Schematrix::Generators::DslPlainRuby.new(
+        "/tmp",
+        "Gen",
+        optionals: :maybe,
+        maybe: ProjectMaybe,
+      )
+    end
+  end
+
+  def test_one_generated_maybe_file_cannot_serve_two_modules
+    Dir.mktmpdir do |dir|
+      schema = File.join(dir, "person.json")
+      File.write(schema, MAYBE_MODULE_SCHEMA)
+
+      output = File.join(dir, "out")
+      error =
+        assert_raises(Schematrix::OutputCollisionError) do
+          Schematrix.generate(
+            generators: [
+              Schematrix::Generators::PlainRuby.new(
+                output,
+                "Gen",
+                optionals: :maybe,
+              ),
+              Schematrix::Generators::PartialPlainRuby.new(output, "Other"),
+            ],
+            input_files: [schema],
+          )
+        end
+
+      assert_includes error.message, "maybe.rb"
+    end
+  end
+
   def test_partial_generators_refuse_immutable
     assert_raises(ArgumentError) do
       Schematrix::Generators::PartialPlainRuby.new(

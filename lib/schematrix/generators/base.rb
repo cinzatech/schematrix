@@ -255,13 +255,11 @@ module Schematrix
       # surface (the DSL builders) refuse the option here, at
       # construction, before any file can be written.
       def assert_maybe_valid
-        if @maybe.nil?
-          return if @optionals != :maybe || self.class.maybe_supported?
-
+        if @optionals == :maybe && !self.class.maybe_supported?
           raise ArgumentError,
                 "#{self.class.name} does not support optionals: :maybe"
         end
-        return if maybe_contract_fulfilled?
+        return if @maybe.nil? || maybe_contract_fulfilled?
 
         raise ArgumentError,
               "maybe #{@maybe.inspect} must be a named module that " \
