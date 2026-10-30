@@ -103,6 +103,7 @@ module M
       module DateTime
         require "time"
 
+        extend T::Sig
         sig { params(value: T.untyped).returns(T.untyped) }
         def self.coerce(value)
           case value
@@ -119,6 +120,7 @@ module M
       module Date
         require "date"
 
+        extend T::Sig
         sig { params(value: T.untyped).returns(T.untyped) }
         def self.coerce(value)
           case value
