@@ -90,7 +90,39 @@ module Schematrix
       generator.write_run_once(objects)
     end
 
+    maybe_writers(objects, per_locator).each do |generator|
+      logger&.info "Writing generated Maybe for #{generator.module_name} " \
+                     "in #{generator.output_dir}"
+      generator.write_run_once(objects)
+    end
+
     objects
+  end
+
+  # One generated Maybe per output directory, flavor, and module:
+  # generators sharing all three share one file; anything less (two
+  # flavors, or two modules in one directory) collides in
+  # assert_distinct_targets, because one maybe.rb declares one
+  # namespace and every other module's Maybe reference would dangle.
+  def self.maybe_writers(_objects, generators)
+    writers = {}
+    generators.each do |generator|
+      next unless generator.maybe_needed?
+
+      key = [
+        generator.output_dir,
+        generator.class.maybe_flavor,
+        generator.module_name,
+      ]
+      writers[key] ||= Generators::Maybe.new(
+        generator.output_dir,
+        generator.module_name,
+        flavor: generator.class.maybe_flavor,
+        format: generator.format,
+        command: generator.command,
+      )
+    end
+    writers.values
   end
 
   # Checks that every generator writing every compiled locator lands
@@ -105,6 +137,7 @@ module Schematrix
   # class would fold onto) before any file is written.
   def self.assert_distinct_targets(generators, objects)
     claimed = {}
+    claimed_maybe = {}
     claim =
       lambda do |generator, path, locator|
         if claimed.key?(path)
@@ -124,6 +157,26 @@ module Schematrix
         objects.each_key do |locator|
           claim.call(generator, generator.target_path(locator), locator)
         end
+        next unless generator.maybe_needed?
+
+        maybe_key = [
+          generator.output_dir,
+          generator.class.maybe_flavor,
+          generator.module_name,
+        ]
+        next if claimed_maybe.key?(maybe_key)
+
+        claimed_maybe[maybe_key] = true
+        Generators::Maybe
+          .new(
+            generator.output_dir,
+            generator.module_name,
+            flavor: generator.class.maybe_flavor,
+            format: generator.format,
+            command: generator.command,
+          )
+          .run_once_target_paths
+          .each { |path| claim.call(generator, path, "generated Maybe") }
       end
     end
   end

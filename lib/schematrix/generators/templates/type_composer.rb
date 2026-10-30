@@ -7,25 +7,59 @@ module Schematrix
       # computing the type of a schema, its variants, array
       # elements and intersections is one algorithm; only the syntax
       # of the target notation differs. Formats including this module
-      # supply that syntax through the hook methods below:
-      # untyped, scalar_type, array_of, string_keyed_hash,
-      # null_only_type, nilable_type, element_union, join_union and
-      # join_intersection.
+      # The spelling hooks every notation supplies: untyped, scalar
+      # type, array_of, string_keyed_hash, null_only_type,
+      # nilable_type, maybe_type, element_union, join_union and
+      # join_intersection. Maybe mode itself is read off the template
+      # (Templates::Base#maybe_wrapped?).
       module TypeComposer
         include Resolver
 
         # The full type of a schema: the bare type underneath,
-        # wrapped for absence wherever the property is optional.
-        def type_of(path, name, schema)
+        # wrapped for absence wherever the property is optional. When
+        # the maybe option is on, the optional wrap is the Maybe type
+        # with the nilability kept inside, so a slot carries three
+        # states: Absent for a missing key, Present(nil) for a null,
+        # Present(value) for a value. Partial classes wrap every
+        # slot, required ones included, since absence is the partial's
+        # whole content.
+        def type_of(path, name, schema, slot: false)
           return untyped if schema.nil?
 
           # A null-only record is just nil, unless it carries more
           # terms: a ref to a target typed ["object", "null"] keeps
-          # its class and renders nilable instead.
-          return null_only_type if null_only?(schema)
+          # its class and renders nilable instead. A wrapped slot
+          # types Maybe[NilClass], so absent and null stay distinct;
+          # every other position keeps the nilable mode's bare
+          # spelling.
+          if null_only?(schema)
+            return maybe_type(null_only_type) if slot && maybe_wrapped?(schema)
+
+            return null_only_type
+          end
 
           combined = bare_type(path, name, schema)
           return combined if combined == untyped
+
+          maybe_absence_type(combined, schema, slot:)
+        end
+
+        # The absence wrap of one slot under the current optionals
+        # mode: the Maybe type over the bare type, nilability inside
+        # wherever the value itself may be null. Only property slots
+        # wrap: array elements, catch-all values, and every other
+        # nested position loads and dumps as a plain value, so they
+        # follow the nilable mode's spelling wherever the schema does
+        # not demand the keyword.
+        def maybe_absence_type(combined, schema, slot:)
+          if slot && maybe_wrapped?(schema)
+            # Nullability stays inside the wrap: the loader is
+            # over-accepting and builds Present(nil) for an explicit
+            # null, so the declared type has to admit it whatever the
+            # schema says about the value.
+            return maybe_type(nilable_type(combined))
+          end
+
           return combined if schema.strictly_required?
 
           nilable_type(combined)
@@ -36,7 +70,7 @@ module Schematrix
         # encode that segment as the Props module level, so a reference
         # built from the property name alone would miss it and dangle.
         def property_type_of(path, name, schema)
-          type_of(path, "properties/#{name}", schema)
+          type_of(path, "properties/#{name}", schema, slot: true)
         end
 
         # Whether the schema says null and nothing else: no ref, no

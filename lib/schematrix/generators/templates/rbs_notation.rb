@@ -37,6 +37,11 @@ module Schematrix
           multi ? "(#{combined})?" : "#{combined}?"
         end
 
+        # Absence under the maybe option renders through the Maybe
+        # generic, named absolutely: an RBS type name is global, so
+        # lexical resolution cannot stand in for it.
+        def maybe_type(combined) = "#{maybe_reference}[#{combined}]"
+
         # Array element unions parenthesize when multiple terms remain,
         # keeping the union one element type inside Array[...]
         def element_union(combined, terms)

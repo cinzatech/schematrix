@@ -39,7 +39,7 @@ load and dump (see [Schema features](schema-features.md)).
   logging, exit behavior.
 - [Library API](library-api.md): `Schematrix.generate`, the error types,
   driving generators from Ruby.
-- [Generators](generators.md): the eight output formats and their type
+- [Generators](generators.md): the twelve output formats and their type
   mappings.
 - [Generated code](generated-code.md): what a generated class contains
   and how loading and dumping work.

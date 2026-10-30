@@ -153,6 +153,80 @@ def initialize(color: "blue")
 key, so an explicit `null` in the document and an absent key stay
 distinct: `{"color": null}` sets `nil`, an absent key keeps `"blue"`.
 
+## Maybe optionals
+
+With `optionals: :maybe` on a generator instance, every property not
+listed in `required` types as `Maybe[T]` instead of a nilable type,
+and required properties keep their type.
+
+The Maybe type has two cases, `Present(value)` and `Absent`, and
+carries nullability inside the type: `Maybe[T.nilable(Integer)]` has
+three states, `Absent` for a missing key, `Present(nil)` for a null,
+and `Present(36)` for a value. Loading and dumping follow the
+document:
+
+- `from_h` builds `Absent` when the key is missing and
+  `Present(value)` when it is there, `null` included.
+- `to_h` writes nothing for `Absent` and writes the value for
+  `Present`, `null` included.
+- A schema `default` is the constructor default, as `Present(default)`,
+  so an absent key still loads the default and dumps it.
+
+The distinction is the content of a partial update: `{"age": null}`
+means "clear the age", an omitted `age` means "leave it alone".
+
+Without further options the generator writes its own `MyApp::Maybe`
+into the output module, once per output directory, so generated code
+keeps its property of depending on nothing but `sorbet-runtime` in the
+Sorbet formats. The generated module declares `interface!` and
+`sealed!`, so a `case` over a `Maybe` checks for exhaustiveness and
+`T.absurd` works; `value` is deliberately not on the interface, so
+calling it on an `Absent` does not type check; `Absent` is one frozen
+instance.
+
+A project that already has a Maybe passes it with `maybe:`:
+
+```ruby
+Schematrix::Generators::SorbetRuby.new(
+  "app/generated",
+  "MyApp",
+  optionals: :maybe,
+  maybe: ::Maybe,
+)
+```
+
+The module must answer `from(value)` and `empty`, and its instances
+`present?` and `when_present { |value| }`; the generator checks the
+four at generation time and refuses anything else before any file is
+written. With a supplied Maybe the generated dump reads through
+`when_present` instead of the sealed `case`, because the generator
+cannot assume a supplied type is sealed. The `dsl_` builders do not
+accept the option: a builder expresses absence by never calling a
+setter, which is already the right behaviour.
+
+## Partial classes
+
+The `partial_` generators ([Generators](generators.md)) write a second
+family where every property wraps in the Maybe type, required ones
+included, under a `Partial` module level:
+
+```ruby
+sig do
+  params(
+    first_name: Maybe[T.nilable(String)],
+    age: Maybe[T.nilable(Integer)]
+  ).void
+end
+def initialize(first_name: Maybe.empty, age: Maybe.empty)
+```
+
+Every keyword carries a `Maybe.empty` default, so an empty partial is
+one constructor call away. A nested object property types as
+`Maybe[Partial::Address]`. A schema `default` does not materialize
+from nothing in a partial: the slot starts `Absent` when the document
+lacks the key, and wraps the document's value as `Present(value)` when
+it carries it, so an empty patch document dumps as an empty hash.
+
 ## Closed shapes
 
 With `--closed-shapes`, or an explicit `"additionalProperties": false`,
@@ -307,6 +381,16 @@ class nesting:
 app/generated/person.rb
 app/generated/complex_object.rb
 app/generated/complex_object/props/address.rb
+```
+
+The DSL builders live under a `dsl/` prefix and the partial classes
+under a `partial/` prefix, at the same depth, so three families can
+share one output directory and one module:
+
+```text
+app/generated/person.rb                  # MyApp::Person
+app/generated/partial/person.rb          # MyApp::Partial::Person
+app/generated/dsl/person.rb              # MyApp::Dsl::Person
 ```
 
 Each file reopens its enclosing modules and classes, so files load in

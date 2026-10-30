@@ -1,0 +1,52 @@
+{
+  "type": "object",
+  "properties": {
+    "firstName": {
+      "type": "string",
+      "description": "The legal first name."
+    },
+    "age": {
+      "type": "integer"
+    },
+    "tag": {
+      "type": "string",
+      "default": "none"
+    },
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": {
+          "type": "string"
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer"
+      }
+    },
+    "nickname": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "voids": {
+      "type": "array",
+      "items": {
+        "type": "null"
+      }
+    }
+  },
+  "required": [
+    "firstName",
+    "nickname"
+  ]
+}

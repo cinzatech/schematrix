@@ -23,7 +23,11 @@ module Schematrix
           documentation_comment:,
           property_keys: [],
           scalar_types: Schematrix::BUILTIN_SCALAR_TYPES,
-          immutable: false
+          immutable: false,
+          optionals: :nilable,
+          maybe: nil,
+          all_slots_maybe: false,
+          namespace_prefix: nil
         )
           @module_name = module_name
           @path = path
@@ -34,7 +38,18 @@ module Schematrix
           @documentation_comment = documentation_comment
           @scalar_types = scalar_types
           @immutable = immutable
+          @optionals = optionals
+          @maybe = maybe
+          @all_slots_maybe = all_slots_maybe
+          @namespace_prefix = namespace_prefix
         end
+
+        # The optionals mode and the supplied Maybe module the
+        # generator was built with: :maybe wraps absence in the Maybe
+        # type instead of nilability, and @maybe, when set, is the
+        # project's own implementation the generated code calls
+        # through.
+        attr_reader :optionals, :maybe
 
         # The merged [type, format] rendering table the type algebra
         # and the coercion plans read. Generators pass the table their
@@ -62,6 +77,57 @@ module Schematrix
         # instead of accessors, the catch-all as a constructor
         # keyword, a with copier, and value equality.
         def immutable? = @immutable
+
+        # Whether a slot wraps in the Maybe type: every slot the
+        # constructor does not demand when the optionals option is
+        # on, and every slot at all in the partial classes, where
+        # absence is the slot's whole content. A property listed in
+        # `required` without a default keeps its type even when
+        # nullable: the constructor demands the keyword, and a
+        # Maybe-typed slot would hand it a Maybe.empty default that
+        # lets callers omit it and dump without it. A property with a
+        # default still wraps, as Present(default).
+        def maybe_wrapped?(schema)
+          return false unless @optionals == :maybe
+
+          @all_slots_maybe || !schema.constructor_required?
+        end
+
+        # The class name a reference resolves to: prefixed with the
+        # family namespace (Partial) where the generator declares one,
+        # so every nested reference in the file points at the same
+        # family as the file's own class.
+        def class_name_from_path(uri, name = nil)
+          return super if @namespace_prefix.nil?
+
+          "#{@namespace_prefix}::#{super}"
+        end
+
+        # The Maybe constant the generated type positions spell:
+        # lexically resolved for the generated module, absolute for a
+        # supplied one, whose home nothing here can assume.
+        def maybe_type_name = @maybe ? "::#{@maybe.name}" : "Maybe"
+
+        # The Maybe constant the generated code dispatches through:
+        # the case in to_h and the Present/Absent tests. The
+        # module-level path is fully qualified, so the case reads the
+        # same in a nested Props class as at the document root.
+        def maybe_reference
+          @maybe ? "::#{@maybe.name}" : "#{@module_name}::Maybe"
+        end
+
+        # Whether maybe slots dump through the exhaustive sealed case
+        # with T.absurd: only output that both emits Sorbet bodies and
+        # references the generated, sealed Maybe can claim it. A
+        # supplied Maybe makes no sealing promise, and plain bodies
+        # have no T.absurd to call.
+        def exhaustive_maybe_dump? = false
+
+        # The escape hatch a notation applies to a loaded maybe slot's
+        # expression. The plain formats pass it through untouched.
+        def maybe_loaded(expression, _name)
+          expression
+        end
 
         # The class's own name, without the module path: the name a
         # self-referencing signature renders (Schema, Child).

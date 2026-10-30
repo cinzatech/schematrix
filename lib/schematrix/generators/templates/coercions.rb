@@ -449,6 +449,9 @@ module Schematrix
             lines << "require #{coercer::GENERATED_REQUIRE.inspect}"
             lines << ""
           end
+          # The sig blocks the Sorbet formats annotate the coerce
+          # method with only resolve when the module extends T::Sig.
+          lines << "extend T::Sig" if sig
           lines << sig if sig
           lines << coercer_method_body(coercer, stub:)
           <<~RUBY.rstrip

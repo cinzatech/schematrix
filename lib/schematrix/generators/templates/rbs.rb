@@ -30,14 +30,18 @@ module Schematrix
         # Mirrors the generated Ruby constructor: the same required
         # keywords (null-typed required properties included) in the
         # same required-first order, and the catch-all keyword once
-        # the class is immutable and open.
+        # the class is immutable and open. A maybe slot always
+        # carries a Maybe value in the Ruby constructor (Absent for a
+        # partial, Present(default) for a defaulted data slot), so it
+        # takes the optional marker wherever the constructor gives it
+        # a default.
         def rbs_initialize_params
           return "" if @properties.nil?
 
           params =
             constructor_properties.map do |name, schema|
               type = property_type_of(@path, name, schema)
-              if schema.constructor_required?
+              if schema.constructor_required? && !maybe_slot?(name)
                 "#{name}: #{type}"
               else
                 "?#{name}: #{type}"

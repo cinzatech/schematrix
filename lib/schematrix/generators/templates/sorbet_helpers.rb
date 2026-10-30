@@ -32,6 +32,11 @@ module Schematrix
         # terms stay grouped by their constructors
         def nilable_type(combined) = "T.nilable(#{combined})"
 
+        # Absence under the maybe option renders through the Maybe
+        # generic; the nilability of the value itself stays inside
+        # (Maybe[T.nilable(Integer)]), spelled by the caller.
+        def maybe_type(combined) = "#{maybe_type_name}[#{combined}]"
+
         def element_union(combined, _terms) = combined
 
         def join_union(types) = "T.any(#{types.join(", ")})"
