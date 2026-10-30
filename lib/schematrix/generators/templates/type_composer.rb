@@ -28,11 +28,12 @@ module Schematrix
 
           # A null-only record is just nil, unless it carries more
           # terms: a ref to a target typed ["object", "null"] keeps
-          # its class and renders nilable instead.
+          # its class and renders nilable instead. A wrapped slot
+          # types Maybe[NilClass], so absent and null stay distinct;
+          # every other position keeps the nilable mode's bare
+          # spelling.
           if null_only?(schema)
-            if @optionals == :maybe
-              return maybe_absence_type(null_only_type, schema, slot:)
-            end
+            return maybe_type(null_only_type) if slot && maybe_wrapped?(schema)
 
             return null_only_type
           end
@@ -51,7 +52,14 @@ module Schematrix
         # follow the nilable mode's spelling wherever the schema does
         # not demand the keyword.
         def maybe_absence_type(combined, schema, slot:)
-          return maybe_type(combined) if slot && maybe_wrapped?(schema)
+          if slot && maybe_wrapped?(schema)
+            # Nullability stays inside the wrap: the loader is
+            # over-accepting and builds Present(nil) for an explicit
+            # null, so the declared type has to admit it whatever the
+            # schema says about the value.
+            return maybe_type(nilable_type(combined))
+          end
+
           return combined if schema.strictly_required?
 
           nilable_type(combined)

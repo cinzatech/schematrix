@@ -15,28 +15,34 @@ module M
             "tag" => :tag,
             "address" => :address,
             "tags" => :tags,
-            "labels" => :labels
+            "labels" => :labels,
+            "nickname" => :nickname,
+            "voids" => :voids
           }.freeze,
           T::Hash[String, Symbol]
         )
 
       sig do
         params(
-          first_name: Maybe[String],
-          age: Maybe[Integer],
-          tag: Maybe[String],
-          address: Maybe[Partial::Schema::Props::Address],
-          tags: Maybe[T::Array[String]],
-          labels: Maybe[T::Hash[String, Integer]]
+          first_name: Maybe[T.nilable(String)],
+          nickname: Maybe[T.nilable(String)],
+          age: Maybe[T.nilable(Integer)],
+          tag: Maybe[T.nilable(String)],
+          address: Maybe[T.nilable(Partial::Schema::Props::Address)],
+          tags: Maybe[T.nilable(T::Array[String])],
+          labels: Maybe[T.nilable(T::Hash[String, Integer])],
+          voids: Maybe[T.nilable(T::Array[NilClass])]
         ).void
       end
       def initialize(
         first_name: Maybe.empty,
+        nickname: Maybe.empty,
         age: Maybe.empty,
         tag: Maybe.empty,
         address: Maybe.empty,
         tags: Maybe.empty,
-        labels: Maybe.empty
+        labels: Maybe.empty,
+        voids: Maybe.empty
       )
         @first_name = first_name
         @age = age
@@ -44,27 +50,35 @@ module M
         @address = address
         @tags = tags
         @labels = labels
+        @nickname = nickname
+        @voids = voids
 
         @_extra = T.let({}, T::Hash[String, T.anything])
       end
 
-      sig { returns(Maybe[String]) }
+      sig { returns(Maybe[T.nilable(String)]) }
       attr_accessor :first_name
 
-      sig { returns(Maybe[Integer]) }
+      sig { returns(Maybe[T.nilable(Integer)]) }
       attr_accessor :age
 
-      sig { returns(Maybe[String]) }
+      sig { returns(Maybe[T.nilable(String)]) }
       attr_accessor :tag
 
-      sig { returns(Maybe[Partial::Schema::Props::Address]) }
+      sig { returns(Maybe[T.nilable(Partial::Schema::Props::Address)]) }
       attr_accessor :address
 
-      sig { returns(Maybe[T::Array[String]]) }
+      sig { returns(Maybe[T.nilable(T::Array[String])]) }
       attr_accessor :tags
 
-      sig { returns(Maybe[T::Hash[String, Integer]]) }
+      sig { returns(Maybe[T.nilable(T::Hash[String, Integer])]) }
       attr_accessor :labels
+
+      sig { returns(Maybe[T.nilable(String)]) }
+      attr_accessor :nickname
+
+      sig { returns(Maybe[T.nilable(T::Array[NilClass])]) }
+      attr_accessor :voids
 
       sig { params(key: String).returns(T.anything) }
       def [](key)
@@ -125,6 +139,26 @@ module M
                 (
                   if hash.key?("labels")
                     M::Maybe.from(hash["labels"])
+                  else
+                    M::Maybe.empty
+                  end
+                )
+              ),
+            nickname:
+              T.unsafe(
+                (
+                  if hash.key?("nickname")
+                    M::Maybe.from(hash["nickname"])
+                  else
+                    M::Maybe.empty
+                  end
+                )
+              ),
+            voids:
+              T.unsafe(
+                (
+                  if hash.key?("voids")
+                    M::Maybe.from(hash["voids"])
                   else
                     M::Maybe.empty
                   end
@@ -190,6 +224,22 @@ module M
           nil
         else
           T.absurd(@labels)
+        end
+        case @nickname
+        when M::Maybe::Present
+          result["nickname"] = @nickname.value
+        when M::Maybe::Absent
+          nil
+        else
+          T.absurd(@nickname)
+        end
+        case @voids
+        when M::Maybe::Present
+          result["voids"] = @voids.value
+        when M::Maybe::Absent
+          nil
+        else
+          T.absurd(@voids)
         end
         @_extra.each { |key, value| result[key] = value }
         result

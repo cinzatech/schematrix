@@ -31,9 +31,22 @@
       "additionalProperties": {
         "type": "integer"
       }
+    },
+    "nickname": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "voids": {
+      "type": "array",
+      "items": {
+        "type": "null"
+      }
     }
   },
   "required": [
-    "firstName"
+    "firstName",
+    "nickname"
   ]
 }

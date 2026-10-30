@@ -211,7 +211,12 @@ family where every property wraps in the Maybe type, required ones
 included, under a `Partial` module level:
 
 ```ruby
-sig { params(first_name: Maybe[String], age: Maybe[T.nilable(Integer)]).void }
+sig do
+  params(
+    first_name: Maybe[T.nilable(String)],
+    age: Maybe[T.nilable(Integer)]
+  ).void
+end
 def initialize(first_name: Maybe.empty, age: Maybe.empty)
 ```
 

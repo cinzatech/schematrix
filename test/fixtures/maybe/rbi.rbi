@@ -8,26 +8,32 @@ module M
       "tag" => :tag,
       "address" => :address,
       "tags" => :tags,
-      "labels" => :labels
+      "labels" => :labels,
+      "nickname" => :nickname,
+      "voids" => :voids
     }.freeze
 
     sig do
       params(
         first_name: String,
-        age: Maybe[Integer],
-        tag: Maybe[String],
-        address: Maybe[Schema::Props::Address],
-        tags: Maybe[T::Array[String]],
-        labels: Maybe[T::Hash[String, Integer]]
+        nickname: T.nilable(String),
+        age: Maybe[T.nilable(Integer)],
+        tag: Maybe[T.nilable(String)],
+        address: Maybe[T.nilable(Schema::Props::Address)],
+        tags: Maybe[T.nilable(T::Array[String])],
+        labels: Maybe[T.nilable(T::Hash[String, Integer])],
+        voids: Maybe[T.nilable(T::Array[NilClass])]
       ).void
     end
     def initialize(
       first_name:,
+      nickname:,
       age: Maybe.empty,
       tag: Maybe.from("none"),
       address: Maybe.empty,
       tags: Maybe.empty,
-      labels: Maybe.empty
+      labels: Maybe.empty,
+      voids: Maybe.empty
     )
     end
 
@@ -39,44 +45,60 @@ module M
     def first_name=(first_name)
     end
 
-    sig { returns(Maybe[Integer]) }
+    sig { returns(Maybe[T.nilable(Integer)]) }
     def age
     end
 
-    sig { params(age: Maybe[Integer]).void }
+    sig { params(age: Maybe[T.nilable(Integer)]).void }
     def age=(age)
     end
 
-    sig { returns(Maybe[String]) }
+    sig { returns(Maybe[T.nilable(String)]) }
     def tag
     end
 
-    sig { params(tag: Maybe[String]).void }
+    sig { params(tag: Maybe[T.nilable(String)]).void }
     def tag=(tag)
     end
 
-    sig { returns(Maybe[Schema::Props::Address]) }
+    sig { returns(Maybe[T.nilable(Schema::Props::Address)]) }
     def address
     end
 
-    sig { params(address: Maybe[Schema::Props::Address]).void }
+    sig { params(address: Maybe[T.nilable(Schema::Props::Address)]).void }
     def address=(address)
     end
 
-    sig { returns(Maybe[T::Array[String]]) }
+    sig { returns(Maybe[T.nilable(T::Array[String])]) }
     def tags
     end
 
-    sig { params(tags: Maybe[T::Array[String]]).void }
+    sig { params(tags: Maybe[T.nilable(T::Array[String])]).void }
     def tags=(tags)
     end
 
-    sig { returns(Maybe[T::Hash[String, Integer]]) }
+    sig { returns(Maybe[T.nilable(T::Hash[String, Integer])]) }
     def labels
     end
 
-    sig { params(labels: Maybe[T::Hash[String, Integer]]).void }
+    sig { params(labels: Maybe[T.nilable(T::Hash[String, Integer])]).void }
     def labels=(labels)
+    end
+
+    sig { returns(T.nilable(String)) }
+    def nickname
+    end
+
+    sig { params(nickname: T.nilable(String)).void }
+    def nickname=(nickname)
+    end
+
+    sig { returns(Maybe[T.nilable(T::Array[NilClass])]) }
+    def voids
+    end
+
+    sig { params(voids: Maybe[T.nilable(T::Array[NilClass])]).void }
+    def voids=(voids)
     end
 
     sig { params(key: String).returns(T.anything) }

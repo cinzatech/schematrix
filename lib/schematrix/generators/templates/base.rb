@@ -78,15 +78,19 @@ module Schematrix
         # keyword, a with copier, and value equality.
         def immutable? = @immutable
 
-        # Whether a slot wraps in the Maybe type: every optional slot
-        # when the optionals option is on, and every slot at all in
-        # the partial classes, where absence is the slot's whole
-        # content. A required slot in a data class keeps its plain
-        # type.
+        # Whether a slot wraps in the Maybe type: every slot the
+        # constructor does not demand when the optionals option is
+        # on, and every slot at all in the partial classes, where
+        # absence is the slot's whole content. A property listed in
+        # `required` without a default keeps its type even when
+        # nullable: the constructor demands the keyword, and a
+        # Maybe-typed slot would hand it a Maybe.empty default that
+        # lets callers omit it and dump without it. A property with a
+        # default still wraps, as Present(default).
         def maybe_wrapped?(schema)
           return false unless @optionals == :maybe
 
-          @all_slots_maybe || !schema.strictly_required?
+          @all_slots_maybe || !schema.constructor_required?
         end
 
         # The class name a reference resolves to: prefixed with the

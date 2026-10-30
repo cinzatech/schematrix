@@ -9,16 +9,20 @@ module M
         "tag" => :tag,
         "address" => :address,
         "tags" => :tags,
-        "labels" => :labels
+        "labels" => :labels,
+        "nickname" => :nickname,
+        "voids" => :voids
       }.freeze
 
       def initialize(
         first_name: Maybe.empty,
+        nickname: Maybe.empty,
         age: Maybe.empty,
         tag: Maybe.empty,
         address: Maybe.empty,
         tags: Maybe.empty,
-        labels: Maybe.empty
+        labels: Maybe.empty,
+        voids: Maybe.empty
       )
         @first_name = first_name
         @age = age
@@ -26,11 +30,20 @@ module M
         @address = address
         @tags = tags
         @labels = labels
+        @nickname = nickname
+        @voids = voids
 
         @_extra = {}
       end
 
-      attr_accessor :first_name, :age, :tag, :address, :tags, :labels
+      attr_accessor :first_name,
+                    :age,
+                    :tag,
+                    :address,
+                    :tags,
+                    :labels,
+                    :nickname,
+                    :voids
 
       def [](key)
         @_extra[key]
@@ -77,7 +90,17 @@ module M
                 else
                   M::Maybe.empty
                 end
-              )
+              ),
+            nickname:
+              (
+                if hash.key?("nickname")
+                  M::Maybe.from(hash["nickname"])
+                else
+                  M::Maybe.empty
+                end
+              ),
+            voids:
+              hash.key?("voids") ? M::Maybe.from(hash["voids"]) : M::Maybe.empty
           )
 
         hash.each do |key, value|
@@ -98,6 +121,8 @@ module M
         end
         @tags.when_present { |value| result["tags"] = value }
         @labels.when_present { |value| result["labels"] = value }
+        @nickname.when_present { |value| result["nickname"] = value }
+        @voids.when_present { |value| result["voids"] = value }
         @_extra.each { |key, value| result[key] = value }
         result
       end
