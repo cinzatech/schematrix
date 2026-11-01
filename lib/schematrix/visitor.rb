@@ -24,7 +24,7 @@ module Schematrix
   # these, keyed by locator.
   #
   # - `type`: set of JSON Schema type names (the TYPE_ constants).
-  # - `ref`: locator of the referenced object schema, when the node
+  # - `ref`: locator of the referenced object or enum schema, when the node
   #   resolved to a `$ref` the compiler kept; nil otherwise.
   # - `properties`: hash of original property name => Schema.
   # - `required`: whether the node demands a value (a property the
@@ -40,6 +40,7 @@ module Schematrix
   # - `default`: the schema's `default` value.
   # - `description`, `title`, `enum`: captured annotations. The
   #   description becomes the generated class comment.
+  # - `enum_class`: whether this record names a generated enum class.
   # - `format`: the schema's `format` annotation. Scalar slots read it
   #   against the scalar type table to render a formatted Ruby type
   #   and to find the coercer that converts on load and dump.
@@ -50,6 +51,7 @@ module Schematrix
       :default,
       :description,
       :enum,
+      :enum_class,
       :format,
       :intersection,
       :items,
@@ -70,6 +72,7 @@ module Schematrix
       any_of: [].freeze,
       default: nil,
       enum: nil,
+      enum_class: false,
       format: nil,
       intersection: false,
       items: nil,
@@ -99,6 +102,20 @@ module Schematrix
   # compiled schema constrains, and whether the constructor demands
   # the property.
   class Schema
+    def self.qualifying_enum_members(values)
+      return unless values.is_a?(Array)
+
+      members = values.compact.uniq
+      return unless members.size > 1
+      return unless members.all?(String) || members.all?(Integer)
+
+      members
+    end
+
+    def enum_class?
+      enum_class
+    end
+
     # Whether the schema constrains nothing: empty type set, no ref,
     # no variants. It types as untyped and is the identity for
     # intersections.
@@ -234,7 +251,7 @@ module Schematrix
       # an interior locator the compiler discovered through an edge.
       # The store hands out raw parsed documents; the model boundary
       # conversion happens here.
-      node = Schematrix::Meta::Schema.from_h(node) if node.is_a?(Hash)
+      node = schema_model(node) if node.is_a?(Hash)
       path = @locator.fragment.split("/").map { |part| Pointer.unescape(part) }
       name = path.pop || "" # document root is nameless
       visit_schema(path, name, node, required: false)
@@ -243,6 +260,43 @@ module Schematrix
     end
 
     private
+
+    def schema_model(raw)
+      Schematrix::Meta::Schema.from_h(normalize_schema(raw))
+    end
+
+    # Drop enum before the model loses explicit const:null presence.
+    # Only schema positions recurse; annotations and literal values stay intact.
+    def normalize_schema(raw)
+      return raw unless raw.is_a?(Hash)
+
+      normalized = raw.key?("const") ? raw.merge("enum" => []) : raw.dup
+      normalized.to_h do |keyword, value|
+        value =
+          case keyword
+          when "properties", "$defs", "definitions", "patternProperties",
+               "dependentSchemas", "dependencies"
+            if value.is_a?(Hash)
+              value.transform_values { |child| normalize_schema(child) }
+            else
+              value
+            end
+          when "items", "additionalProperties", "additionalItems", "contains",
+               "propertyNames", "if", "then", "else", "not", "unevaluatedItems",
+               "unevaluatedProperties", "contentSchema"
+            normalize_schema(value)
+          when "allOf", "anyOf", "oneOf", "prefixItems"
+            if value.is_a?(Array)
+              value.map { |child| normalize_schema(child) }
+            else
+              value
+            end
+          else
+            value
+          end
+        [keyword, value]
+      end
+    end
 
     # The document's own keys, as a String-keyed hash: the node's
     # to_h with the slots the document left absent (which from_h
@@ -301,6 +355,14 @@ module Schematrix
           type = Set[*inferred] unless inferred.empty?
         end
         enum = node.enum
+        enum = nil if enum == []
+        members = qualifying_node_enum(node)
+        enum_class = !members.nil?
+        if enum_class
+          type = Set[const_type(members.first)]
+          type.add(TYPE_NULL) if enum.include?(nil)
+          enum = members
+        end
         default = node.default
         title = node.title
         description = node.description
@@ -314,7 +376,8 @@ module Schematrix
         # unions its anyOf/oneOf branches as variants instead, except
         # that inline object branches inside anyOf merge into the
         # property's own class.
-        object_context = name.empty? || type.include?(TYPE_OBJECT)
+        object_context =
+          !enum_class && (name.empty? || type.include?(TYPE_OBJECT))
         if object_context
           body = compile_object(site, node)
           properties = body.properties
@@ -332,6 +395,11 @@ module Schematrix
             properties = body.properties
             additional_properties = body.additional_properties
             type |= Set[TYPE_OBJECT]
+            if enum_class
+              enum_class = false
+              enum = nil
+              ref = nil
+            end
           else
             properties = compile_properties(site, node)
             additional_properties = visit_additional_properties(site, node)
@@ -345,6 +413,7 @@ module Schematrix
             default:,
             description:,
             enum:,
+            enum_class:,
             format:,
             intersection: false,
             items:,
@@ -364,7 +433,8 @@ module Schematrix
           schema = fold_value_allof(site, schema, node.all_of)
         end
 
-        own_class = ref.nil? && schema.type.include?(TYPE_OBJECT)
+        own_class =
+          ref.nil? && (schema.type.include?(TYPE_OBJECT) || schema.enum_class?)
         if register_object && own_class && !schema.map_shaped?
           @objects[current_locator(site)] = schema
         end
@@ -425,14 +495,25 @@ module Schematrix
         # stood alone, which types as untyped, same as "true");
         # "false" accepts nothing, and visit_schema compiles the whole
         # node to the bottom schema after resolution.
-        if target == true
-          return Schematrix::Meta::Schema.from_h(siblings_of(node)), nil, nil
-        end
+        return schema_model(siblings_of(node)), nil, nil if target == true
 
         return target, nil, nil
       end
 
-      if Array(target["type"]).include?(TYPE_OBJECT)
+      enum_target =
+        (Schema.qualifying_enum_members(target["enum"]) if @enums_classes)
+      enum_target = nil if target.key?("const")
+      siblings = siblings_of(node)
+      pure_ref = SHAPE_SIBLINGS.none? { |keyword| siblings.key?(keyword) }
+      pure_ref = false if siblings.key?("enum")
+      if enum_target && pure_ref
+        @edges << locator
+        merged =
+          target.slice("format").merge(siblings).merge("enum" => target["enum"])
+        return schema_model(merged), locator, nil
+      end
+
+      if !enum_target && Array(target["type"]).include?(TYPE_OBJECT)
         # 2020-12 semantics: a $ref applies alongside its siblings, so
         # a ref with shape-applying siblings is the allOf-equivalent
         # of the target and those siblings. Rewrite the node into
@@ -449,7 +530,7 @@ module Schematrix
               "type" => Array(siblings["type"]) | [TYPE_OBJECT],
               "allOf" => [{ "$ref" => reference }, *Array(siblings["allOf"])],
             )
-          return Schematrix::Meta::Schema.from_h(rewritten), nil, nil
+          return schema_model(rewritten), nil, nil
         end
 
         # A target whose whole shape is a catch-all is a plain
@@ -495,14 +576,14 @@ module Schematrix
       return node if extra.empty?
 
       merged = present_slots(node).merge("type" => Array(node.type) | extra)
-      Schematrix::Meta::Schema.from_h(merged)
+      schema_model(merged)
     end
 
     # Merges a raw $ref target with the referencing node's own
     # siblings (locals win) and loads the result back into the
     # model for the rest of the visit.
     def inline_model(target, node)
-      Schematrix::Meta::Schema.from_h(target.merge(siblings_of(node)))
+      schema_model(target.merge(siblings_of(node)))
     end
 
     # Raw-node form of the map rule (see Schema#map_shaped?), applied
@@ -623,6 +704,7 @@ module Schematrix
       node = @store.node_at(locator)
       reference = node.is_a?(Hash) ? node["$ref"] : nil
       return node, locator if reference.nil?
+      return node, locator if node.key?("enum")
       if SHAPE_SIBLINGS.any? { |keyword| node.key?(keyword) }
         return node, locator
       end
@@ -667,6 +749,12 @@ module Schematrix
       node.prefix_items&.map do |item|
         visit_schema(path, "prefixItems", item, register_object: false)
       end || []
+    end
+
+    def qualifying_node_enum(node)
+      return unless @enums_classes && node.const.nil?
+
+      Schema.qualifying_enum_members(node.enum)
     end
 
     # maps a const value to its JSON Schema type when the mapping
@@ -730,7 +818,8 @@ module Schematrix
       mergeable, any_variants =
         any_branches.partition do |branch|
           branch.is_a?(Schematrix::Meta::Schema) && branch.ref.nil? &&
-            Array(branch.type).include?(TYPE_OBJECT)
+            Array(branch.type).include?(TYPE_OBJECT) &&
+            !qualifying_node_enum(branch)
         end
       { mergeable:, any_of: any_variants, one_of: Array(node.one_of) }
     end
@@ -780,7 +869,8 @@ module Schematrix
       Array(raws).each_with_index do |raw, index|
         next unless raw.is_a?(Schematrix::Meta::Schema)
 
-        if raw.ref.nil? && Array(raw.type).include?(TYPE_OBJECT)
+        object_branch = raw.ref.nil? && Array(raw.type).include?(TYPE_OBJECT)
+        if object_branch && !qualifying_node_enum(raw)
           schema =
             absorb_object_branch(path, schema, raw, Set.new(Array(raw.type)))
           next
@@ -819,6 +909,7 @@ module Schematrix
           raw,
         )
       schema.with(
+        **enum_fold_metadata([schema, Schema::Empty]),
         type: schema.type | branch_types,
         properties: body.properties,
         additional_properties: body.additional_properties,
@@ -858,7 +949,7 @@ module Schematrix
         nil
       else
         with_ref_base(document_base(locator)) do
-          node_body(path, Schematrix::Meta::Schema.from_h(target))
+          node_body(path, schema_model(target))
         end
       end
     end
@@ -981,6 +1072,8 @@ module Schematrix
     # declaration.
     def conjoin_schemas(own, other)
       return own if own == other
+      return other if own.type == Set[TYPE_BOTTOM]
+      return own if other.type == Set[TYPE_BOTTOM]
 
       shared = own.type & other.type
 
@@ -988,7 +1081,7 @@ module Schematrix
         type: shared.empty? ? own.type | other.type : shared,
         items: conjoin_items(own, other),
         prefix_items: conjoin_prefix_items(own, other),
-        ref: own.ref || other.ref,
+        **enum_fold_metadata([own, other]),
         any_of: own.any_of + other.any_of,
         one_of: own.one_of + other.one_of,
         required: own.required || other.required,
@@ -1052,7 +1145,7 @@ module Schematrix
         type: schemas.reduce(Set.new) { |set, schema| set | schema.type },
         items: union_items(schemas),
         prefix_items: union_prefix_items(schemas),
-        ref: schemas.filter_map(&:ref).first,
+        **enum_fold_metadata(schemas),
         any_of: schemas.flat_map(&:any_of),
         one_of: schemas.flat_map(&:one_of),
         required:,
@@ -1101,6 +1194,29 @@ module Schematrix
       conjoin_schemas(decls.first, decls.last)
     end
 
+    def pure_enum_fold?(schemas)
+      schemas.all?(&:enum_class?) &&
+        schemas.map { |schema| [schema.enum, schema.ref] }.uniq.size == 1
+    end
+
+    def enum_fold_metadata(schemas)
+      if pure_enum_fold?(schemas)
+        { enum_class: true, enum: schemas.first.enum, ref: schemas.first.ref }
+      elsif schemas.any?(&:enum_class?)
+        {
+          enum_class: false,
+          enum: nil,
+          ref: schemas.reject(&:enum_class?).filter_map(&:ref).first,
+        }
+      else
+        {
+          enum_class: false,
+          enum: schemas.first.enum,
+          ref: schemas.filter_map(&:ref).first,
+        }
+      end
+    end
+
     # Union branches open the shape: untyped wins, a closed
     # (false) branch contributes nothing because an instance from
     # another branch may still carry extra keys, and declared schemas
@@ -1115,10 +1231,16 @@ module Schematrix
 
       return Schema::Empty if own.untyped? || other.untyped?
 
-      refs = [own.ref, other.ref].compact.uniq
+      schemas = [own, other].reject { |schema| schema.type == Set[TYPE_BOTTOM] }
+      return own if schemas.empty?
+      return schemas.first if schemas.size == 1
+
+      metadata = enum_fold_metadata(schemas)
+      refs = schemas.reject(&:enum_class?).filter_map(&:ref).uniq
+      metadata[:ref] = nil if refs.size > 1
       own.with(
         type: own.type | other.type,
-        ref: refs.size == 1 ? refs.first : nil,
+        **metadata,
         any_of: own.any_of + other.any_of,
         one_of: own.one_of + other.one_of,
       )
