@@ -13,9 +13,7 @@ module Schematrix
       # writes once per output directory. A literal carrying a
       # coercing scalar format claims its JSON class through a
       # coercer, so every rendered formatted type converts on load
-      # and dump. A union whose branches would convert the same JSON
-      # type through different coercers cannot be attributed from
-      # the value alone and fails the run with CoercionConflictError.
+      # and dump.
       module Coercions
         include Resolver
 
@@ -83,6 +81,18 @@ module Schematrix
             return value.nil? ? nil : [:map, value]
           end
 
+          if schema.enum_class?
+            type = schema.enum.first.is_a?(String) ? TYPE_STRING : TYPE_INTEGER
+            entry = lookup_scalar_type(type, schema.format)
+            if entry&.coerces?
+              return :coerce, entry.coercer, CLAIM_CLASSES.fetch(type)
+            end
+            return nil unless @enums == :classes
+
+            target = "::#{@module_name}::#{enum_class_name(path, name, schema)}"
+            return :coerce, target, CLAIM_CLASSES.fetch(type)
+          end
+
           subs = []
           schema.type.each do |type|
             case type
@@ -117,7 +127,22 @@ module Schematrix
             subs << conversion_spec(nested, "oneOf_#{index}", variant)
           end
 
-          combine(subs)
+          combine(subs, uncoerced_claims(schema))
+        end
+
+        def uncoerced_claims(schema)
+          return CLAIM_CLASSES.values.flatten.uniq if schema.untyped?
+          return [] if schema.enum_class? && @enums == :classes
+
+          own =
+            schema.type.flat_map do |type|
+              entry = lookup_scalar_type(type, schema.format)
+              entry&.coerces? ? [] : CLAIM_CLASSES.fetch(type, [])
+            end
+          own +
+            (schema.any_of + schema.one_of).flat_map do |variant|
+              uncoerced_claims(variant)
+            end
         end
 
         # The element spec of an array term: prefix positions convert
@@ -149,20 +174,19 @@ module Schematrix
           [:array, element]
         end
 
-        # Folds a node's claiming specs into one: pass-through branches
-        # drop out, a single survivor stands alone, two scalar coercers
-        # claiming the same JSON class conflict, and the rest compose
-        # as a union, structural branches deduplicated in document
-        # order (the first class term wins, as everywhere) with the
-        # coercers sequenced after them. A variant union folds flat
-        # first, so its branches meet the same dedup and conflict
-        # rules; sequenced application of the flattened branches is
-        # what the interpreter would do with the nesting anyway.
-        def combine(subs)
-          subs =
-            subs.compact.flat_map { |sub| sub[0] == :union ? sub[1] : [sub] }
+        def combine(subs, uncoerced = [])
+          subs = flatten_conversion_union(subs)
+          enum_claims =
+            subs.select { |sub| sub[0] == :coerce && sub[1].is_a?(String) }
+          ambiguous =
+            enum_claims.select do |sub|
+              sub[2].intersect?(uncoerced) ||
+                enum_claims.any? do |other|
+                  other[1] != sub[1] && sub[2].intersect?(other[2])
+                end
+            end
           return nil if subs.empty?
-          return subs.first if subs.size == 1
+          return subs.first if subs.size == 1 && ambiguous.empty?
 
           structural = []
           coercers = []
@@ -172,7 +196,8 @@ module Schematrix
               coercer = sub[1]
               Array(sub[2]).each do |klass|
                 other = claims[klass]
-                if other && !other.equal?(coercer)
+                enum_pair = other.is_a?(String) && coercer.is_a?(String)
+                if other && other != coercer && !enum_pair
                   raise CoercionConflictError,
                         "#{@path}: #{other} and #{coercer} would both " \
                           "convert #{klass} values in one union; give the " \
@@ -194,18 +219,33 @@ module Schematrix
           end
           coercers.uniq! { |sub| sub[1] }
 
+          coercers.map! { |sub| ambiguous.include?(sub) ? [:try, sub] : sub }
           subs = structural + coercers
+          subs << [:pass] unless ambiguous.empty?
           return nil if subs.empty?
           return subs.first if subs.size == 1
 
           [:union, subs]
         end
 
-        # Whether a coercing format appears anywhere in the slot's
-        # value structure. The catch-all of a non-map node belongs to
-        # the class's extra riders, not to this slot.
+        def flatten_conversion_union(subs)
+          subs.compact.flat_map do |sub|
+            case sub[0]
+            when :union
+              flatten_conversion_union(sub[1])
+            when :try
+              [sub[1]]
+            when :pass
+              []
+            else
+              [sub]
+            end
+          end
+        end
+
         def format_coerced?(schema)
           return false if schema.nil?
+          return true if @enums == :classes && schema.enum_class?
           return true if scalar_format_coerced?(schema)
           return true if format_coerced?(schema.items)
           if schema.prefix_items&.any? { |item| format_coerced?(item) }
@@ -228,10 +268,6 @@ module Schematrix
           end
         end
 
-        # The conversion spec of an open class's extra riders: the
-        # catch-all schema's own tree, when it carries a coercing
-        # format. A catch-all without one keeps the raw pass-through
-        # the class-shaped plans have always had. nil otherwise.
         def catch_all_spec
           return @catch_all_spec if defined?(@catch_all_spec)
 
@@ -351,6 +387,8 @@ module Schematrix
         # where every generated file that needs one emits its copy;
         # project coercers are carried by their own name.
         def coercion_target(coercer)
+          return coercer if coercer.is_a?(String)
+
           if Schematrix::Coercers::BUILTIN.include?(coercer)
             return "::#{@module_name}::#{coercer.name}"
           end
@@ -362,13 +400,15 @@ module Schematrix
         # and constant references only, so the generated file holds
         # fixed calls and nothing the table could inject.
         def spec_literal(spec)
+          return "[:pass]" if spec[0] == :pass
+
           inner =
             case spec[0]
             when :coerce
               coercion_target(spec[1])
             when :class
               "#{@module_name}::#{spec[1]}"
-            when :array, :map
+            when :array, :map, :try
               spec_literal(spec[1])
             when :tuple
               positions = spec[1].map { |sub| sub ? spec_literal(sub) : "nil" }
@@ -407,7 +447,7 @@ module Schematrix
             else
               collect_coercers(element, out)
             end
-          when :map
+          when :map, :try
             collect_coercers(spec[1], out)
           when :union
             spec[1].each { |sub| collect_coercers(sub, out) }
