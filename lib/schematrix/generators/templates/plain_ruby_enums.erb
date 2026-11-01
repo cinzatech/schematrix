@@ -1,0 +1,29 @@
+module <%= @module_name %>
+<%= declaration_open %>
+    def initialize(value)
+      @value = value.freeze
+      freeze
+    end
+    private_class_method :new
+
+    def serialize
+      @value
+    end
+
+<% @members.each do |name, value| -%>
+    <%= name %> = new(<%= value.inspect %>)
+<% end -%>
+
+    def self.values
+      [<%= @members.map(&:first).join(", ") %>]
+    end
+
+    def self.deserialize(value)
+      {<%= @members.map { |name, value| "#{value.inspect} => #{name}" }.join(", ") %>}.fetch(value)
+    end
+
+    def self.coerce(value)
+      <%= coerce_body %>
+    end
+<%= declaration_close %>
+end

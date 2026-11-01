@@ -14,6 +14,10 @@ require_relative "templates/dsl_sorbet_ruby"
 require_relative "templates/dsl_rbi"
 require_relative "templates/dsl_rbs"
 require_relative "templates/partial"
+require_relative "templates/plain_ruby_enums"
+require_relative "templates/sorbet_ruby_enums"
+require_relative "templates/rbi_enums"
+require_relative "templates/rbs_enums"
 
 module Schematrix
   module Generators
@@ -192,20 +196,29 @@ module Schematrix
       # Fills the ERB template through this generator's template class
       # and formats the result. Returns the file content.
       def transform(path, class_name, object)
-        code = template(path, class_name, object).render(self.class.erb)
+        filename =
+          (
+            if object.enum_class?
+              self.class.enum_template_name
+            else
+              self.class.template_name
+            end
+          )
+        code =
+          template(path, class_name, object).render(self.class.erb(filename))
 
         format_code(code)
       end
 
       # The ERB object for this generator's template file, compiled
       # once per class.
-      def self.erb
-        @erb ||=
-          begin
-            template_file =
-              File.join(File.dirname(__FILE__), "templates", template_name)
-            ERB.new(File.read(template_file), trim_mode: "-")
-          end
+      def self.erb(filename = template_name)
+        @erbs ||= {}
+        @erbs[filename] ||= begin
+          template_file =
+            File.join(File.dirname(__FILE__), "templates", filename)
+          ERB.new(File.read(template_file), trim_mode: "-")
+        end
       end
 
       # Name of the template helper class that fills this generator's
@@ -220,6 +233,14 @@ module Schematrix
         raise NotImplementedError, "#{name} must implement #template_name"
       end
 
+      def self.enum_template_name
+        raise NotImplementedError, "#{name} must implement #enum_template_name"
+      end
+
+      def self.enum_template_class
+        raise NotImplementedError, "#{name} must implement #enum_template_class"
+      end
+
       # File extension of this generator's output, including the dot.
       def self.file_extension
         raise NotImplementedError, "#{name} must implement #file_extension"
@@ -229,7 +250,7 @@ module Schematrix
       # output directory: the maybe option is on and no project Maybe
       # was supplied.
       def maybe_needed?
-        @optionals == :maybe && @maybe.nil?
+        !self.class.enum_generator? && @optionals == :maybe && @maybe.nil?
       end
 
       private
@@ -361,6 +382,18 @@ module Schematrix
       # and the description comment, alongside the module, path, and
       # class name. Mangled-name collisions are warned from here.
       def template(path, class_name, object)
+        if object.enum_class?
+          enum_template =
+            self.class.enum_template_class.new(
+              module_name: @module_name,
+              path:,
+              class_name:,
+              members: Templates::EnumBase.fold_members(object.enum),
+              documentation_comment: documentation_comment(object),
+            )
+          return enum_template
+        end
+
         properties = object&.properties
         mangled_names = mangled_property_names(properties)
         property_keys =
@@ -504,6 +537,34 @@ module Schematrix
       def self.file_extension = ".rbi"
       def self.template_class = Templates::Rbi
       def self.maybe_flavor = :rbi
+    end
+
+    # Writes dependency-free enum classes with frozen member instances.
+    class PlainRubyEnums < PlainRuby
+      def self.enum_generator? = true
+      def self.enum_template_name = "plain_ruby_enums.erb"
+      def self.enum_template_class = Templates::PlainRubyEnums
+    end
+
+    # Writes executable T::Enum classes with strict Sorbet signatures.
+    class SorbetRubyEnums < SorbetRuby
+      def self.enum_generator? = true
+      def self.enum_template_name = "sorbet_ruby_enums.erb"
+      def self.enum_template_class = Templates::SorbetRubyEnums
+    end
+
+    # Declares T::Enum members without serialized values or method bodies.
+    class RbiEnums < Rbi
+      def self.enum_generator? = true
+      def self.enum_template_name = "rbi_enums.erb"
+      def self.enum_template_class = Templates::RbiEnums
+    end
+
+    # Declares the plain enum surface for RBS consumers.
+    class RbsEnums < Rbs
+      def self.enum_generator? = true
+      def self.enum_template_name = "rbs_enums.erb"
+      def self.enum_template_class = Templates::RbsEnums
     end
 
     # Naming overrides shared by the DSL generators: builder classes

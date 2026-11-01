@@ -1,0 +1,15 @@
+# typed: strict
+
+module <%= @module_name %>
+<%= declaration_open %>
+    extend ::T::Sig
+    enums do
+<% @members.each do |name, _value| -%>
+      <%= name %> = new
+<% end -%>
+    end
+
+    sig { params(value: ::T.anything).returns(::T.anything) }
+    def self.coerce(value); end
+<%= declaration_close %>
+end
