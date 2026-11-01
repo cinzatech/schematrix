@@ -215,10 +215,11 @@ module Schematrix
     # `store` the shared DocumentStore. `closed_shapes` treats an
     # absent additionalProperties as false (closed classes) instead
     # of the spec's open default.
-    def initialize(locator, store, closed_shapes: false)
+    def initialize(locator, store, closed_shapes: false, enums_classes: false)
       @locator = locator
       @store = store
       @closed_shapes = closed_shapes
+      @enums_classes = enums_classes
       @objects = {}
       @edges = []
       @ref_base = nil

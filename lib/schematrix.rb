@@ -75,8 +75,21 @@ module Schematrix
     closed_shapes: false,
     schema_dirs: []
   )
+    mode = enum_mode(generators)
+    generators.each { |generator| generator.resolved_enums = mode }
+    enum_writers =
+      generators.any? { |generator| generator.class.enum_generator? }
+    if mode == :classes && !enum_writers
+      logger&.warn "enums: :classes references enum constants; add a " \
+                     "*_enums generator to write their class files"
+    end
     store = DocumentStore.new(schema_dirs:)
-    objects = Compiler.new(store:, closed_shapes:).compile(input_files)
+    objects =
+      Compiler.new(
+        store:,
+        closed_shapes:,
+        enums_classes: mode == :classes || enum_writers,
+      ).compile(input_files)
 
     assert_distinct_targets(generators, objects)
 
@@ -97,6 +110,22 @@ module Schematrix
     end
 
     objects
+  end
+
+  def self.enum_mode(generators)
+    modes = generators.filter_map(&:enums).uniq
+    if modes.size > 1
+      raise ArgumentError, "conflicting enums modes: #{modes.inspect}"
+    end
+
+    modes.first ||
+      (
+        if generators.any? { |generator| generator.class.enum_generator? }
+          :classes
+        else
+          :unions
+        end
+      )
   end
 
   # One generated Maybe per output directory, flavor, and module:

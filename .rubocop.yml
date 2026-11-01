@@ -58,6 +58,7 @@ Metrics/ParameterLists:
   # template reads.
   Exclude:
     - "lib/schematrix/generators/templates/base.rb"
+    - "lib/schematrix/generators/base.rb"
 
 Metrics/CyclomaticComplexity:
   Max: 40

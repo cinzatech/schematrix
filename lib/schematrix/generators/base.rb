@@ -115,7 +115,8 @@ module Schematrix
         scalar_types: {},
         immutable: false,
         optionals: :nilable,
-        maybe: nil
+        maybe: nil,
+        enums: nil
       )
         assert_immutable_supported if immutable
         @output_dir = output_dir
@@ -126,12 +127,18 @@ module Schematrix
         @immutable = immutable
         @optionals = self.class.partial? ? :maybe : optionals
         @maybe = maybe
+        @enums = enums
+        assert_enums_valid
         assert_optionals_valid
         assert_maybe_valid
         assert_coercers_valid(@scalar_types)
       end
 
-      attr_reader :output_dir, :module_name, :format, :command
+      attr_reader :output_dir, :module_name, :format, :command, :enums
+
+      attr_writer :resolved_enums
+
+      def self.enum_generator? = false
 
       # Whether this generator's output honors the immutable option.
       # The data generators do; the DSL builders answer through
@@ -242,6 +249,13 @@ module Schematrix
       # The optionals spelling is fixed; a supplied Maybe only
       # travels with the maybe option, since the nilable option never
       # references the type.
+      def assert_enums_valid
+        return if @enums.nil? || %i[classes unions].include?(@enums)
+
+        raise ArgumentError,
+              "enums must be :classes or :unions, not #{@enums.inspect}"
+      end
+
       def assert_optionals_valid
         return if %i[nilable maybe].include?(@optionals)
 
