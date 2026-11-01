@@ -242,15 +242,34 @@ module Schematrix
           end
         end
 
+        def enum_setter_value(name, kind)
+          schema = @properties.fetch(name)
+          path = nested_locator(@path, "properties/#{name}")
+          slot = nil
+          case kind
+          when :array_scalars
+            schema = schema.items
+            slot = "items"
+          when :map_scalars
+            schema = schema.additional_properties
+            slot = "additionalProperties"
+          end
+          return "value" unless @enums == :classes && schema&.enum_class?
+
+          klass = enum_class_name(path, slot, schema)
+          "value.is_a?(::#{@module_name}::#{klass}) ? value.serialize : value"
+        end
+
         def setter_method(name, kind, stub: false)
           return "def #{name}(#{SETTER_PARAMS[kind]}); end" if stub
 
           key = original_key_of(name).inspect
+          value = enum_setter_value(name, kind)
           case kind
           when :scalar
             <<~RUBY
               def #{name}(value)
-                @fields[#{key}] = value
+                @fields[#{key}] = #{value}
                 self
               end
             RUBY
@@ -264,10 +283,12 @@ module Schematrix
               end
             RUBY
           when :array_scalars
+            values =
+              value == "value" ? "values" : "values.map { |value| #{value} }"
             <<~RUBY
               def #{name}(*values)
                 target = (@fields[#{key}] ||= [])
-                target.concat(values)
+                target.concat(#{values})
                 self
               end
             RUBY
@@ -293,7 +314,7 @@ module Schematrix
             <<~RUBY
               def #{name}(key, value)
                 target = (@fields[#{key}] ||= {})
-                target[key] = value
+                target[key] = #{value}
                 self
               end
             RUBY
@@ -330,6 +351,10 @@ module Schematrix
         def setter_value_type(name, kind, schema)
           case kind
           when :scalar
+            if @enums == :classes && schema.enum_class?
+              return type_of(@path, "properties/#{name}", schema)
+            end
+
             bare_type(@path, "properties/#{name}", schema)
           when :array_scalars
             array_element_type(
@@ -337,8 +362,16 @@ module Schematrix
               schema,
             )
           when :map_scalars
+            slot =
+              (
+                if schema.additional_properties&.enum_class?
+                  "properties/#{name}"
+                else
+                  name
+                end
+              )
             map_value_type(
-              nested_locator(@path, name),
+              nested_locator(@path, slot),
               schema.additional_properties,
             )
           when :extra_scalars

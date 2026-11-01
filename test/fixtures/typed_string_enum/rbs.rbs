@@ -2,9 +2,9 @@ module M
   class Schema
     ORIGINAL_KEYS: Hash[String, Symbol]
 
-    attr_accessor status: String?
+    attr_accessor status: ("active" | "inactive")?
 
-    def initialize: (?status: String?) -> void
+    def initialize: (?status: ("active" | "inactive")?) -> void
 
     def []: (String) -> top
 

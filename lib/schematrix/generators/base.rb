@@ -376,6 +376,7 @@ module Schematrix
           additional_properties: object.additional_properties,
           documentation_comment: documentation_comment(object),
           scalar_types: @scalar_types,
+          enums: @resolved_enums || @enums || :unions,
           immutable: @immutable,
           optionals: @optionals,
           maybe: @maybe,

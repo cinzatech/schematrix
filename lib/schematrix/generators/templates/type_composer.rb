@@ -90,6 +90,12 @@ module Schematrix
 
           return map_type(path, name, schema) if schema.map_shaped?
 
+          members = Schema.qualifying_enum_members(schema.enum)
+          if members && (@enums == :unions || schema.enum_class?)
+            class_name = enum_class_name(path, name, schema)
+            return enum_type(class_name, members, schema)
+          end
+
           base =
             schema.type.flat_map do |type|
               case type

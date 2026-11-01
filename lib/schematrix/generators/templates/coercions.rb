@@ -248,7 +248,7 @@ module Schematrix
         # object-typed class, then the variant branches in document
         # order. nil when none applies.
         def class_term(path, name, schema)
-          return nil if schema.nil?
+          return nil if schema.nil? || schema.enum_class?
           return class_name_from_path(schema.ref) unless schema.ref.nil?
 
           if schema.type.include?(TYPE_OBJECT) && !schema.map_shaped?
