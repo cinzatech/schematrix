@@ -84,12 +84,12 @@ Rules:
   the coercer, an instance dumps through it, arrays convert
   elementwise (tuple positions each through their own coercer), maps
   and catch-all riders convert their values, and union branches
-  dispatch on the value's class. Every conversion is a frozen literal
+  dispatch on the value's class. A scalar coercer leaf delegates
+  directly to its coercer. Structured conversions use frozen literals
   that the property's `coerce_` method hands to the shared
-  `CoercionHelper` module: the file the `auxiliary_files` generator
-  writes once per output directory, and that every converting class
-  file requires. Generated code depends on nothing but the generated
-  set itself.
+  `CoercionHelper` module, written by `auxiliary_files` once per output
+  directory. Classes that use that module require its file. Generated
+  plain Ruby code depends on nothing but the generated set itself.
 - A property with a schema `default` keeps that default when the key is
   absent from the hash. `from_h` assigns defaulted properties only when
   the key is present.
@@ -109,6 +109,52 @@ across a round trip, and unknown keys survive unchanged.
 A required keyword fed `nil` by `from_h` (the key was absent) does not
 raise. Loading accepts more than the schema does; the data can be
 validated elsewhere.
+
+## Enum classes
+
+Only the four `*_enums` generators write enum files.
+`plain_ruby_enums` writes dependency-free classes with frozen member
+instances. `sorbet_ruby_enums` writes `T::Enum` subclasses with strict
+signatures. `rbi_enums` declares the Sorbet enum members with `Name = new`
+in an `enums do` block; `rbs_enums` declares the plain enum API.
+
+For an enum with values `"employee"` and `"external"`, the plain API is:
+
+```ruby
+MyApp::Affiliation.values
+# => [MyApp::Affiliation::Employee, MyApp::Affiliation::External]
+MyApp::Affiliation.deserialize("employee").equal?(MyApp::Affiliation::Employee)
+# => true
+MyApp::Affiliation::Employee.serialize # => "employee"
+MyApp::Affiliation.coerce("employee") # => MyApp::Affiliation::Employee
+MyApp::Affiliation.coerce(MyApp::Affiliation::Employee) # => "employee"
+MyApp::Affiliation.coerce(nil) # => nil
+```
+
+`values` returns members in document order after removing duplicates
+and null. Plain members and their serialized values are frozen; `new`
+is private, and equality remains object identity. `deserialize` uses
+`Hash#fetch`, so an unknown value raises `KeyError`. Integer enums use
+integer serialized values and constants such as `N1` and `N2`.
+`coerce` deserializes values of the enum's raw type, serializes members,
+and passes everything else through. There is no `members` alias.
+
+Class-mode slots name the enum in both Sorbet and RBS. Their
+`coerce_status` methods delegate directly to a fully qualified generated
+class, for example `::MyApp::Person::Props::Status.coerce(value)`.
+A class whose only conversions are scalar enum leaves needs no
+`CoercionHelper`. Array, tuple, map, and union conversions use the
+shared helper. A coercing `format` entry replaces the enum conversion
+but leaves the class-mode slot type as the enum class.
+
+The helper interpreter supports `[:try, spec]`, which rescues `KeyError`
+and returns the original value, and `[:pass]`, which returns it unchanged.
+Unions with `:try` stop after the first result that differs by object
+identity. A member dumped to a string therefore cannot be deserialized
+again by a later branch. These cases are interpreter-only additions;
+the RBS helper signatures remain `(top value, top spec) -> top` for
+`coerce_spec` and `(top value, top klass) -> top` for `coerce_class_slot`.
+See [Limits](limits.md#enums) for over-acceptance and conflicts.
 
 ## Property names
 
@@ -226,6 +272,15 @@ one constructor call away. A nested object property types as
 from nothing in a partial: the slot starts `Absent` when the document
 lacks the key, and wraps the document's value as `Present(value)` when
 it carries it, so an empty patch document dumps as an empty hash.
+
+In class mode, enum slots wrap the shared enum class, for example
+`Maybe[T.nilable(::MyApp::Person::Props::Status)]` in Sorbet. The
+inner type admits null, as it does for other partial slots. Present
+raw values load as members; present members dump as raw values.
+Constructor and `with` signatures use absolute enum references to
+avoid namespace shadowing. There is no `Partial` enum class and no
+second set of members; select an enum writer alongside the partial
+writer.
 
 ## Closed shapes
 

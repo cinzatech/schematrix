@@ -156,11 +156,12 @@ module Schematrix
         def array_spec(path, name, schema)
           nested = nested_locator(path, name)
           prefix =
-            schema.prefix_items.map do |item|
+            schema.prefix_items.each_with_index.map do |item, index|
               next if item.type.include?(TYPE_BOTTOM)
               next if item.type.include?(TYPE_OBJECT) && !item.map_shaped?
 
-              conversion_spec(nested, "prefixItems", item)
+              slot = item.enum_class? ? "prefixItems/#{index}" : "prefixItems"
+              conversion_spec(nested, slot, item)
             end
           tail =
             if schema.items.nil?

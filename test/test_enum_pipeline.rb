@@ -79,6 +79,27 @@ class TestEnumPipeline < Minitest::Test
     end
   end
 
+  def test_member_collisions_fail_before_any_file_is_written
+    [
+      ["plain_ruby_enums", %w[in-progress in_progress]],
+      ["sorbet_ruby_enums", %w[status other]],
+    ].each do |writer, members|
+      with_schema do |path, output|
+        document = JSON.parse(File.read(path))
+        document["properties"]["status"]["enum"] = members
+        File.write(path, JSON.generate(document))
+        generators = [
+          Schematrix::Generators::PlainRuby.new(output, "M"),
+          Schematrix::GENERATORS.fetch(writer).new(output, "M"),
+        ]
+        assert_raises(Schematrix::OutputCollisionError) do
+          Schematrix.generate(generators:, input_files: [path])
+        end
+        refute Dir.exist?(output)
+      end
+    end
+  end
+
   def test_default_without_writer_does_not_register_enum_classes
     with_schema do |path, output|
       generator = Schematrix::Generators::PlainRuby.new(output, "M")

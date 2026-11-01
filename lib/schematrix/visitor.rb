@@ -740,15 +740,14 @@ module Schematrix
       visit_schema(path, branch_name, branch)
     end
 
-    # Visits prefixItems entries as value schemas. All entries
-    # share the "prefixItems" path segment: inline object entries
-    # register no class (their numeric position is not a valid class
-    # name; they fall back to untyped in the element union), while $ref
-    # entries keep their target's class through the recorded edge.
     def visit_prefix_items(path, node)
-      node.prefix_items&.map do |item|
-        visit_schema(path, "prefixItems", item, register_object: false)
-      end || []
+      Array(node.prefix_items).each_with_index.map do |item, index|
+        if item.is_a?(Schematrix::Meta::Schema) && qualifying_node_enum(item)
+          visit_schema(path + ["prefixItems"], index.to_s, item)
+        else
+          visit_schema(path, "prefixItems", item, register_object: false)
+        end
+      end
     end
 
     def qualifying_node_enum(node)

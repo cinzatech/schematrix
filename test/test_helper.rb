@@ -22,8 +22,8 @@ module SchematrixTestHelper
     closed_shapes: false,
     schema_dirs: [],
     locator: nil,
-    immutable: false,
-    optionals: :nilable
+    enums: nil,
+    **generator_options
   )
     actual =
       generate_fixture(
@@ -33,8 +33,8 @@ module SchematrixTestHelper
         closed_shapes:,
         schema_dirs:,
         locator:,
-        immutable:,
-        optionals:,
+        enums:,
+        **generator_options,
       )
 
     expected_file = expected_path(fixture_name, generator_name, path)
@@ -53,26 +53,30 @@ module SchematrixTestHelper
     closed_shapes: false,
     schema_dirs: [],
     locator: nil,
-    immutable: false,
-    optionals: :nilable
+    enums: nil,
+    **generator_options
   )
     schema_file = File.join(FIXTURES_DIR, fixture_name, "schema.json")
+    generator_class = Schematrix::GENERATORS.fetch(generator_name)
     objects =
       Schematrix::Compiler.new(
         store: Schematrix::DocumentStore.new(schema_dirs:),
         closed_shapes:,
+        enums_classes: enums == :classes || generator_class.enum_generator?,
       ).compile([schema_file])
     uri = URI(locator || fixture_locator(schema_file, path))
     node = objects.fetch(uri.to_s)
 
     generator =
-      Schematrix::GENERATORS[generator_name].new(
+      generator_class.new(
         "/tmp",
         MODULE_NAME,
         format: true,
-        immutable:,
-        optionals:,
+        enums:,
+        **generator_options,
       )
+    generator.resolved_enums =
+      enums || (generator_class.enum_generator? ? :classes : :unions)
     generator.transform(uri, generator.class_name_from_path(uri), node)
   end
 

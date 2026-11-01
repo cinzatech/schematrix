@@ -1,6 +1,7 @@
 # Generators
 
-A generator renders compiled schema records as source files. Twelve exist:
+A generator renders compiled schema records as source files. Sixteen
+per-class generators exist:
 
 | Name | Files | Contents |
 | ------------- | ----- | -------- |
@@ -16,13 +17,24 @@ A generator renders compiled schema records as source files. Twelve exist:
 | `partial_sorbet_ruby` | `.rb` | Partial classes with inline Sorbet `sig` blocks, `# typed: strict`. |
 | `partial_rbi` | `.rbi` | Sorbet interface files for the partial classes. |
 | `partial_rbs` | `.rbs` | RBS signature files for the partial classes. |
+| `plain_ruby_enums` | `.rb` | Enum classes with frozen member instances. |
+| `sorbet_ruby_enums` | `.rb` | Strictly typed `T::Enum` subclasses. |
+| `rbi_enums` | `.rbi` | Sorbet enum member declarations. |
+| `rbs_enums` | `.rbs` | Signatures for the plain enum API. |
 
-All twelve walk the same compiled records, so one schema produces the same
-classes under every format. All twelve format their output with SyntaxTree
-(`syntax_tree` for Ruby, `syntax_tree-rbs` for RBS). Pass `format:`
-false to [a generator instance](library-api.md) to skip that step.
+The data, DSL, and partial generators receive object records; the enum
+writers receive qualifying enum records. All format their output with
+SyntaxTree (`syntax_tree` for Ruby, `syntax_tree-rbs` for RBS). Pass
+`format: false` to [a generator instance](library-api.md) to skip that step.
 
-## What every generator emits
+Only the four `*_enums` generators write enum files. They use the normal
+class names without a `Dsl` or `Partial` prefix. Selecting any of them
+defaults the whole run to `enums: :classes`; otherwise the default is
+`:unions`. Explicit mode settings override this default. See
+[Enums](schema-features.md#enums) for qualification and mode rules, and
+[Enum classes](generated-code.md#enum-classes) for the member API.
+
+## What data generators emit
 
 For each object schema the compiler found, one file per class:
 

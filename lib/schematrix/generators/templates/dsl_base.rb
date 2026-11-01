@@ -254,10 +254,41 @@ module Schematrix
             schema = schema.additional_properties
             slot = "additionalProperties"
           end
+          serialized_enum_value(path, slot, schema)
+        end
+
+        def serialized_enum_value(path, slot, schema)
           return "value" unless @enums == :classes && schema&.enum_class?
 
           klass = enum_class_name(path, slot, schema)
-          "value.is_a?(::#{@module_name}::#{klass}) ? value.serialize : value"
+          enum_serialization_expression("::#{@module_name}::#{klass}")
+        end
+
+        def enum_serialization_expression(klass)
+          "value.is_a?(#{klass}) ? value.serialize : value"
+        end
+
+        def enum_array_values(name, tail)
+          schema = @properties.fetch(name)
+          unless @enums == :classes && schema.prefix_items.any?(&:enum_class?)
+            return tail == "value" ? "values" : "values.map { |value| #{tail} }"
+          end
+
+          path = nested_locator(@path, "properties/#{name}")
+          branches =
+            schema.prefix_items.each_with_index.map do |item, index|
+              value = serialized_enum_value(path, "prefixItems/#{index}", item)
+              "when #{index}\n#{value}"
+            end
+          <<~RUBY.strip
+            values.each_with_index.map do |value, index|
+              case target.size + index
+              #{branches.join("\n")}
+              else
+                #{tail}
+              end
+            end
+          RUBY
         end
 
         def setter_method(name, kind, stub: false)
@@ -283,8 +314,7 @@ module Schematrix
               end
             RUBY
           when :array_scalars
-            values =
-              value == "value" ? "values" : "values.map { |value| #{value} }"
+            values = enum_array_values(name, value)
             <<~RUBY
               def #{name}(*values)
                 target = (@fields[#{key}] ||= [])

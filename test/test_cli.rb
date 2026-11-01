@@ -1,5 +1,6 @@
 require_relative "test_helper"
 require_relative "../lib/schematrix/cli"
+require "tmpdir"
 
 class TestCLI < Minitest::Test
   def test_usage_line_advertises_no_subcommand
@@ -92,6 +93,62 @@ class TestCLI < Minitest::Test
     assert_output(nil, /Unknown generators: nope/) do
       assert_raises(SystemExit) { cli.run }
     end
+  end
+
+  def test_enums_option_parses
+    %w[classes unions].each do |mode|
+      cli = Schematrix::CLI.new
+      cli.parse(["-g", "plain_ruby", "-m", "M", "--enums", mode, "schema.json"])
+
+      assert_empty cli.params.errors.to_a
+      assert_equal mode, cli.params[:enums]
+    end
+  end
+
+  def test_enums_default_is_unset_for_pipeline_resolution
+    cli = Schematrix::CLI.new
+    cli.parse(%w[-g plain_ruby -m M schema.json])
+
+    assert_empty cli.params.errors.to_a
+    assert_nil cli.params[:enums]
+  end
+
+  def test_invalid_enums_mode_is_fatal
+    previous_logger = Schematrix.logger
+    cli = Schematrix::CLI.new
+    cli.parse(%w[-g plain_ruby -m M --enums scalar schema.json])
+
+    assert_output(nil, /Unknown enums mode: scalar/) do
+      error = assert_raises(SystemExit) { cli.run }
+      assert_equal 1, error.status
+    end
+  ensure
+    Schematrix.logger = previous_logger
+  end
+
+  def test_enums_default_and_explicit_override_reach_generated_types
+    previous_logger = Schematrix.logger
+    schema = File.join(__dir__, "fixtures", "enum_usage", "schema.json")
+    [
+      ["rbs", [], '("active" | "inactive")?'],
+      ["rbs,rbs_enums", [], "Schema::Props::Status?"],
+      ["rbs,rbs_enums", %w[--enums unions], '("active" | "inactive")?'],
+      ["rbs,rbs_enums", %w[--enums classes], "Schema::Props::Status?"],
+    ].each do |generators, options, type|
+      Dir.mktmpdir do |output|
+        cli = Schematrix::CLI.new
+        cli.parse(["-g", generators, "-m", "M", "-o", output, *options, schema])
+        assert_empty cli.params.errors.to_a
+        cli.run
+
+        source = File.read(File.join(output, "schema.rbs"))
+        assert_includes source, "attr_accessor status: #{type}"
+        enum_files = Dir["#{output}/**/status.rbs"]
+        assert_equal generators.include?("rbs_enums") ? 1 : 0, enum_files.size
+      end
+    end
+  ensure
+    Schematrix.logger = previous_logger
   end
 
   def test_immutable_flag_parses

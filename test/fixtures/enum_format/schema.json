@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "status": { "type": "string", "enum": ["active", "inactive"], "format": "project-status" }
+  },
+  "required": ["status"],
+  "additionalProperties": false
+}

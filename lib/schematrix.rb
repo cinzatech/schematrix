@@ -191,6 +191,7 @@ module Schematrix
           next unless generator.class.enum_generator? == node.enum_class?
 
           claim.call(generator, generator.target_path(locator), locator)
+          generator.validate_enum_members(locator, node) if node.enum_class?
         end
         next unless generator.maybe_needed?
 

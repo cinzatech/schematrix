@@ -26,3 +26,30 @@ end
 No integer serialization fallback is needed. Member names that start
 with digits use the resolver's `N` prefix. An underscore prefix would
 not form a valid Ruby constant.
+
+## Member name equal to the class name
+
+Sorbet cannot type a member whose constant name equals its enclosing
+enum class's leaf name. The problematic shape is:
+
+```ruby
+class Affiliation < T::Enum
+  enums do
+    Affiliation = new("affiliation")
+    External = new("external")
+  end
+end
+```
+
+The inner `Affiliation` denotes a member, not a type. Qualifying type
+references does not make this member declaration usable by Sorbet.
+The chosen limit is to reject this shape in `sorbet_ruby_enums` and
+`rbi_enums` with `Schematrix::OutputCollisionError`. The check compares
+the folded member name with the enclosing class leaf, so it also
+applies to nested classes and differently spelled values that fold to
+that name. Plain Ruby and RBS permit it.
+
+This restriction is separate from namespace shadowing in consumers.
+Partial and DSL signatures use absolute class references to select
+the shared enum class outside their `Partial` and `Dsl` namespaces.
+They do not create another enum family.

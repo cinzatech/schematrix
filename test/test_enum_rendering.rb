@@ -47,15 +47,17 @@ class TestEnumRendering < Minitest::Test
     assert_includes code, "params(values: ::M::Person::Props::Entries::Items)"
     assert_includes code,
                     "value: ::M::Person::Props::Labels::AdditionalProperties"
+    refute_includes code, "T.unsafe"
+    assert_includes code, "enum_value = T.let(value, T.anything)"
     assert_match(
-      /if value\.is_a\?\(::M::Person::Props::Status\)\s+value\.serialize\s+else\s+value/,
+      /when ::M::Person::Props::Status\s+enum_value\.serialize\s+else\s+enum_value/,
       code,
     )
     assert_includes code, "values.map"
-    assert_includes code, "value.is_a?(::M::Person::Props::Entries::Items)"
+    assert_includes code, "when ::M::Person::Props::Entries::Items"
     assert_includes code,
-                    "value.is_a?(::M::Person::Props::Labels::AdditionalProperties)"
-    assert_includes code, "value.is_a?(::M::Person::Defs::Shared)"
+                    "when ::M::Person::Props::Labels::AdditionalProperties"
+    assert_includes code, "when ::M::Person::Defs::Shared"
     refute_includes code, "Defs::Shared.build"
     assert_includes render(:DslRbi),
                     "params(value: T.nilable(::M::Person::Props::Status))"

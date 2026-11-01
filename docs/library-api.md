@@ -39,7 +39,7 @@ you want.
 
 ## Errors
 
-`generate` raises, in order:
+`generate` can raise:
 
 - `Schematrix::InvalidSchemaError` when a document parses to something
   that is neither an object nor a boolean.
@@ -50,7 +50,9 @@ you want.
   scheme is unsupported.
 - `Schematrix::OutputCollisionError` when two compiled classes, or two
   generators sharing a file extension in one directory, would write the
-  same file.
+  same file. Enum member folding collisions also raise this error,
+  as do member names equal to the enclosing class leaf in the Sorbet
+  Ruby and RBI enum generators (plain Ruby and RBS permit them).
 - `Schematrix::CoercionConflictError` while rendering a class whose
   schema unions branches that would convert the same JSON type through
   different coercers (see [Limits](limits.md)).
@@ -58,8 +60,9 @@ you want.
   whose coerced property names fold onto the generated coercion
   helpers.
 
-Collisions are checked for every generator and class before the first
-file is written, so a failed run leaves no partial output.
+Output-path and enum member collisions are checked before the first
+file is written. Conversion errors occur during rendering, so earlier
+files may already have been written.
 
 ## Logging
 
@@ -91,6 +94,9 @@ generator.write(locator, node) # renders, formats, writes, returns the path
 - Pass `command:` to name the regenerating command in the written
   files' banner; the CLI passes `schematrix`, the rake task
   `rake meta:generate`.
+- Pass `enums: :classes` or `enums: :unions` to select enum usage for
+  the whole run. The default `nil` leaves mode selection to
+  `Schematrix.generate`; see [Enum modes](#enum-modes).
 - Pass `scalar_types:` to map `[type, format]` pairs to renderings of
   the project's own, merged over the built-in table (below).
 - Pass `immutable: true` to write data classes as frozen value
@@ -126,6 +132,46 @@ helper.run_once_target_paths
 # => ["out/coercion_helper.rb", "out/coercion_helper.rbs"]
 helper.write_run_once(objects)
 ```
+
+## Enum modes
+
+Every generator accepts `enums: nil`, `:classes`, or `:unions`.
+Other values raise `ArgumentError` at construction. This is a generator
+option, not a keyword to `Schematrix.generate`.
+
+The pipeline collects explicit modes from all generators. Two distinct
+explicit modes raise `ArgumentError`. One explicit mode applies to the
+entire run, including generators that left it unset. With none set,
+any enum writer selects `:classes`; otherwise the mode is `:unions`.
+
+The enum writers are `PlainRubyEnums`, `SorbetRubyEnums`, `RbiEnums`,
+and `RbsEnums`, registered as `plain_ruby_enums`, `sorbet_ruby_enums`,
+`rbi_enums`, and `rbs_enums`. They alone write enum classes:
+
+```ruby
+Schematrix.generate(
+  generators: [
+    Schematrix::Generators::PlainRuby.new("generated", "MyApp"),
+    Schematrix::Generators::PlainRubyEnums.new("generated", "MyApp"),
+    Schematrix::Generators::AuxiliaryFiles.new("generated", "MyApp"),
+  ],
+  input_files: ["person.schema.json"],
+)
+```
+
+`:classes` without an enum writer logs a warning asking for a
+`*_enums` generator. It does not fail, but the referenced enum constants
+must come from elsewhere. With the default `nil` logger, no warning is
+visible. DSL and partial generators do not write enum files.
+
+An enum writer with explicit `:unions` still writes enum classes;
+slots use union rendering without converting through those classes.
+Compilation registers qualifying enums whenever class usage or enum
+file generation is requested. The write loop sends enum records only
+to enum writers and all other records to the other per-class generators.
+
+See [Schema features](schema-features.md#enums) for qualification,
+conversion, and format composition.
 
 ## Scalar types
 
@@ -173,11 +219,12 @@ anonymous module, a nameless value, or a missing method raises
 `ArgumentError` at generator construction, before any file is
 written.
 
-Twelve generator classes exist: `PlainRuby`, `SorbetRuby`, `Rbi`, and
+Sixteen per-class generator classes exist: `PlainRuby`, `SorbetRuby`, `Rbi`, and
 `Rbs` for the data classes, plus `DslPlainRuby`, `DslSorbetRuby`,
 `DslRbi`, and `DslRbs` for the instance builders, plus `PartialPlainRuby`,
 `PartialSorbetRuby`, `PartialRbi`, and `PartialRbs` for the partial
-classes. They share the rendering described in
+classes, plus `PlainRubyEnums`, `SorbetRubyEnums`, `RbiEnums`, and
+`RbsEnums` for enum classes. They share the rendering described in
 [Generators](generators.md); the builders place every class under a
 `Dsl` module level and the partials under a `Partial` module level, so
 the families can write to one directory without colliding.

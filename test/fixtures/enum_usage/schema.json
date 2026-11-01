@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "status": { "enum": ["active", "inactive", null] }
+  },
+  "required": ["status"],
+  "additionalProperties": false
+}

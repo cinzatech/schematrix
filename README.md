@@ -4,7 +4,9 @@
 
 `schematrix` is a Ruby gem and CLI tool that reads [JSON Schema](https://json-schema.org/) files and produces idiomatic Ruby source code. Point it at a schema, choose a generator, and get ready-to-use Ruby classes and type signatures written into your project.
 
-Twelve output formats share one compiler: plain Ruby classes, Ruby classes with inline Sorbet signatures, Sorbet RBI files, RBS signature files, and each of those four notations again as a builder DSL and as a partial class family. The DSL classes define instances of the schema through plain method calls; running one builds the document as a Hash, and parsing one reconstructs the same document statically.
+Sixteen per-class output formats share one compiler: plain Ruby classes, Ruby classes with inline Sorbet signatures, Sorbet RBI files, RBS signature files, and each of those four notations again as a builder DSL, a partial class family, and enum classes. The DSL classes define instances of the schema through plain method calls; running one builds the document as a Hash, and parsing one reconstructs the same document statically.
+
+Qualifying string and integer enums can generate named member classes with the four `*_enums` generators, or render as literal unions in RBS. See [Enums](docs/schema-features.md#enums).
 
 ---
 
@@ -148,6 +150,8 @@ Options:
       --closed-shapes      Treat absent additionalProperties as false: closed
                            classes with no catch-all, instead of the spec
                            default
+      --enums string       Enum slot types: classes or unions (default depends
+                           on generators)
   -g, --generators list    Output generators to use, e.g.: plain_ruby,
                            auxiliary_files
   -h, --help               Print usage
@@ -239,8 +243,8 @@ running from the repository root.
 
 ## Generators
 
-All twelve generators walk the same compiled records and write one file
-per object schema. They differ only in notation:
+The data, DSL, and partial generators write object schema files.
+The four enum generators write qualifying enum schema files:
 
 | Name                | Writes                                                          |
 | ------------------- | --------------------------------------------------------------- |
@@ -256,6 +260,10 @@ per object schema. They differ only in notation:
 | `partial_sorbet_ruby` | Partial classes with inline Sorbet `sig` blocks                |
 | `partial_rbi`       | Sorbet signature files for the partial classes                  |
 | `partial_rbs`       | RBS signature files for the partial classes                     |
+| `plain_ruby_enums`  | Enum classes with frozen members, no runtime dependency         |
+| `sorbet_ruby_enums` | `T::Enum` classes with inline Sorbet signatures                  |
+| `rbi_enums`         | Sorbet enum declarations                                        |
+| `rbs_enums`         | RBS declarations for the plain enum API                          |
 
 See the [generator guide](docs/generators.md) for sample output and the
 type mapping tables per notation. Class names, module nesting, and file
