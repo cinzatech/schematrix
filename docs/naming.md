@@ -45,6 +45,35 @@ a definition chain can never fold onto the same class name.
 A class's own Ruby nesting mirrors the name: `Flat::Props::A` is itself
 a generated class, and `Props::B` nests inside it.
 
+## Enum names
+
+Qualifying enums use the same locator rules:
+
+| Schema site | Enum class |
+| ----------- | ---------- |
+| `person.schema.json` `#/properties/status` | `Person::Props::Status` |
+| `person.schema.json` `#/$defs/affiliation` | `Person::Defs::Affiliation` |
+| `affiliation.schema.json` root | `Affiliation` |
+
+Only the four `*_enums` generators write these files. The enum family
+has no `Dsl` or `Partial` prefix: data classes, builders, and partials
+share one set of member constants. Partial and DSL signatures use
+absolute class references to avoid binding to a class in their own
+namespace.
+
+Member names fold from serialized values to PascalCase. For example,
+`"in-progress"` becomes `InProgress`, and integer `1` becomes `N1`.
+The `N` prefix makes digit-leading names valid Ruby constants; it is
+not an underscore. Duplicate raw values produce one member. Distinct
+values that fold to one constant raise `OutputCollisionError`.
+
+The Sorbet Ruby and RBI enum generators also reject a member name that
+equals the enclosing class's leaf name. For example, `"affiliation"`
+in class `Affiliation` would declare `Affiliation::Affiliation`, which
+Sorbet cannot type as the enclosing enum. This raises
+`OutputCollisionError`. Plain Ruby and RBS permit that name. See the
+[spike evidence](enum-spike.md).
+
 ## File layout
 
 One file per class, under the output directory. The path is the class
@@ -89,15 +118,17 @@ every class lands on its own path. These fail with
 `Schematrix::OutputCollisionError`, naming both claimants:
 
 - Two input files with the same basename (`a.json` and `a.yaml`).
-- Two generators that share a file extension writing to one directory
-  (running `plain_ruby` and `sorbet_ruby` into the same `-o`).
+- Two generators that write the same schema site with the same file
+  extension into one directory (for example, `plain_ruby` and
+  `sorbet_ruby`). A data generator and an enum generator may share an
+  extension and directory because they write different sites.
 - Two schema sites whose folded class names collide, such as two
   `$defs` keys that normalize to one constant, or two keys where one
   is the hex fallback spelling of the other (`"@"` and `"40"`).
 
-A collision aborts the run with nothing written, so a failed run never
-leaves half an output tree behind. Give same-extension generators
-separate `-o` directories, or run them as separate commands.
+Output-path and enum member collisions abort before any files are
+written. Give generators that claim the same paths separate `-o`
+directories, or run them as separate commands.
 
 A different, smaller clash stays a warning: two property names of one
 class can fold onto one accessor (`"foo-bar"` and `"foo_bar"`). The

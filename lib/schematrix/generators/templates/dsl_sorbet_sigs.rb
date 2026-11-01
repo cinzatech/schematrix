@@ -17,6 +17,20 @@ module Schematrix
 
         private
 
+        def enum_serialization_expression(klass)
+          <<~RUBY.strip
+            begin
+              enum_value = T.let(value, T.anything)
+              case enum_value
+              when #{klass}
+                enum_value.serialize
+              else
+                enum_value
+              end
+            end
+          RUBY
+        end
+
         def fields_assignment
           "@fields = T.let({}, T::Hash[String, T.untyped])"
         end

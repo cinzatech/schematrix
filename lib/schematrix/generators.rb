@@ -11,6 +11,10 @@ module Schematrix
   # pipeline writes it once per output directory when a generator
   # runs with optionals: :maybe and no supplied maybe module.
   GENERATORS = {
+    "plain_ruby_enums" => Generators::PlainRubyEnums,
+    "sorbet_ruby_enums" => Generators::SorbetRubyEnums,
+    "rbi_enums" => Generators::RbiEnums,
+    "rbs_enums" => Generators::RbsEnums,
     "plain_ruby" => Generators::PlainRuby,
     "rbs" => Generators::Rbs,
     "sorbet_ruby" => Generators::SorbetRuby,

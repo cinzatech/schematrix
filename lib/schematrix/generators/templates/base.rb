@@ -23,6 +23,7 @@ module Schematrix
           documentation_comment:,
           property_keys: [],
           scalar_types: Schematrix::BUILTIN_SCALAR_TYPES,
+          enums: :unions,
           immutable: false,
           optionals: :nilable,
           maybe: nil,
@@ -37,6 +38,7 @@ module Schematrix
           @additional_properties = additional_properties
           @documentation_comment = documentation_comment
           @scalar_types = scalar_types
+          @enums = enums
           @immutable = immutable
           @optionals = optionals
           @maybe = maybe
@@ -101,6 +103,30 @@ module Schematrix
           return super if @namespace_prefix.nil?
 
           "#{@namespace_prefix}::#{super}"
+        end
+
+        def unprefixed_class_name_from_path(uri, name = nil)
+          Resolver.instance_method(:class_name_from_path).bind_call(
+            self,
+            uri,
+            name,
+          )
+        end
+
+        def enum_type_reference(class_name)
+          if @namespace_prefix.nil? && !@class_name.start_with?("Dsl::")
+            return class_name
+          end
+
+          "::#{@module_name}::#{class_name}"
+        end
+
+        def enum_class_name(path, name, schema)
+          if schema.ref
+            unprefixed_class_name_from_path(URI(schema.ref))
+          else
+            unprefixed_class_name_from_path(path, name)
+          end
         end
 
         # The Maybe constant the generated type positions spell:

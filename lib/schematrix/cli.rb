@@ -92,6 +92,12 @@ module Schematrix
              "with copier, and value equality; data generators only"
     end
 
+    option :enums do
+      optional
+      long "--enums string"
+      desc "Enum slot types: classes or unions (default depends on generators)"
+    end
+
     flag :verbose do
       optional
       arity zero_or_more
@@ -141,6 +147,12 @@ module Schematrix
           exit 1
         end
 
+        enums = params[:enums]&.to_sym
+        unless enums.nil? || %i[classes unions].include?(enums)
+          Schematrix.logger&.fatal "Unknown enums mode: #{params[:enums]}"
+          exit 1
+        end
+
         output = Array(params[:output])
         unless [0, 1, generator_names.size].include?(output.size)
           message =
@@ -170,6 +182,7 @@ module Schematrix
                 module_name,
                 format: true,
                 command: "schematrix",
+                enums:,
                 immutable:
                   params[:immutable] && generator_class.immutable_supported?,
               )

@@ -1,0 +1,15 @@
+module M
+  class Schema
+    ORIGINAL_KEYS: Hash[String, Symbol]
+
+    attr_accessor status: Schema::Props::Status?
+
+    def initialize: (status: Schema::Props::Status?) -> void
+
+    def self.coerce_status: (top value) -> top
+
+    def self.from_h: (Hash[String, top] hash) -> Schema
+
+    def to_h: -> Hash[String, top]
+  end
+end

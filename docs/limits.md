@@ -2,8 +2,9 @@
 
 Schematrix generates data shapes, not validators. This page states what
 the output does not do, and where it accepts more than the schema
-requires. The design rule is one direction only: the output never
-rejects data the schema accepts.
+requires. Shape compilation widens unsupported constraints. Format
+conversion can reject schema-valid data, and enum conversion rejects
+unknown members as described below.
 
 ## No validation
 
@@ -34,6 +35,41 @@ from, so rendering either branch's type alone would name loaded
 values the other branch never produces. Generation fails with
 `CoercionConflictError` instead. Give the branches distinct JSON
 types, or map them to one coercer.
+
+## Enums
+
+Only enums with more than one distinct non-null value, all strings or
+all integers, qualify. Mixed, single-value, boolean, and float enums,
+and `const`, stay scalar. Null is a nullable slot term, not a member.
+In `:unions` mode, Sorbet uses scalar types because it cannot spell
+string or integer literal unions; RBS uses literal unions.
+
+In `:classes` mode, standalone enum conversion raises `KeyError` for
+an unknown raw value. Values of other Ruby types still pass through.
+This is a conversion contract, not a general schema validator. A
+coercing format entry wins conversion while the signature stays the
+enum class; the generator does not enforce that the coercer returns a
+member.
+
+When enum union branches share a JSON type with another enum or an
+uncoerced branch, the helper tries conversion and rescues `KeyError`.
+A trailing `:pass` keeps values that no enum accepts. This can accept
+values outside every schema branch. The first identity-changing result
+wins; dumped strings are not fed through later enum conversions.
+An enum and a builtin coercer claiming the same JSON type, such as a
+string enum unioned with `format: "date"`, raise
+`CoercionConflictError` during generation.
+
+Distinct values that fold to the same member constant raise
+`OutputCollisionError`. The Sorbet Ruby and RBI enum generators also
+raise it when a folded member equals the enclosing class leaf, such as
+`Affiliation::Affiliation`. Plain Ruby and RBS permit that name. See
+[Enum serialization spike](enum-spike.md) for the Sorbet evidence.
+The pipeline checks these names before writing any files.
+
+Class usage without an enum writer only warns. The run succeeds but
+the application must supply the constants. DSL and partial generators
+never write enum files.
 
 ## Ignored keywords
 
@@ -90,11 +126,13 @@ Each item below widens acceptance. None of them narrows it.
   on load, not on dump. The `optionals: :maybe` mode closes this gap
   for every slot it wraps: absent stays absent and null stays null
   through dump.
-- Type names inside RBS and RBI signatures are relative
+- Data-class type names inside RBS and RBI signatures are generally relative
   (`Schema::Props::Child`, not `MyApp::Schema::Props::Child`), which
   resolves lexically. A schema whose property names shadow an enclosing
   class name could bind the wrong constant. Property coercion in
-  generated loading code is fully qualified and unaffected.
+  generated loading code is fully qualified and unaffected. Enum
+  references in partial and DSL signatures are absolute, so they
+  cannot bind to a class in those families.
 
 ## Signatures are shapes, not proofs
 
@@ -116,3 +154,7 @@ approximation above and add their own:
   class term.
 - Tuples feed the array setter positionally; deeper array nesting has
   no dedicated spelling and rides Array literals.
+- Class-mode enum signatures accept members only. Raw strings or
+  integers pass through the setter body, but do not satisfy the member
+  type and fail static checking. Members serialize on store, including
+  array elements and map values. See [The instance DSL](dsl.md).

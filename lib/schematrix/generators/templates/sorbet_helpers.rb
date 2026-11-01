@@ -22,6 +22,13 @@ module Schematrix
           entry.sorbet
         end
 
+        def enum_type(class_name, members, schema)
+          return enum_type_reference(class_name) if @enums == :classes
+
+          base_type = members.first.is_a?(String) ? TYPE_STRING : TYPE_INTEGER
+          scalar_type(base_type, schema.format)
+        end
+
         def array_of(element) = "T::Array[#{element}]"
 
         def string_keyed_hash(value) = "T::Hash[String, #{value}]"

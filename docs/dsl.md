@@ -64,7 +64,8 @@ under the property's original key.
 
 | Property shape | Call | Document effect | Repeat rule |
 | -------------- | ---- | --------------- | ----------- |
-| scalar, union, enum | `age 36` | `doc["age"] = 36` | last call wins |
+| scalar, union, enum in `:unions` mode | `age 36` | `doc["age"] = 36` | last call wins |
+| enum in `:classes` mode | `status MyApp::Person::Props::Status::Active` | stores the member's serialized value | last call wins |
 | object | `address do \|a\| ... end` | child document through `Address.build` | merges into a held Hash, replaces anything else |
 | array of scalars | `hobbies "a", "b"` | appends one element per argument | appends |
 | array of objects | `friends do \|f\| ... end` | appends one built element per call | appends |
@@ -94,9 +95,34 @@ reconstructs statically, every node a known kind; a file that carries
 `user_age` or `30 + 6` is out of contract, and a parser flags it instead
 of guessing.
 
-The runtime is looser: setters store whatever they receive, over-accepting
-the same way `from_h` does. The contract bounds what a data file may
-contain, not what the code accepts.
+Class-mode enums are the exception to the literal contract. Their
+setter signatures accept enum members, not raw strings or integers:
+
+```ruby
+MyApp::Dsl::Person.build do |person|
+  person.status MyApp::Person::Props::Status::Active
+end
+# => { "status" => "active" }
+```
+
+A parser must resolve the member constant to its serialized value.
+`person.status "active"` still runs in the plain builder, but fails
+`srb tc` against the class-mode signature. Sorbet runtime signature
+checks can also reject it. The setter body serializes members and
+passes non-members through without validation. Arrays serialize each
+member argument; tuple arguments use their positions, including across
+repeated setter calls. Maps serialize each member value. The resulting
+`to_h` document carries raw values, ready for a data class's `from_h`.
+
+Enum setters stay scalar-shaped; they do not take an object builder
+block. Nilability follows the generated signature. DSL signatures use
+absolute enum class references such as
+`::MyApp::Person::Props::Status`, without a `Dsl` prefix, to avoid
+namespace shadowing. Only the `*_enums` generators write those classes.
+
+For other values, the runtime stores whatever the setter receives.
+The parse contract bounds what a data file may contain, not what the
+setter body accepts.
 
 ## Required and defaults
 

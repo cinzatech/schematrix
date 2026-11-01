@@ -1,0 +1,15 @@
+module M
+  class Schema
+    module Props
+      class Status
+        Active: Status
+        Inactive: Status
+
+        def self.values: -> Array[Status]
+        def self.deserialize: (String) -> Status
+        def self.coerce: (top) -> top
+        def serialize: -> String
+      end
+    end
+  end
+end

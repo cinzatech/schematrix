@@ -90,6 +90,12 @@ module Schematrix
 
           return map_type(path, name, schema) if schema.map_shaped?
 
+          members = Schema.qualifying_enum_members(schema.enum)
+          if members && (@enums == :unions || schema.enum_class?)
+            class_name = enum_class_name(path, name, schema)
+            return enum_type(class_name, members, schema)
+          end
+
           base =
             schema.type.flat_map do |type|
               case type
@@ -152,10 +158,11 @@ module Schematrix
           terms =
             schema
               .prefix_items
-              .filter_map do |item|
+              .each_with_index
+              .filter_map do |item, index|
                 next if item.type.include?(TYPE_BOTTOM)
 
-                prefix_item_type(path, item)
+                prefix_item_type(path, item, index)
               end
               .uniq
           if schema.items.nil?
@@ -167,10 +174,11 @@ module Schematrix
           element_union(union(terms), terms)
         end
 
-        def prefix_item_type(path, item)
+        def prefix_item_type(path, item, index)
           return untyped if item.type.include?(TYPE_OBJECT) && !item.map_shaped?
 
-          type_of(path, "prefixItems", item)
+          slot = item.enum_class? ? "prefixItems/#{index}" : "prefixItems"
+          type_of(path, slot, item)
         end
 
         # Conjoin: distinct declarations intersect syntactically,

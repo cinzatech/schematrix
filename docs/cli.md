@@ -9,6 +9,8 @@ Options:
       --closed-shapes      Treat absent additionalProperties as false: closed
                            classes with no catch-all, instead of the spec
                            default
+      --enums string       Enum slot types: classes or unions (default depends
+                           on generators)
   -g, --generators list    Output generators to use, e.g.: plain_ruby,
                            dsl_plain_ruby
   -h, --help               Print usage
@@ -46,7 +48,10 @@ any file is written. See [Names and files](naming.md).
 Required. One or more generator names, given as repeated flags or as a
 comma-separated list. The names are `plain_ruby`, `sorbet_ruby`, `rbi`,
 `rbs`, the `dsl_` prefixed builders of each (`dsl_plain_ruby`,
-`dsl_sorbet_ruby`, `dsl_rbi`, `dsl_rbs`), and `auxiliary_files`, the run-once generator that writes
+`dsl_sorbet_ruby`, `dsl_rbi`, `dsl_rbs`), the four `partial_` generators,
+and `plain_ruby_enums`, `sorbet_ruby_enums`, `rbi_enums`, `rbs_enums`.
+Only the `*_enums` generators write enum files. There is also
+`auxiliary_files`, the run-once generator that writes
 the auxiliary files (see [generators](generators.md)). An unknown name stops the run
 with a fatal log message and exit status 1.
 
@@ -87,8 +92,9 @@ schematrix -g plain_ruby -o generated -g rbs -o sig schema.json
 schematrix -g plain_ruby,rbs -o generated schema.json
 ```
 
-Two generators that share a file extension and a directory collide and
-stop the run with `OutputCollisionError`.
+Two generators writing the same schema site with the same extension
+and directory collide with `OutputCollisionError`. Data and enum
+writers can share a directory and extension because their sites differ.
 
 ### `--closed-shapes`
 
@@ -97,6 +103,25 @@ keys accepted". The flag switches that default to "closed": generated
 classes carry no catch-all accessors and drop unknown keys on load.
 Explicit `additionalProperties` in the document always wins over the
 flag. See [Schema features](schema-features.md).
+
+### `--enums`
+
+Selects `classes` or `unions` for every generator in the run. Other
+values stop the run with exit status 1. Without the flag, any
+`*_enums` generator selects `classes`; otherwise the default is `unions`.
+An explicit flag overrides that default.
+
+```sh
+schematrix -g plain_ruby,plain_ruby_enums,auxiliary_files -m MyApp person.schema.json
+schematrix -g rbs --enums unions -m MyApp person.schema.json
+```
+
+`classes` makes qualifying enum slots reference generated classes.
+Without an enum writer it warns and continues, leaving the caller to
+supply those constants. `unions` spells literal unions in RBS and
+scalar types in Sorbet. Enum writers still write files when the flag
+is `unions`; the slots simply do not use the classes. See
+[Enums](schema-features.md#enums).
 
 ### `--immutable`
 

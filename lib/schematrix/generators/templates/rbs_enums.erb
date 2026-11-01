@@ -1,0 +1,12 @@
+module <%= @module_name %>
+<%= declaration_open %>
+<% @members.each do |name, _value| -%>
+    <%= name %>: <%= own_class_name %>
+<% end -%>
+
+    def self.values: () -> Array[<%= own_class_name %>]
+    def self.deserialize: (<%= serialized_type %>) -> <%= own_class_name %>
+    def self.coerce: (top) -> top
+    def serialize: () -> <%= serialized_type %>
+<%= declaration_close %>
+end

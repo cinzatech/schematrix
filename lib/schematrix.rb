@@ -42,7 +42,7 @@ module Schematrix
   # generator's auxiliary files.
   #
   # - `generators`: generator instances, one per output format. Each
-  #   per-locator generator receives a `write(locator, node)` call
+  #   per-locator generator receives a `write(locator, node, enums:)` call
   #   per compiled class; a run-once generator (one answering
   #   `run_once?`) receives a single `write_run_once(objects)` call
   #   with the whole compiled record set.
@@ -75,15 +75,31 @@ module Schematrix
     closed_shapes: false,
     schema_dirs: []
   )
+    mode = enum_mode(generators)
+    enum_writers =
+      generators.any? { |generator| generator.class.enum_generator? }
+    if mode == :classes && !enum_writers
+      logger&.warn "enums: :classes references enum constants; add a " \
+                     "*_enums generator to write their class files"
+    end
     store = DocumentStore.new(schema_dirs:)
-    objects = Compiler.new(store:, closed_shapes:).compile(input_files)
+    objects =
+      Compiler.new(
+        store:,
+        closed_shapes:,
+        enums_classes: mode == :classes || enum_writers,
+      ).compile(input_files)
 
     assert_distinct_targets(generators, objects)
 
     per_locator, run_once = generators.partition { |g| !g.class.run_once? }
     objects.each do |locator, node|
       logger&.info "Writing output for #{locator}"
-      per_locator.each { |generator| generator.write(locator, node) }
+      per_locator.each do |generator|
+        next unless generator.class.enum_generator? == node.enum_class?
+
+        generator.write(locator, node, enums: mode)
+      end
     end
     run_once.each do |generator|
       logger&.info "Writing auxiliary output for #{generator.class}"
@@ -97,6 +113,22 @@ module Schematrix
     end
 
     objects
+  end
+
+  def self.enum_mode(generators)
+    modes = generators.filter_map(&:enums).uniq
+    if modes.size > 1
+      raise ArgumentError, "conflicting enums modes: #{modes.inspect}"
+    end
+
+    modes.first ||
+      (
+        if generators.any? { |generator| generator.class.enum_generator? }
+          :classes
+        else
+          :unions
+        end
+      )
   end
 
   # One generated Maybe per output directory, flavor, and module:
@@ -154,8 +186,11 @@ module Schematrix
           claim.call(generator, path, "auxiliary output")
         end
       else
-        objects.each_key do |locator|
+        objects.each do |locator, node|
+          next unless generator.class.enum_generator? == node.enum_class?
+
           claim.call(generator, generator.target_path(locator), locator)
+          generator.validate_enum_members(locator, node) if node.enum_class?
         end
         next unless generator.maybe_needed?
 

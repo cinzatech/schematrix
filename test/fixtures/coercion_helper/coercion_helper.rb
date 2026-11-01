@@ -36,8 +36,24 @@ module M
         return value unless value.is_a?(Hash)
 
         value.transform_values { |entry| coerce_spec(entry, spec[1]) }
+      when :try
+        begin
+          coerce_spec(value, spec[1])
+        rescue KeyError
+          value
+        end
+      when :pass
+        value
       when :union
-        spec[1].reduce(value) { |result, sub| coerce_spec(result, sub) }
+        if spec[1].any? { |sub| sub[0] == :try }
+          spec[1].each do |sub|
+            result = coerce_spec(value, sub)
+            return result unless result.equal?(value)
+          end
+          value
+        else
+          spec[1].reduce(value) { |result, sub| coerce_spec(result, sub) }
+        end
       end
     end
   end

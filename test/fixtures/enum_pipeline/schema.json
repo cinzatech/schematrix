@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "status": { "enum": ["active", "inactive"] },
+    "nullable": { "enum": ["yes", "no", null] },
+    "affiliation": { "$ref": "#/$defs/affiliation" },
+    "second": { "$ref": "#/$defs/affiliation" },
+    "statuses": { "type": "array", "items": { "$ref": "#/$defs/affiliation" } },
+    "labels": { "type": "object", "additionalProperties": { "$ref": "#/$defs/affiliation" } },
+    "rank": { "enum": [1, 2] }
+  },
+  "required": ["status", "affiliation", "second", "statuses", "labels", "rank"],
+  "additionalProperties": false,
+  "$defs": {
+    "affiliation": { "enum": ["employee", "external"] }
+  }
+}

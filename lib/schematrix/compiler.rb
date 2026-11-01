@@ -12,9 +12,14 @@ module Schematrix
     # `store` is the Schematrix::DocumentStore every visitor shares.
     # `closed_shapes` treats an absent `additionalProperties` as false
     # (closed classes), instead of the spec's open default.
-    def initialize(store: DocumentStore.new, closed_shapes: false)
+    def initialize(
+      store: DocumentStore.new,
+      closed_shapes: false,
+      enums_classes: false
+    )
       @store = store
       @closed_shapes = closed_shapes
+      @enums_classes = enums_classes
       @queue = []
       @seen = Set.new
       @objects = {}
@@ -39,7 +44,12 @@ module Schematrix
     def visit(uri)
       node = @store.node_at(uri)
       visitor =
-        Visitor.new(uri, @store, closed_shapes: @closed_shapes).compile(node)
+        Visitor.new(
+          uri,
+          @store,
+          closed_shapes: @closed_shapes,
+          enums_classes: @enums_classes,
+        ).compile(node)
 
       @objects.merge!(visitor.objects)
       visitor.edges.each { |edge| discover(edge) }

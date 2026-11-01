@@ -24,6 +24,17 @@ module Schematrix
           entry.rbs
         end
 
+        def enum_type(class_name, members, schema)
+          return enum_type_reference(class_name) if @enums == :classes
+
+          base_type = members.first.is_a?(String) ? TYPE_STRING : TYPE_INTEGER
+          if lookup_scalar_type(base_type, schema.format)&.coercer
+            return scalar_type(base_type, schema.format)
+          end
+
+          members.map(&:inspect).join(" | ")
+        end
+
         def array_of(element) = "Array[#{element}]"
 
         def string_keyed_hash(value) = "Hash[String, #{value}]"

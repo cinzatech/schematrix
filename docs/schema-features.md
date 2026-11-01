@@ -25,8 +25,9 @@ with `InvalidSchemaError`.
 - `const` with no declared type infers the type from the value:
   `{"const": "active"}` types the property as `String`. Values that do
   not map to a clean scalar type infer nothing.
-- `enum` with no declared type infers the union of its values' types.
-  Values without a clean mapping contribute nothing.
+- `enum` infers value types when no type is declared. Qualifying string
+  and integer enums render as literal unions or generated classes,
+  depending on the run's `enums` mode (below).
 - A schema that is just `true` accepts anything: it types as
   unconstrained (`T.anything` / `top`) and creates no class. A schema
   that is just `false` accepts nothing and contributes nothing.
@@ -35,6 +36,72 @@ The `description` annotation becomes a comment above the generated
 class. `title` is captured but unused. Constraint keywords such as
 `pattern`, `minimum`, `minLength` never reach the output: the generated
 classes shape data, they do not validate it.
+
+## Enums
+
+An enum qualifies when, after removing `null` and duplicates, it has
+more than one value and all values are strings or all are integers.
+`null` makes the slot nullable but is not a member. Mixed lists,
+single-value lists, `const`, boolean enums, and float enums stay scalar.
+For qualifying class enums, the members determine the scalar type even
+when the declared `type` differs.
+
+The `enums` mode applies to the whole run:
+
+- `:unions` is the default without an enum generator. RBS spells literal
+  unions such as `"active" | "inactive"` or `1 | 2`; Sorbet spells
+  `String` or `Integer`, since it cannot express those literal unions.
+- `:classes` is the default when any `*_enums` generator is present.
+  Both notations name the enum class. Explicit mode settings override
+  the default; conflicting settings raise `ArgumentError`.
+
+Only `plain_ruby_enums`, `sorbet_ruby_enums`, `rbi_enums`, and
+`rbs_enums` write enum files. Data, DSL, and partial generators only
+reference them. `:classes` without an enum writer logs a warning and
+continues; the caller must supply the referenced constants. An explicit
+`:unions` with an enum writer still writes enum files, but slots use
+union types rather than the classes.
+
+Inline enums, `$defs` enums, and enum document roots use the normal
+[naming rules](naming.md#enum-names). A `$ref` to a qualifying enum keeps
+its target class, so two properties referencing one `$defs` entry share
+members. Shape-changing siblings, an own `enum` or `const`, and folds
+that mix different enum records can degrade the result to scalar types.
+
+The plain class has frozen, identity-equal members, member constants,
+`values`, `deserialize`, `serialize`, and bidirectional `coerce`.
+The Sorbet class uses `T::Enum`. `deserialize` of an unknown value raises
+`KeyError`; loading a standalone enum slot has the same contract.
+Dumping a member returns its original string or integer. See
+[Generated code](generated-code.md#enum-classes) for the API.
+
+Enum and format composition follows this table:
+
+| Mode | Slot type | Load and dump conversion |
+| ---- | --------- | ------------------------ |
+| `:classes`, no coercing format entry | enum class | enum class's `coerce` |
+| `:classes`, coercing format entry | enum class | format entry's coercer |
+| `:unions`, no coercing format entry | literal union in RBS, scalar in Sorbet | none |
+| `:unions`, coercing format entry | format entry's type | format entry's coercer |
+
+A format coercer wins conversion even in class mode. It must return
+members if its results are to match the enum signature; the generator
+adds no second enum conversion after it.
+
+Arrays and maps convert enum elements and values. Inline tuple enums
+also convert by position; `prefixItems/0` names `PrefixItems::N0`.
+Partial slots wrap the same unprefixed enum class in `Maybe`, and convert present values
+on load and dump. DSL setter signatures accept members only, serialize
+them on store, and pass raw values through at runtime. Neither family
+writes its own enum members. See [The instance DSL](dsl.md).
+
+When union branches share a JSON type, enum conversions use `:try` and
+a final `:pass`: unknown members pass through rather than raising.
+The interpreter stops at the first conversion that changes object
+identity, so a dumped string is not converted back into a member by a
+later branch. This over-accepts values outside every enum branch.
+An enum and a builtin format coercer claiming the same JSON type still
+raise `CoercionConflictError` during generation.
 
 ## Formats
 
@@ -201,7 +268,8 @@ contribute to the property's type instead:
   where nearly every definition carries the
   `specification-extensions` hook beside its own keywords.
 - `$ref` to a scalar schema: the target's type compiles in place of the
-  reference.
+  reference, except qualifying enum targets registered as classes
+  (see [Enums](#enums)).
 - `$ref` to `true`: only the reference's own siblings remain, which
   types as unconstrained when the `$ref` stood alone. `$ref` to
   `false`: the schema accepts nothing.
