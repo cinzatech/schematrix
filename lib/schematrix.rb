@@ -96,7 +96,11 @@ module Schematrix
     per_locator, run_once = generators.partition { |g| !g.class.run_once? }
     objects.each do |locator, node|
       logger&.info "Writing output for #{locator}"
-      per_locator.each { |generator| generator.write(locator, node) }
+      per_locator.each do |generator|
+        next unless generator.class.enum_generator? == node.enum_class?
+
+        generator.write(locator, node)
+      end
     end
     run_once.each do |generator|
       logger&.info "Writing auxiliary output for #{generator.class}"
@@ -183,7 +187,9 @@ module Schematrix
           claim.call(generator, path, "auxiliary output")
         end
       else
-        objects.each_key do |locator|
+        objects.each do |locator, node|
+          next unless generator.class.enum_generator? == node.enum_class?
+
           claim.call(generator, generator.target_path(locator), locator)
         end
         next unless generator.maybe_needed?
