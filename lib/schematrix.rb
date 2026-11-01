@@ -42,7 +42,7 @@ module Schematrix
   # generator's auxiliary files.
   #
   # - `generators`: generator instances, one per output format. Each
-  #   per-locator generator receives a `write(locator, node)` call
+  #   per-locator generator receives a `write(locator, node, enums:)` call
   #   per compiled class; a run-once generator (one answering
   #   `run_once?`) receives a single `write_run_once(objects)` call
   #   with the whole compiled record set.
@@ -76,7 +76,6 @@ module Schematrix
     schema_dirs: []
   )
     mode = enum_mode(generators)
-    generators.each { |generator| generator.resolved_enums = mode }
     enum_writers =
       generators.any? { |generator| generator.class.enum_generator? }
     if mode == :classes && !enum_writers
@@ -99,7 +98,7 @@ module Schematrix
       per_locator.each do |generator|
         next unless generator.class.enum_generator? == node.enum_class?
 
-        generator.write(locator, node)
+        generator.write(locator, node, enums: mode)
       end
     end
     run_once.each do |generator|

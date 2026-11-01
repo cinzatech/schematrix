@@ -144,6 +144,13 @@ explicit modes raise `ArgumentError`. One explicit mode applies to the
 entire run, including generators that left it unset. With none set,
 any enum writer selects `:classes`; otherwise the mode is `:unions`.
 
+The resolved mode belongs to the invocation. The pipeline passes it
+through `write` and `transform` without changing the generator's
+configuration. Reusing an instance in another run cannot change a
+render already in progress. Concurrent runs must still use distinct
+output files. Direct `write` and `transform` calls accept an `enums:`
+override; otherwise they use the constructor's mode or `:unions`.
+
 The enum writers are `PlainRubyEnums`, `SorbetRubyEnums`, `RbiEnums`,
 and `RbsEnums`, registered as `plain_ruby_enums`, `sorbet_ruby_enums`,
 `rbi_enums`, and `rbs_enums`. They alone write enum classes:

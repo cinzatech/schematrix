@@ -1,5 +1,6 @@
 require_relative "test_helper"
 require "tmpdir"
+require "timeout"
 
 class TestEnumPipeline < Minitest::Test
   def test_shared_directory_partitions_objects_and_enums
@@ -108,6 +109,68 @@ class TestEnumPipeline < Minitest::Test
       assert_equal 1, objects.size
       assert_equal ["person.rb"], files(output)
       refute_includes File.read(File.join(output, "person.rb")), "coerce_status"
+    end
+  end
+
+  def test_overlapping_runs_keep_their_own_enum_modes
+    [
+      Schematrix::Generators::Rbs,
+      Schematrix::Generators::PlainRuby,
+    ].each do |format|
+      with_schema do |path, output|
+        other_path = File.join(File.dirname(path), "other.json")
+        FileUtils.cp(path, other_path)
+        entered = Queue.new
+        release = Queue.new
+        shared = format.new(output, "M")
+        shared.define_singleton_method(:write) do |locator, node, **options|
+          if URI(locator).path == path
+            entered << true
+            release.pop
+          end
+          super(locator, node, **options)
+        end
+        writer = Schematrix::Generators::PlainRubyEnums.new(output, "M")
+        worker =
+          Thread.new do
+            Schematrix.generate(
+              generators: [shared, writer],
+              input_files: [path],
+            )
+          end
+        begin
+          Timeout.timeout(10) { entered.pop }
+          Schematrix.generate(generators: [shared], input_files: [other_path])
+        ensure
+          release << true
+          worker.value
+        end
+        extension = format.file_extension
+        classes = File.read(File.join(output, "person#{extension}"))
+        unions = File.read(File.join(output, "other#{extension}"))
+        if format == Schematrix::Generators::Rbs
+          assert_includes classes,
+                          "attr_accessor status: Person::Props::Status?"
+          assert_includes unions,
+                          'attr_accessor status: ("active" | "inactive")?'
+        else
+          assert_includes classes, "::M::Person::Props::Status.coerce(value)"
+          refute_includes unions, "coerce_status"
+        end
+      end
+    end
+  end
+
+  def test_generation_does_not_change_direct_rendering_mode
+    with_schema do |path, output|
+      shared = Schematrix::Generators::Rbs.new(output, "M")
+      writer = Schematrix::Generators::PlainRubyEnums.new(output, "M")
+      records =
+        Schematrix.generate(generators: [shared, writer], input_files: [path])
+      locator, node = records.find { |_key, schema| !schema.enum_class? }
+      uri = URI(locator)
+      source = shared.transform(uri, shared.class_name_from_path(uri), node)
+      assert_includes source, 'attr_accessor status: ("active" | "inactive")?'
     end
   end
 

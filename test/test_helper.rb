@@ -75,9 +75,13 @@ module SchematrixTestHelper
         enums:,
         **generator_options,
       )
-    generator.resolved_enums =
-      enums || (generator_class.enum_generator? ? :classes : :unions)
-    generator.transform(uri, generator.class_name_from_path(uri), node)
+    mode = enums || (generator_class.enum_generator? ? :classes : :unions)
+    generator.transform(
+      uri,
+      generator.class_name_from_path(uri),
+      node,
+      enums: mode,
+    )
   end
 
   # Maps a test-friendly path like 'l1/l2' or 'Address' to the locator of

@@ -130,9 +130,14 @@ class TestEnumRendering < Minitest::Test
       records = Schematrix::Compiler.new(enums_classes: marked).compile([path])
       locator, schema = records.find { |key, _| URI(key).fragment == "/" }
       generator = Schematrix::Generators.const_get(flavor).new(dir, "M", enums:)
-      generator.resolved_enums = resolved
       uri = URI(locator)
-      generator.transform(uri, generator.class_name_from_path(uri), schema)
+      options = resolved ? { enums: resolved } : {}
+      generator.transform(
+        uri,
+        generator.class_name_from_path(uri),
+        schema,
+        **options,
+      )
     end
   end
 end
