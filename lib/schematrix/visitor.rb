@@ -1045,10 +1045,14 @@ module Schematrix
       branch = branch_body(path, raw)
       return acc if branch.nil?
 
+      optional_properties =
+        branch.properties.transform_values do |schema|
+          schema.with(required: false)
+        end
       properties =
         acc
           .properties
-          .merge(branch.properties) do |_name, own, other|
+          .merge(optional_properties) do |_name, own, other|
             union_schemas([own, other], parent: own)
           end
       Body.new(
