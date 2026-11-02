@@ -79,14 +79,15 @@ Enum and format composition follows this table:
 
 | Mode | Slot type | Load and dump conversion |
 | ---- | --------- | ------------------------ |
-| `:classes`, no coercing format entry | enum class | enum class's `coerce` |
-| `:classes`, coercing format entry | enum class | format entry's coercer |
+| `:classes`, absent or builtin format coercer | enum class | enum class's `coerce` |
+| `:classes`, project format coercer | enum class | format entry's coercer |
 | `:unions`, no coercing format entry | literal union in RBS, scalar in Sorbet | none |
 | `:unions`, coercing format entry | format entry's type | format entry's coercer |
 
-A format coercer wins conversion even in class mode. It must return
-members if its results are to match the enum signature; the generator
-adds no second enum conversion after it.
+In class mode, enum conversion takes precedence over builtin format
+coercers such as `Date`. A project format coercer can override enum
+conversion. It must load members and dump their serialized values to
+match the enum signature; the generator adds no second conversion.
 
 Arrays and maps convert enum elements and values. Inline tuple enums
 also convert by position; `prefixItems/0` names `PrefixItems::N0`.

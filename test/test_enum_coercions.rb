@@ -66,10 +66,17 @@ class TestEnumCoercions < Minitest::Test
       with_generated(
         reference.merge("format" => "date"),
         mode:,
-      ) do |root, source, _namespace|
-        assert_includes source, "Schematrix::Coercers::Date.coerce(value)"
-        date = root.from_h("value" => "2026-01-02").value
-        assert_equal Date.new(2026, 1, 2), date
+        members: %w[2026-01-02 2026-01-03],
+      ) do |root, source, namespace|
+        value = root.from_h("value" => "2026-01-02").value
+        if mode == :classes
+          refute_includes source, "Schematrix::Coercers::Date.coerce(value)"
+          assert_same namespace::Record::Defs::Status.deserialize("2026-01-02"),
+                      value
+        else
+          assert_includes source, "Schematrix::Coercers::Date.coerce(value)"
+          assert_equal Date.new(2026, 1, 2), value
+        end
         assert_equal(
           { "value" => "2026-01-02" },
           root.from_h("value" => "2026-01-02").to_h,

@@ -84,7 +84,10 @@ module Schematrix
           if schema.enum_class?
             type = schema.enum.first.is_a?(String) ? TYPE_STRING : TYPE_INTEGER
             entry = lookup_scalar_type(type, schema.format)
-            if entry&.coerces?
+            builtin_format =
+              Schematrix::Coercers::BUILTIN.include?(entry&.coercer)
+            use_format = @enums != :classes || !builtin_format
+            if entry&.coerces? && use_format
               return :coerce, entry.coercer, CLAIM_CLASSES.fetch(type)
             end
             return nil unless @enums == :classes
