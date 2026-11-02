@@ -550,7 +550,7 @@ module Schematrix
           if @inline_targets.include?(locator.to_s)
             recursive_map =
               schema_model(
-                "type" => TYPE_OBJECT,
+                "type" => target["type"],
                 "additionalProperties" => true,
               )
             return recursive_map, nil, nil
