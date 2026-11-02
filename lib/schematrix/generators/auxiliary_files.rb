@@ -62,47 +62,58 @@ module Schematrix
               end
 
               def self.coerce_spec(value, spec)
-                case spec[0]
-                when :coerce
-                  spec[1].coerce(value)
-                when :class
-                  coerce_class_slot(value, spec[1])
-                when :array
-                  return value unless value.is_a?(Array)
+                coercion_result(value, spec).last
+              end
 
+              def self.coercion_result(value, spec)
+                case spec[0]
+                when :coerce, :class
                   converted =
+                    if spec[0] == :coerce
+                      spec[1].coerce(value)
+                    else
+                      coerce_class_slot(value, spec[1])
+                    end
+                  [value.nil? || !converted.equal?(value), converted]
+                when :array
+                  return [false, value] unless value.is_a?(Array)
+
+                  results =
                     if spec[1][0] == :tuple
                       prefix, tail = spec[1][1], spec[1][2]
                       value.each_with_index.map do |element, index|
                         sub = index < prefix.size ? prefix[index] : tail
-                        sub.nil? ? element : coerce_spec(element, sub)
+                        sub.nil? ? [true, element] : coercion_result(element, sub)
                       end
                     else
-                      value.map { |element| coerce_spec(element, spec[1]) }
+                      value.map { |element| coercion_result(element, spec[1]) }
                     end
-                  converted.each_with_index.all? { |element, index| element.equal?(value[index]) } ? value : converted
+                  [results.all?(&:first), results.map(&:last)]
                 when :map
-                  return value unless value.is_a?(Hash)
+                  return [false, value] unless value.is_a?(Hash)
 
-                  converted = value.transform_values { |entry| coerce_spec(entry, spec[1]) }
-                  converted.all? { |key, entry| entry.equal?(value[key]) } ? value : converted
+                  results = value.transform_values { |entry| coercion_result(entry, spec[1]) }
+                  [results.values.all?(&:first), results.transform_values(&:last)]
                 when :try
                   begin
-                    coerce_spec(value, spec[1])
+                    coercion_result(value, spec[1])
                   rescue KeyError
-                    value
+                    [false, value]
                   end
                 when :pass
-                  value
+                  [true, value]
                 when :union
                   if spec[1].any? { |sub| sub[0] == :try }
                     spec[1].each do |sub|
-                      result = coerce_spec(value, sub)
-                      return result unless result.equal?(value)
+                      result = coercion_result(value, sub)
+                      return result if result.first
                     end
-                    value
+                    [false, value]
                   else
-                    spec[1].reduce(value) { |result, sub| coerce_spec(result, sub) }
+                    spec[1].reduce([false, value]) do |(matched, converted), sub|
+                      accepted, result = coercion_result(converted, sub)
+                      [matched || accepted, result]
+                    end
                   end
                 end
               end
@@ -118,6 +129,8 @@ module Schematrix
               def self.coerce_class_slot: (top value, top klass) -> top
 
               def self.coerce_spec: (top value, top spec) -> top
+
+              def self.coercion_result: (top value, top spec) -> [bool, top]
             end
           end
         RBS

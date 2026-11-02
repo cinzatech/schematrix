@@ -247,6 +247,22 @@ class TestReviewRegressions < Minitest::Test
     end
   end
 
+  def test_copying_a_container_does_not_make_a_union_branch_match
+    with_generated(
+      object_schema("value" => { "enum" => [1, 2] }),
+      enum_classes: true,
+    ) do |namespace|
+      enum = namespace::Schema::Props::Value
+      spec = [:union, [[:map, [:coerce, enum]], [:array, [:coerce, enum]]]]
+      value = { "k" => Object.new }
+      matched, converted =
+        namespace::CoercionHelper.coercion_result(value, spec)
+      refute matched
+      refute_same value, converted
+      assert_same value.fetch("k"), converted.fetch("k")
+    end
+  end
+
   private
 
   def object_schema(properties)
