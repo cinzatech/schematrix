@@ -175,6 +175,78 @@ class TestReviewRegressions < Minitest::Test
     end
   end
 
+  def test_recursive_nullable_map_keeps_null_items
+    schema =
+      object_schema("tree" => { "$ref" => "#/$defs/tree" }).merge(
+        "$defs" => {
+          "tree" => {
+            "type" => %w[object null],
+            "additionalProperties" => {
+              "type" => "array",
+              "items" => {
+                "$ref" => "#/$defs/tree",
+              },
+            },
+          },
+        },
+      )
+    with_schema(schema) do |path|
+      root = Schematrix::Compiler.new.compile([path]).values.first
+      item = root.properties.fetch("tree").additional_properties.items
+      assert_equal Set["object", "null"], item.type
+    end
+  end
+
+  def test_unchanged_coerced_containers_are_copied
+    enum = { "enum" => [1, 2, nil] }
+    shapes = [
+      [{ "type" => "array", "items" => enum }, [nil]],
+      [{ "type" => "array", "prefixItems" => [enum], "items" => false }, [nil]],
+      [{ "type" => "object", "additionalProperties" => enum }, { "k" => nil }],
+    ]
+    shapes.each do |shape, value|
+      with_generated(
+        object_schema("value" => shape),
+        enum_classes: true,
+      ) do |namespace|
+        loaded = namespace::Schema.from_h("value" => value)
+        refute_same value, loaded.value
+        dumped = loaded.to_h.fetch("value")
+        refute_same loaded.value, dumped
+        value.clear
+        dumped.clear
+        refute_empty loaded.value
+      end
+    end
+  end
+
+  def test_unchanged_map_union_branch_does_not_fall_through
+    schema =
+      object_schema(
+        "value" => {
+          "oneOf" => [
+            {
+              "type" => "object",
+              "additionalProperties" => {
+                "enum" => [1, 2, nil],
+              },
+            },
+            object_schema("foo" => { "type" => "string" }).merge(
+              "required" => ["foo"],
+            ),
+          ],
+        },
+      )
+    with_generated(schema, enum_classes: true) do |namespace|
+      [{ "k" => nil }, {}, { "foo" => "bar" }].each do |value|
+        source = { "value" => value }
+        loaded = namespace::Schema.from_h(source)
+        assert_equal source, loaded.to_h
+        assert_equal source, namespace::Schema.from_h(loaded.to_h).to_h
+      end
+    end
+  end
+
   private
 
   def object_schema(properties)
