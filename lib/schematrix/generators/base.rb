@@ -86,10 +86,14 @@ module Schematrix
       # ORIGINAL_KEYS still recording it.
       IMMUTABLE_RESERVED_METHOD_NAMES = %w[with _extra hash].freeze
       RESERVED_METHOD_NAMES = %w[initialize to_h].freeze
+      MODULE_NAME_PATTERN =
+        /\A(?:::)?[A-Z][A-Za-z0-9_]*(?:::[A-Z][A-Za-z0-9_]*)*\z/
 
       # `output_dir` is the directory files are written to (created on
       # demand), `module_name` the namespace generated code is placed
-      # in. `format: false` skips SyntaxTree formatting and emits the
+      # in. Namespace segments must start with A-Z and contain only
+      # ASCII letters, digits, and underscores. An initial :: is allowed.
+      # `format: false` skips SyntaxTree formatting and emits the
       # template output as-is. `command` names the regenerating command
       # in the written files' banner; nil leaves that line out.
       # `scalar_types` maps [type, format] pairs to ScalarType
@@ -123,6 +127,7 @@ module Schematrix
         maybe: nil,
         enums: nil
       )
+        assert_namespace_valid(module_name)
         assert_immutable_supported if immutable
         @output_dir = output_dir
         @module_name = module_name
@@ -262,6 +267,12 @@ module Schematrix
       end
 
       private
+
+      def assert_namespace_valid(name)
+        return if name.is_a?(String) && MODULE_NAME_PATTERN.match?(name)
+
+        raise ArgumentError, "module_name must be a Ruby constant path"
+      end
 
       # The immutable option only reshapes data classes: a builder
       # accumulates a document, so it is mutable by construction, and
