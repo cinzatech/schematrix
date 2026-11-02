@@ -71,8 +71,8 @@ class TestEnumCoercions < Minitest::Test
         value = root.from_h("value" => "2026-01-02").value
         if mode == :classes
           refute_includes source, "Schematrix::Coercers::Date.coerce(value)"
-          assert_same namespace::Record::Defs::Status.deserialize("2026-01-02"),
-                      value
+          enum = namespace::Record::Props::Value
+          assert_same enum.deserialize(Date.new(2026, 1, 2)), value
         else
           assert_includes source, "Schematrix::Coercers::Date.coerce(value)"
           assert_equal Date.new(2026, 1, 2), value

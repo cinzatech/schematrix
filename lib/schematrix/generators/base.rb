@@ -397,6 +397,8 @@ module Schematrix
               path:,
               class_name:,
               members: Templates::EnumBase.fold_members(object.enum),
+              format: object.format,
+              scalar_types: @scalar_types,
               documentation_comment: documentation_comment(object),
             )
           return enum_template

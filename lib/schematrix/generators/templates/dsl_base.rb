@@ -265,7 +265,7 @@ module Schematrix
         end
 
         def enum_serialization_expression(klass)
-          "value.is_a?(#{klass}) ? value.serialize : value"
+          "value.is_a?(#{klass}) ? #{klass}.coerce(value) : value"
         end
 
         def enum_array_values(name, tail)

@@ -47,14 +47,16 @@ string or integer literal unions; RBS uses literal unions.
 In `:classes` mode, standalone enum conversion raises `KeyError` for
 an unknown raw value. Values of other Ruby types still pass through.
 This is a conversion contract, not a general schema validator. A
-coercing format entry wins conversion while the signature stays the
-enum class; the generator does not enforce that the coercer returns a
-member.
+coercing format entry converts document values before enum membership
+is checked. Members store those converted values. On dump, the same
+coercer converts the member's serialized value back to a document value.
+Format parsing errors propagate; a successfully parsed value outside the
+enum raises `KeyError`.
 
 When enum union branches share a JSON type with another enum or an
 uncoerced branch, the helper tries conversion and rescues `KeyError`.
 A trailing `:pass` keeps values that no enum accepts. This can accept
-values outside every schema branch. The first identity-changing result
+values outside every schema branch. The first successful conversion
 wins; dumped strings are not fed through later enum conversions.
 An enum and a builtin coercer claiming the same JSON type, such as a
 string enum unioned with `format: "date"`, raise

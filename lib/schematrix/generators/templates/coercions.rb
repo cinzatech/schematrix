@@ -83,17 +83,16 @@ module Schematrix
 
           if schema.enum_class?
             type = schema.enum.first.is_a?(String) ? TYPE_STRING : TYPE_INTEGER
-            entry = lookup_scalar_type(type, schema.format)
-            builtin_format =
-              Schematrix::Coercers::BUILTIN.include?(entry&.coercer)
-            use_format = @enums != :classes || !builtin_format
-            if entry&.coerces? && use_format
-              return :coerce, entry.coercer, CLAIM_CLASSES.fetch(type)
+            if @enums == :classes
+              target =
+                "::#{@module_name}::#{enum_class_name(path, name, schema)}"
+              return :coerce, target, CLAIM_CLASSES.fetch(type)
             end
-            return nil unless @enums == :classes
 
-            target = "::#{@module_name}::#{enum_class_name(path, name, schema)}"
-            return :coerce, target, CLAIM_CLASSES.fetch(type)
+            entry = lookup_scalar_type(type, schema.format)
+            return nil unless entry&.coerces?
+
+            return :coerce, entry.coercer, CLAIM_CLASSES.fetch(type)
           end
 
           subs = []

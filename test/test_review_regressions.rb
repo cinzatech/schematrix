@@ -92,12 +92,10 @@ class TestReviewRegressions < Minitest::Test
     with_generated(schema, enum_classes: true) do |namespace|
       klass = namespace::Schema
       member = klass::Props::Value.values.first
-      loaded = klass.from_h("value" => member.serialize)
+      loaded = klass.from_h("value" => "2025-01-01")
       assert_same member, loaded.value
-      assert_equal(
-        { "value" => member.serialize },
-        klass.new(value: member).to_h,
-      )
+      assert_equal Date.new(2025, 1, 1), member.serialize
+      assert_equal({ "value" => "2025-01-01" }, klass.new(value: member).to_h)
     end
   end
 

@@ -514,9 +514,13 @@ module Schematrix
       pure_ref = SHAPE_SIBLINGS.none? { |keyword| siblings.key?(keyword) }
       pure_ref = false if siblings.key?("enum")
       if enum_target && pure_ref
-        @edges << locator
         merged =
           target.slice("format").merge(siblings).merge("enum" => target["enum"])
+        if siblings.key?("format") && siblings["format"] != target["format"]
+          return schema_model(merged), nil, nil
+        end
+
+        @edges << locator
         return schema_model(merged), locator, nil
       end
 

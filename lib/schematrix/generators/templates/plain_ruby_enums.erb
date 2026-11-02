@@ -1,4 +1,9 @@
 module <%= @module_name %>
+<% coercer_block = coercer_modules_block %>
+<% unless coercer_block.empty? %>
+<%= coercer_block %>
+
+<% end %>
 <%= declaration_open %>
     def initialize(value)
       @value = value.freeze
@@ -11,7 +16,7 @@ module <%= @module_name %>
     end
 
 <% @members.each do |name, value| -%>
-    <%= name %> = new(<%= value.inspect %>)
+    <%= name %> = new(<%= format_conversion(value.inspect) %>)
 <% end -%>
 
     def self.values
@@ -19,7 +24,7 @@ module <%= @module_name %>
     end
 
     def self.deserialize(value)
-      {<%= @members.map { |name, value| "#{value.inspect} => #{name}" }.join(", ") %>}.fetch(value)
+      {<%= @members.map { |name, _value| "#{name}.serialize => #{name}" }.join(", ") %>}.fetch(value)
     end
 
     def self.coerce(value)

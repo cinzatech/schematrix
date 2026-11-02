@@ -65,29 +65,39 @@ union types rather than the classes.
 Inline enums, `$defs` enums, and enum document roots use the normal
 [naming rules](naming.md#enum-names). A `$ref` to a qualifying enum keeps
 its target class, so two properties referencing one `$defs` entry share
-members. Shape-changing siblings, an own `enum` or `const`, and folds
+members. A sibling `format` that differs from the target creates a local
+enum class because its members can have different serialized types.
+Shape-changing siblings, an own `enum` or `const`, and folds
 that mix different enum records can degrade the result to scalar types.
 
 The plain class has frozen, identity-equal members, member constants,
 `values`, `deserialize`, `serialize`, and bidirectional `coerce`.
 The Sorbet class uses `T::Enum`. `deserialize` of an unknown value raises
 `KeyError`; loading a standalone enum slot has the same contract.
-Dumping a member returns its original string or integer. See
+Dumping a member returns its document value, with format conversion
+applied when present. See
 [Generated code](generated-code.md#enum-classes) for the API.
 
 Enum and format composition follows this table:
 
 | Mode | Slot type | Load and dump conversion |
 | ---- | --------- | ------------------------ |
-| `:classes`, absent or builtin format coercer | enum class | enum class's `coerce` |
-| `:classes`, project format coercer | enum class | format entry's coercer |
+| `:classes`, no coercing format entry | enum class | enum class's `coerce` |
+| `:classes`, coercing format entry | enum class | format conversion, then enum membership on load; reverse on dump |
 | `:unions`, no coercing format entry | literal union in RBS, scalar in Sorbet | none |
 | `:unions`, coercing format entry | format entry's type | format entry's coercer |
 
-In class mode, enum conversion takes precedence over builtin format
-coercers such as `Date`. A project format coercer can override enum
-conversion. It must load members and dump their serialized values to
-match the enum signature; the generator adds no second conversion.
+In class mode, format and enum conversion run in sequence. The enum
+writer converts each declared value with the format coercer before
+creating its member. Loading converts the document value, then looks up
+the member. Dumping serializes the member, then applies the format
+coercer to produce the document value.
+
+Builtin and project coercers follow the same rule. A date enum stores
+`Date` values, so its `serialize` method returns a `Date` and `deserialize`
+accepts a `Date`. Its `coerce` method loads document strings as members
+and dumps members as strings. A project coercer can normalize legacy
+spellings to a canonical value; enum membership is checked afterwards.
 
 Arrays and maps convert enum elements and values. Inline tuple enums
 also convert by position; `prefixItems/0` names `PrefixItems::N0`.
