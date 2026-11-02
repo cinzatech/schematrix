@@ -191,7 +191,8 @@ module Schematrix
     # The parsed document a locator belongs to, read and parsed on
     # first access and cached per document key.
     def document(uri)
-      @documents[document_key(uri)] ||= read_document(uri)
+      key = document_key(uri)
+      @documents.fetch(key) { @documents[key] = read_document(uri) }
     end
 
     # Reads and parses a document: local files directly, remote
