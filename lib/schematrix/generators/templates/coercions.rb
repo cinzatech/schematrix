@@ -217,15 +217,21 @@ module Schematrix
                 else
                   (sub[0] == :map ? Hash : Array)
                 end
-              structural << sub unless claims.key?(claim)
+              structural << sub unless structural.include?(sub)
               claims[claim] = sub
             end
           end
           coercers.uniq! { |sub| sub[1] }
 
+          structural_claims =
+            structural.group_by { |sub| sub[0] == :array ? Array : Hash }
+          structural.map! do |sub|
+            claim = sub[0] == :array ? Array : Hash
+            structural_claims.fetch(claim).size > 1 ? [:try, sub] : sub
+          end
           coercers.map! { |sub| ambiguous.include?(sub) ? [:try, sub] : sub }
           subs = structural + coercers
-          subs << [:pass] unless ambiguous.empty?
+          subs << [:pass] if subs.any? { |sub| sub[0] == :try }
           return nil if subs.empty?
           return subs.first if subs.size == 1
 

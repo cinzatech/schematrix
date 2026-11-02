@@ -105,10 +105,11 @@ class TestReviewRegressions < Minitest::Test
     values = %w[a c]
     %w[array object].each do |type|
       child = type == "array" ? "items" : "additionalProperties"
+      keyword = type == "array" ? "anyOf" : "oneOf"
       schema =
         object_schema(
           "value" => {
-            "anyOf" => [
+            keyword => [
               { "type" => type, child => { "enum" => %w[a b] } },
               { "type" => type, child => { "enum" => %w[c d] } },
             ],
@@ -117,7 +118,11 @@ class TestReviewRegressions < Minitest::Test
       with_generated(schema, enum_classes: true) do |namespace|
         values.each do |value|
           source = { "value" => type == "array" ? [value] : { "key" => value } }
-          assert_equal source, namespace::Schema.from_h(source).to_h
+          loaded = namespace::Schema.from_h(source)
+          member =
+            type == "array" ? loaded.value.first : loaded.value.fetch("key")
+          assert_equal value, member.serialize
+          assert_equal source, loaded.to_h
         end
       end
     end

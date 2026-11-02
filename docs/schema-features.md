@@ -101,6 +101,11 @@ a final `:pass`: unknown members pass through rather than raising.
 The interpreter stops at the first conversion that changes object
 identity, so a dumped string is not converted back into a member by a
 later branch. This over-accepts values outside every enum branch.
+Array and map alternatives also try each distinct conversion in order.
+A branch that cannot load an enum member leaves the original container
+unchanged so the next branch can try it. Containers whose elements do
+not change keep their identity, including when dumping members from a
+later branch.
 An enum and a builtin format coercer claiming the same JSON type still
 raise `CoercionConflictError` during generation.
 

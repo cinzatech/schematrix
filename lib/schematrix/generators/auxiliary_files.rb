@@ -70,19 +70,22 @@ module Schematrix
                 when :array
                   return value unless value.is_a?(Array)
 
-                  if spec[1][0] == :tuple
-                    prefix, tail = spec[1][1], spec[1][2]
-                    value.each_with_index.map do |element, index|
-                      sub = index < prefix.size ? prefix[index] : tail
-                      sub.nil? ? element : coerce_spec(element, sub)
+                  converted =
+                    if spec[1][0] == :tuple
+                      prefix, tail = spec[1][1], spec[1][2]
+                      value.each_with_index.map do |element, index|
+                        sub = index < prefix.size ? prefix[index] : tail
+                        sub.nil? ? element : coerce_spec(element, sub)
+                      end
+                    else
+                      value.map { |element| coerce_spec(element, spec[1]) }
                     end
-                  else
-                    value.map { |element| coerce_spec(element, spec[1]) }
-                  end
+                  converted.each_with_index.all? { |element, index| element.equal?(value[index]) } ? value : converted
                 when :map
                   return value unless value.is_a?(Hash)
 
-                  value.transform_values { |entry| coerce_spec(entry, spec[1]) }
+                  converted = value.transform_values { |entry| coerce_spec(entry, spec[1]) }
+                  converted.all? { |key, entry| entry.equal?(value[key]) } ? value : converted
                 when :try
                   begin
                     coerce_spec(value, spec[1])
