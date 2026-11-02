@@ -224,7 +224,9 @@ module Schematrix
         def immutable_from_h_body
           lines = ["kwargs = {}"]
           defaulted_free_properties.each do |name|
-            lines << "kwargs[:#{name}] = #{load_value(name)}"
+            value =
+              maybe_slot?(name) ? maybe_load_expression(name) : load_value(name)
+            lines << "kwargs[:#{name}] = #{value}"
           end
           defaulted_properties.each do |name|
             lines << load_assignment(name, kwargs: true)
