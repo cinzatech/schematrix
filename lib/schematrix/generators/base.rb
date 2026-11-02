@@ -85,6 +85,7 @@ module Schematrix
       # A property folding onto one takes the keyword treatment, with
       # ORIGINAL_KEYS still recording it.
       IMMUTABLE_RESERVED_METHOD_NAMES = %w[with _extra hash].freeze
+      RESERVED_METHOD_NAMES = %w[initialize to_h].freeze
 
       # `output_dir` is the directory files are written to (created on
       # demand), `module_name` the namespace generated code is placed
@@ -465,7 +466,9 @@ module Schematrix
         name = key.unpack1("H*") if name.empty? || name.match?(/\A_+\z/)
         name = "_#{name}" if name.match?(/\A\d/)
         name = "_" if name.empty?
-        name = "#{name}_" if RUBY_KEYWORDS.include?(name)
+        if RUBY_KEYWORDS.include?(name) || RESERVED_METHOD_NAMES.include?(name)
+          name = "#{name}_"
+        end
         if @immutable && IMMUTABLE_RESERVED_METHOD_NAMES.include?(name)
           name = "#{name}_"
         end
