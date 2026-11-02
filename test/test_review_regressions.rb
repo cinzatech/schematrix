@@ -41,6 +41,25 @@ class TestReviewRegressions < Minitest::Test
     end
   end
 
+  def test_nested_composition_through_recursive_reference
+    schema = {
+      "type" => "object",
+      "allOf" => [{ "$ref" => "#/$defs/base" }],
+      "$defs" => {
+        "base" => {
+          "allOf" => [
+            { "properties" => { "x" => { "type" => "string" } } },
+            { "$ref" => "#/$defs/base" },
+          ],
+        },
+      },
+    }
+    with_schema(schema) do |path|
+      root = Schematrix::Compiler.new.compile([path]).values.first
+      assert_equal Set["string"], root.properties.fetch("x").type
+    end
+  end
+
   def test_immutable_maybe_preserves_presence
     schema = object_schema("name" => { "type" => %w[string null] })
     with_generated(schema, immutable: true, optionals: :maybe) do |namespace|

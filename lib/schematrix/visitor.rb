@@ -239,6 +239,7 @@ module Schematrix
       @enums_classes = enums_classes
       @objects = {}
       @edges = []
+      @branch_targets = Set.new
       @ref_base = nil
     end
 
@@ -938,11 +939,14 @@ module Schematrix
     # skipped false branch).
     def branch_body(path, raw)
       unless raw.is_a?(Schematrix::Meta::Schema) && !raw.ref.nil?
-        return node_body(path, raw)
+        return compile_object(path, raw)
       end
 
       target, locator = final_target(ref_base, raw.ref)
-      return node_body(path, raw) if target.nil?
+      return compile_object(path, raw) if target.nil?
+      return nil unless @branch_targets.add?(locator.to_s)
+
+      active_target = locator.to_s
 
       if target == true
         Body.new(properties: {}, additional_properties: Schema::Empty)
@@ -950,9 +954,11 @@ module Schematrix
         nil
       else
         with_ref_base(document_base(locator)) do
-          node_body(path, schema_model(target))
+          compile_object(path, schema_model(target))
         end
       end
+    ensure
+      @branch_targets.delete(active_target) if active_target
     end
 
     # Visits a node's own properties at the given path. Shared by
