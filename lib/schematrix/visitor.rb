@@ -1,6 +1,7 @@
 require "uri"
 
 require_relative "pointer"
+require_relative "compilation_budget"
 
 module Schematrix
   # The JSON Schema type names the compiler tracks, shared by the
@@ -232,7 +233,14 @@ module Schematrix
     # `store` the shared DocumentStore. `closed_shapes` treats an
     # absent additionalProperties as false (closed classes) instead
     # of the spec's open default.
-    def initialize(locator, store, closed_shapes: false, enums_classes: false)
+    def initialize(
+      locator,
+      store,
+      closed_shapes: false,
+      enums_classes: false,
+      budget: CompilationBudget.new
+    )
+      @budget = budget
       @locator = locator
       @store = store
       @closed_shapes = closed_shapes
@@ -272,8 +280,10 @@ module Schematrix
     # Drop enum before the model loses explicit const:null presence.
     # Only schema positions recurse; annotations and literal values stay intact.
     def normalize_schema(raw)
+      @budget.consume!
       return raw unless raw.is_a?(Hash)
 
+      @budget.consume!(raw.size)
       normalized = raw.key?("const") ? raw.merge("enum" => []) : raw.dup
       normalized.to_h do |keyword, value|
         value =
@@ -281,6 +291,7 @@ module Schematrix
           when "properties", "$defs", "definitions", "patternProperties",
                "dependentSchemas", "dependencies"
             if value.is_a?(Hash)
+              @budget.consume!(value.size)
               value.transform_values { |child| normalize_schema(child) }
             else
               value
@@ -291,6 +302,7 @@ module Schematrix
             normalize_schema(value)
           when "allOf", "anyOf", "oneOf", "prefixItems"
             if value.is_a?(Array)
+              @budget.consume!(value.size)
               value.map { |child| normalize_schema(child) }
             else
               value
@@ -310,13 +322,31 @@ module Schematrix
     # spellings compile identically. This is what the $ref rewrite
     # algebra merges with.
     def present_slots(node)
+      reserve_serialization(node)
       node.to_h.reject { |key, value| value == MODEL_DEFAULTS[key] }
+    end
+
+    def reserve_serialization(value)
+      @budget.consume!
+      case value
+      when Schematrix::Meta::Schema
+        value.instance_variables.each do |name|
+          reserve_serialization(value.instance_variable_get(name))
+        end
+      when Hash
+        @budget.consume!(value.size)
+        value.each_value { |child| reserve_serialization(child) }
+      when Array
+        @budget.consume!(value.size)
+        value.each { |child| reserve_serialization(child) }
+      end
     end
 
     # Compiles the schema at `path + [name]`. The path segments name
     # the containing chain (properties, $defs, anyOf_0, ...); an
     # empty name is the document root.
     def visit_schema(path, name, node, required: true, register_object: true)
+      @budget.consume!
       site = path + [name]
 
       # JSON Schema allows "true" as a catch-all. It types as
@@ -339,7 +369,8 @@ module Schematrix
       # written (see resolve_reference).
       schema = nil
       with_ref_base(inline_base) do
-        IGNORED_KEYWORDS.each { |keyword| ignore_keyword(site, node, keyword) }
+        slots = present_slots(node)
+        IGNORED_KEYWORDS.each { |keyword| ignore_keyword(site, slots, keyword) }
 
         type = Set.new(Array(node.type))
         # a const with no declared type infers from the value's
@@ -455,8 +486,8 @@ module Schematrix
     # seen in this document. Presence reads through the model: a
     # keyword the document never wrote stays absent after the
     # default-stripping of present_slots.
-    def ignore_keyword(site, node, keyword)
-      return unless present_slots(node).key?(keyword)
+    def ignore_keyword(site, slots, keyword)
+      return unless slots.key?(keyword)
 
       # ref_base, not @locator: content inlined from another document
       # belongs to that document (see with_ref_base)
@@ -715,6 +746,7 @@ module Schematrix
     # its own $ref applies when the node compiles (see
     # resolve_reference); following it would resolve past the target.
     def final_target(base, reference, seen = Set.new)
+      @budget.consume!
       locator = URI.join(base, reference)
       locator.fragment = "/" if locator.fragment.nil?
       locator = @store.canonicalize(locator)
@@ -852,6 +884,7 @@ module Schematrix
     # are single branches and merge their own properties only; `if` is
     # a condition and is ignored.
     def compile_object(path, node)
+      @budget.consume!
       body = node_body(path, node)
       Array(node.all_of).each { |raw| body = conjoin_body(path, body, raw) }
       body = union_list_body(path, body, node.any_of)
@@ -1008,6 +1041,7 @@ module Schematrix
       branch = branch_body(path, raw)
       return acc if branch.nil?
 
+      @budget.consume!(1 + acc.properties.size + branch.properties.size)
       properties =
         acc
           .properties
@@ -1030,6 +1064,7 @@ module Schematrix
     # over-constrained; branch-introduced properties are optional,
     # the parent's own required-ness survives.
     def union_list_body(path, acc, list)
+      @budget.consume!(1 + Array(list).size)
       compiled =
         Array(list).filter_map do |raw|
           # a true branch owns no properties and a fully open shape;
@@ -1043,8 +1078,12 @@ module Schematrix
         end
       return acc if compiled.empty?
 
+      @budget.consume!(
+        acc.properties.size + compiled.sum { |body| body.properties.size },
+      )
       pool = acc.properties.dup
       names = compiled.flat_map { |body| body.properties.keys }.uniq
+      @budget.consume!(names.size * (compiled.size + 1))
       names.each do |name|
         own = acc.properties[name]
         contribs = compiled.map { |body| body.properties[name] || :untyped }
@@ -1068,6 +1107,7 @@ module Schematrix
       branch = branch_body(path, raw)
       return acc if branch.nil?
 
+      @budget.consume!(1 + acc.properties.size + (2 * branch.properties.size))
       optional_properties =
         branch.properties.transform_values do |schema|
           schema.with(required: false)
@@ -1099,6 +1139,10 @@ module Schematrix
     # them whole. Facets beyond type/ref/variants keep the parent's
     # declaration.
     def conjoin_schemas(own, other)
+      @budget.consume!(
+        1 + own.any_of.size + other.any_of.size + own.one_of.size +
+          other.one_of.size,
+      )
       return own if own == other
       return other if own.type == Set[TYPE_BOTTOM]
       return own if other.type == Set[TYPE_BOTTOM]
@@ -1160,6 +1204,12 @@ module Schematrix
     # A bottom (false) contribution accepts nothing, so it
     # contributes nothing; every-bottom is bottom.
     def union_schemas(contribs, parent: nil)
+      @budget.consume!(1 + contribs.size)
+      contribs.each do |schema|
+        next unless schema.is_a?(Schema)
+
+        @budget.consume!(schema.any_of.size + schema.one_of.size)
+      end
       required = parent&.required || false
       has_untyped = contribs.include?(:untyped)
       has_untyped ||= contribs.any? { |c| c.is_a?(Schema) && c.untyped? }

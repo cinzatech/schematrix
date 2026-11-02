@@ -54,6 +54,9 @@ module Schematrix
   # - `schema_dirs`: directories that remote `http(s)` schema URIs
   #   resolve through, in search order. Nothing is ever fetched over
   #   the network.
+  # - `max_compilation_work`: positive cumulative work limit across all
+  #   roots and references. Exceeding it raises CompilationLimitError
+  #   before any output is written. See docs/limits.md for scope.
   #
   # Returns the compiled records as a hash keyed by schema locator
   # (a URI string such as
@@ -73,7 +76,8 @@ module Schematrix
     generators:,
     input_files:,
     closed_shapes: false,
-    schema_dirs: []
+    schema_dirs: [],
+    max_compilation_work: CompilationBudget::DEFAULT_LIMIT
   )
     mode = enum_mode(generators)
     enum_writers =
@@ -88,6 +92,7 @@ module Schematrix
         store:,
         closed_shapes:,
         enums_classes: mode == :classes || enum_writers,
+        max_compilation_work:,
       ).compile(input_files)
 
     assert_distinct_targets(generators, objects)

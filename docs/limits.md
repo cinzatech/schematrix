@@ -6,6 +6,20 @@ requires. Shape compilation widens unsupported constraints. Format
 conversion can reject schema-valid data, and enum conversion rejects
 unknown members as described below.
 
+## Compilation work limit
+
+Compilation raises `Schematrix::CompilationLimitError` when it exceeds
+100,000 work units. All roots and referenced documents share one budget.
+Schema visits, reference expansion, model copying, and composition merges
+consume units, including repeated visits to the same inline target.
+This stops compact shared-reference graphs from expanding without a bound.
+The pipeline finishes compilation before writing generated files.
+
+For large trusted schemas, pass a larger positive integer as
+`max_compilation_work:` to `Schematrix.generate` or `Schematrix::Compiler.new`.
+Units are internal accounting, not a count of input schemas or bytes.
+This limit does not bound document parsing, recursion depth, or rendering.
+
 ## No validation
 
 Constraint keywords never reach the output. Generated classes check no
