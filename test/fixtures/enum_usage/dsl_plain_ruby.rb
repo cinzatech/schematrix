@@ -16,7 +16,7 @@ module M
       def status(value)
         @fields["status"] = (
           if value.is_a?(::M::Schema::Props::Status)
-            value.serialize
+            ::M::Schema::Props::Status.coerce(value)
           else
             value
           end

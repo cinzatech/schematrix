@@ -26,7 +26,9 @@ class TestEnumGenerators < Minitest::Test
           end
 
           def self.deserialize(value)
-            { "employee" => Employee, "external" => External }.fetch(value)
+            { Employee.serialize => Employee, External.serialize => External }.fetch(
+              value
+            )
           end
 
           def self.coerce(value)
@@ -121,7 +123,7 @@ class TestEnumGenerators < Minitest::Test
           end
 
           def self.deserialize(value)
-            { 1 => N1, 2 => N2 }.fetch(value)
+            { N1.serialize => N1, N2.serialize => N2 }.fetch(value)
           end
 
           def self.coerce(value)

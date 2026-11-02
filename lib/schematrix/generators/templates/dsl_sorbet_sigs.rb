@@ -23,7 +23,7 @@ module Schematrix
               enum_value = T.let(value, T.anything)
               case enum_value
               when #{klass}
-                enum_value.serialize
+                #{klass}.coerce(enum_value)
               else
                 enum_value
               end

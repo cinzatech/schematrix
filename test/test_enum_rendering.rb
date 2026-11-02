@@ -50,7 +50,7 @@ class TestEnumRendering < Minitest::Test
     refute_includes code, "T.unsafe"
     assert_includes code, "enum_value = T.let(value, T.anything)"
     assert_match(
-      /when ::M::Person::Props::Status\s+enum_value\.serialize\s+else\s+enum_value/,
+      /when ::M::Person::Props::Status\s+::M::Person::Props::Status\.coerce\(enum_value\)\s+else\s+enum_value/,
       code,
     )
     assert_includes code, "values.map"

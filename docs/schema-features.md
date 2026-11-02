@@ -65,14 +65,17 @@ union types rather than the classes.
 Inline enums, `$defs` enums, and enum document roots use the normal
 [naming rules](naming.md#enum-names). A `$ref` to a qualifying enum keeps
 its target class, so two properties referencing one `$defs` entry share
-members. Shape-changing siblings, an own `enum` or `const`, and folds
+members. A sibling `format` that differs from the target creates a local
+enum class because its members can have different serialized types.
+Shape-changing siblings, an own `enum` or `const`, and folds
 that mix different enum records can degrade the result to scalar types.
 
 The plain class has frozen, identity-equal members, member constants,
 `values`, `deserialize`, `serialize`, and bidirectional `coerce`.
 The Sorbet class uses `T::Enum`. `deserialize` of an unknown value raises
 `KeyError`; loading a standalone enum slot has the same contract.
-Dumping a member returns its original string or integer. See
+Dumping a member returns its document value, with format conversion
+applied when present. See
 [Generated code](generated-code.md#enum-classes) for the API.
 
 Enum and format composition follows this table:
@@ -80,13 +83,21 @@ Enum and format composition follows this table:
 | Mode | Slot type | Load and dump conversion |
 | ---- | --------- | ------------------------ |
 | `:classes`, no coercing format entry | enum class | enum class's `coerce` |
-| `:classes`, coercing format entry | enum class | format entry's coercer |
+| `:classes`, coercing format entry | enum class | format conversion, then enum membership on load; reverse on dump |
 | `:unions`, no coercing format entry | literal union in RBS, scalar in Sorbet | none |
 | `:unions`, coercing format entry | format entry's type | format entry's coercer |
 
-A format coercer wins conversion even in class mode. It must return
-members if its results are to match the enum signature; the generator
-adds no second enum conversion after it.
+In class mode, format and enum conversion run in sequence. The enum
+writer converts each declared value with the format coercer before
+creating its member. Loading converts the document value, then looks up
+the member. Dumping serializes the member, then applies the format
+coercer to produce the document value.
+
+Builtin and project coercers follow the same rule. A date enum stores
+`Date` values, so its `serialize` method returns a `Date` and `deserialize`
+accepts a `Date`. Its `coerce` method loads document strings as members
+and dumps members as strings. A project coercer can normalize legacy
+spellings to a canonical value; enum membership is checked afterwards.
 
 Arrays and maps convert enum elements and values. Inline tuple enums
 also convert by position; `prefixItems/0` names `PrefixItems::N0`.
@@ -97,9 +108,15 @@ writes its own enum members. See [The instance DSL](dsl.md).
 
 When union branches share a JSON type, enum conversions use `:try` and
 a final `:pass`: unknown members pass through rather than raising.
-The interpreter stops at the first conversion that changes object
-identity, so a dumped string is not converted back into a member by a
-later branch. This over-accepts values outside every enum branch.
+The interpreter stops at the first successful conversion, so a dumped
+string is not converted back into a member by a later branch. This
+over-accepts values outside every enum branch.
+Array and map alternatives also try each distinct conversion in order.
+The helper tracks success separately from the converted container. Empty
+containers and null values can succeed without changing any elements.
+A failed branch does not pass a partially converted value to the next
+branch. Array and map conversions allocate new containers on load and
+dump, even when every element stays unchanged.
 An enum and a builtin format coercer claiming the same JSON type still
 raise `CoercionConflictError` during generation.
 
@@ -196,6 +213,11 @@ This compiles to `Hash[String, String?]`-style slot types (the value
 type carries a nil term when the catch-all admits null), and no class
 file is generated for it. An explicit `false` catch-all on an object
 with no properties is an empty object and keeps its class.
+
+Recursive map references remain hashes. At a repeated reference, the
+compiler uses a hash with unconstrained values instead of expanding the
+same schema indefinitely. Nested document values pass through unchanged;
+the generated types do not enforce the recursive constraint beyond that point.
 
 ## Arrays
 

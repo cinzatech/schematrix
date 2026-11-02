@@ -306,7 +306,7 @@ module Schematrix
     def tokens(fragment)
       return [] if fragment.nil? || fragment.empty? || fragment == "/"
 
-      fragment.split("/").drop(1).map { |token| Pointer.unescape(token) }
+      fragment.split("/", -1).drop(1).map { |token| Pointer.unescape(token) }
     end
 
     # One pointer step: array nodes index numerically, hash nodes

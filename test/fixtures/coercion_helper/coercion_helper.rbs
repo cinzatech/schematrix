@@ -7,5 +7,7 @@ module M
     def self.coerce_class_slot: (top value, top klass) -> top
 
     def self.coerce_spec: (top value, top spec) -> top
+
+    def self.coercion_result: (top value, top spec) -> [bool, top]
   end
 end

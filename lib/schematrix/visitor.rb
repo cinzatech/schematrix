@@ -239,6 +239,8 @@ module Schematrix
       @enums_classes = enums_classes
       @objects = {}
       @edges = []
+      @branch_targets = Set.new
+      @inline_targets = Set.new
       @ref_base = nil
     end
 
@@ -252,7 +254,9 @@ module Schematrix
       # The store hands out raw parsed documents; the model boundary
       # conversion happens here.
       node = schema_model(node) if node.is_a?(Hash)
-      path = @locator.fragment.split("/").map { |part| Pointer.unescape(part) }
+      fragment = @locator.fragment
+      path = fragment == "/" ? [] : fragment.split("/", -1)
+      path = path.map { |part| Pointer.unescape(part) }
       name = path.pop || "" # document root is nameless
       visit_schema(path, name, node, required: false)
 
@@ -324,7 +328,8 @@ module Schematrix
       # JSON Schema "false" accepts nothing: no class, bottom type
       return Schema::Bottom if node.is_a?(FalseClass)
 
-      node, ref, inline_base = resolve_reference(site, node)
+      node, ref, inline_base, inline_target = resolve_reference(site, node)
+      @inline_targets.add(inline_target) if inline_target
       # A reference that resolved to the "false" schema accepts
       # nothing whichever siblings it had: the node is uninhabitable
       return Schema::Bottom if node.is_a?(FalseClass)
@@ -441,6 +446,8 @@ module Schematrix
       end
 
       schema
+    ensure
+      @inline_targets.delete(inline_target) if inline_target
     end
 
     # Notes a keyword without codegen representation on the
@@ -507,9 +514,13 @@ module Schematrix
       pure_ref = SHAPE_SIBLINGS.none? { |keyword| siblings.key?(keyword) }
       pure_ref = false if siblings.key?("enum")
       if enum_target && pure_ref
-        @edges << locator
         merged =
           target.slice("format").merge(siblings).merge("enum" => target["enum"])
+        if siblings.key?("format") && siblings["format"] != target["format"]
+          return schema_model(merged), nil, nil
+        end
+
+        @edges << locator
         return schema_model(merged), locator, nil
       end
 
@@ -540,9 +551,18 @@ module Schematrix
         # recorded; the local siblings win over the target, as on the
         # scalar inline path.
         if map_target?(target)
+          if @inline_targets.include?(locator.to_s)
+            recursive_map =
+              schema_model(
+                "type" => target["type"],
+                "additionalProperties" => true,
+              )
+            return recursive_map, nil, nil
+          end
+
           base = document_base(locator)
           base = nil if same_document?(base, ref_base)
-          return inline_model(target, node), nil, base
+          return inline_model(target, node), nil, base, locator.to_s
         end
 
         @edges << locator
@@ -936,11 +956,14 @@ module Schematrix
     # skipped false branch).
     def branch_body(path, raw)
       unless raw.is_a?(Schematrix::Meta::Schema) && !raw.ref.nil?
-        return node_body(path, raw)
+        return compile_object(path, raw)
       end
 
       target, locator = final_target(ref_base, raw.ref)
-      return node_body(path, raw) if target.nil?
+      return compile_object(path, raw) if target.nil?
+      return nil unless @branch_targets.add?(locator.to_s)
+
+      active_target = locator.to_s
 
       if target == true
         Body.new(properties: {}, additional_properties: Schema::Empty)
@@ -948,9 +971,11 @@ module Schematrix
         nil
       else
         with_ref_base(document_base(locator)) do
-          node_body(path, schema_model(target))
+          compile_object(path, schema_model(target))
         end
       end
+    ensure
+      @branch_targets.delete(active_target) if active_target
     end
 
     # Visits a node's own properties at the given path. Shared by
@@ -1043,10 +1068,14 @@ module Schematrix
       branch = branch_body(path, raw)
       return acc if branch.nil?
 
+      optional_properties =
+        branch.properties.transform_values do |schema|
+          schema.with(required: false)
+        end
       properties =
         acc
           .properties
-          .merge(branch.properties) do |_name, own, other|
+          .merge(optional_properties) do |_name, own, other|
             union_schemas([own, other], parent: own)
           end
       Body.new(

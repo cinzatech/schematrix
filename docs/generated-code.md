@@ -144,16 +144,20 @@ Class-mode slots name the enum in both Sorbet and RBS. Their
 class, for example `::MyApp::Person::Props::Status.coerce(value)`.
 A class whose only conversions are scalar enum leaves needs no
 `CoercionHelper`. Array, tuple, map, and union conversions use the
-shared helper. A coercing `format` entry replaces the enum conversion
-but leaves the class-mode slot type as the enum class.
+shared helper. A coercing `format` entry runs before enum membership
+on load and after member serialization on dump. The enum writer applies
+the same coercer to member literals. For example, a date enum stores
+`Date` values: `serialize` returns a `Date`, `deserialize` accepts one,
+and `coerce` converts between document strings and enum members.
 
 The helper interpreter supports `[:try, spec]`, which rescues `KeyError`
 and returns the original value, and `[:pass]`, which returns it unchanged.
-Unions with `:try` stop after the first result that differs by object
-identity. A member dumped to a string therefore cannot be deserialized
-again by a later branch. These cases are interpreter-only additions;
-the RBS helper signatures remain `(top value, top spec) -> top` for
-`coerce_spec` and `(top value, top klass) -> top` for `coerce_class_slot`.
+Unions with `:try` stop after the first successful conversion. The
+helper tracks success separately from container identity, so empty
+collections and null values do not fall through to later branches.
+A member dumped to a string cannot be deserialized again by a later
+branch. `coercion_result` returns `[bool, top]`; `coerce_spec` returns
+only the converted value.
 See [Limits](limits.md#enums) for over-acceptance and conflicts.
 
 ## Property names

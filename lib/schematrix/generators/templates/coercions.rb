@@ -83,14 +83,16 @@ module Schematrix
 
           if schema.enum_class?
             type = schema.enum.first.is_a?(String) ? TYPE_STRING : TYPE_INTEGER
-            entry = lookup_scalar_type(type, schema.format)
-            if entry&.coerces?
-              return :coerce, entry.coercer, CLAIM_CLASSES.fetch(type)
+            if @enums == :classes
+              target =
+                "::#{@module_name}::#{enum_class_name(path, name, schema)}"
+              return :coerce, target, CLAIM_CLASSES.fetch(type)
             end
-            return nil unless @enums == :classes
 
-            target = "::#{@module_name}::#{enum_class_name(path, name, schema)}"
-            return :coerce, target, CLAIM_CLASSES.fetch(type)
+            entry = lookup_scalar_type(type, schema.format)
+            return nil unless entry&.coerces?
+
+            return :coerce, entry.coercer, CLAIM_CLASSES.fetch(type)
           end
 
           subs = []
@@ -214,15 +216,21 @@ module Schematrix
                 else
                   (sub[0] == :map ? Hash : Array)
                 end
-              structural << sub unless claims.key?(claim)
+              structural << sub unless structural.include?(sub)
               claims[claim] = sub
             end
           end
           coercers.uniq! { |sub| sub[1] }
 
+          structural_claims =
+            structural.group_by { |sub| sub[0] == :array ? Array : Hash }
+          structural.map! do |sub|
+            claim = sub[0] == :array ? Array : Hash
+            structural_claims.fetch(claim).size > 1 ? [:try, sub] : sub
+          end
           coercers.map! { |sub| ambiguous.include?(sub) ? [:try, sub] : sub }
           subs = structural + coercers
-          subs << [:pass] unless ambiguous.empty?
+          subs << [:pass] if subs.any? { |sub| sub[0] == :try }
           return nil if subs.empty?
           return subs.first if subs.size == 1
 

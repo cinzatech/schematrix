@@ -41,7 +41,7 @@ class TestEnumCompilation < Minitest::Test
       compile(
         "type" => "object",
         "$defs" => {
-          "status" => enum,
+          "status" => enum.merge("format" => "custom"),
           "alias" => {
             "$ref" => "#/$defs/status",
           },

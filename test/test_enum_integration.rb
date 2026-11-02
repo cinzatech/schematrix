@@ -111,32 +111,25 @@ class TestEnumIntegration < Minitest::Test
     end
   end
 
-  def test_project_format_coercer_loads_members_and_dumps_raw_values
+  def test_project_format_coercer_normalizes_before_enum_membership
     with_namespace do |namespace|
       calls = []
       coercer = Module.new
       namespace.const_set(:StatusCoercer, coercer)
       coercer.define_singleton_method(:coerce) do |value|
         calls << value
-        enum = namespace::Schema::Props::Status
-        case value
-        when String
-          enum.deserialize(value.downcase)
-        when enum
-          value.serialize
-        else
-          value
-        end
+        value.is_a?(String) ? value.downcase : value
       end
       scalar_types = {
         %w[string project-status] =>
           Schematrix::ScalarType.new(sorbet: "String", rbs: "String", coercer:),
       }
       generate_into(namespace, "enum_format", scalar_types:) do |_output|
+        calls.clear
         loaded = namespace::Schema.from_h("status" => "ACTIVE")
         assert_same namespace::Schema::Props::Status::Active, loaded.status
         assert_equal({ "status" => "active" }, loaded.to_h)
-        assert_equal ["ACTIVE", loaded.status], calls
+        assert_equal %w[ACTIVE active], calls
         assert_same loaded.status, namespace::Schema.from_h(loaded.to_h).status
         assert_raises(KeyError) do
           namespace::Schema.from_h("status" => "missing")
