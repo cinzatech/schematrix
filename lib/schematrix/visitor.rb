@@ -252,7 +252,9 @@ module Schematrix
       # The store hands out raw parsed documents; the model boundary
       # conversion happens here.
       node = schema_model(node) if node.is_a?(Hash)
-      path = @locator.fragment.split("/").map { |part| Pointer.unescape(part) }
+      fragment = @locator.fragment
+      path = fragment == "/" ? [] : fragment.split("/", -1)
+      path = path.map { |part| Pointer.unescape(part) }
       name = path.pop || "" # document root is nameless
       visit_schema(path, name, node, required: false)
 
