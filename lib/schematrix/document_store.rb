@@ -54,6 +54,7 @@ module Schematrix
       @schema_dirs = schema_dirs.map { |dir| File.expand_path(dir) }
       @documents = {}
       @anchors = {}
+      @dynamic_anchors = {}
       @ignored = {}
     end
 
@@ -113,10 +114,16 @@ module Schematrix
     # no such anchor. This is the fallback resolution for
     # `$dynamicRef` (the static approximation lives in Visitor).
     def last_dynamic_anchor_locator(uri, name)
-      segments = nil
-      each_node(document(uri)) do |node, path|
-        segments = path if node.is_a?(Hash) && node["$dynamicAnchor"] == name
-      end
+      anchors =
+        @dynamic_anchors[document_key(uri)] ||= begin
+          index = {}
+          each_node(document(uri)) do |node, path|
+            anchor = node["$dynamicAnchor"]
+            index[anchor] = path if anchor
+          end
+          index
+        end
+      segments = anchors[name]
       return nil if segments.nil?
 
       locator = uri.dup
