@@ -197,6 +197,11 @@ type carries a nil term when the catch-all admits null), and no class
 file is generated for it. An explicit `false` catch-all on an object
 with no properties is an empty object and keeps its class.
 
+Recursive map references remain hashes. At a repeated reference, the
+compiler uses a hash with unconstrained values instead of expanding the
+same schema indefinitely. Nested document values pass through unchanged;
+the generated types do not enforce the recursive constraint beyond that point.
+
 ## Arrays
 
 - `items` types the element. An array with `items` absent has an open

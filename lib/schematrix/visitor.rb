@@ -240,6 +240,7 @@ module Schematrix
       @objects = {}
       @edges = []
       @branch_targets = Set.new
+      @inline_targets = Set.new
       @ref_base = nil
     end
 
@@ -327,7 +328,8 @@ module Schematrix
       # JSON Schema "false" accepts nothing: no class, bottom type
       return Schema::Bottom if node.is_a?(FalseClass)
 
-      node, ref, inline_base = resolve_reference(site, node)
+      node, ref, inline_base, inline_target = resolve_reference(site, node)
+      @inline_targets.add(inline_target) if inline_target
       # A reference that resolved to the "false" schema accepts
       # nothing whichever siblings it had: the node is uninhabitable
       return Schema::Bottom if node.is_a?(FalseClass)
@@ -444,6 +446,8 @@ module Schematrix
       end
 
       schema
+    ensure
+      @inline_targets.delete(inline_target) if inline_target
     end
 
     # Notes a keyword without codegen representation on the
@@ -543,9 +547,18 @@ module Schematrix
         # recorded; the local siblings win over the target, as on the
         # scalar inline path.
         if map_target?(target)
+          if @inline_targets.include?(locator.to_s)
+            recursive_map =
+              schema_model(
+                "type" => TYPE_OBJECT,
+                "additionalProperties" => true,
+              )
+            return recursive_map, nil, nil
+          end
+
           base = document_base(locator)
           base = nil if same_document?(base, ref_base)
-          return inline_model(target, node), nil, base
+          return inline_model(target, node), nil, base, locator.to_s
         end
 
         @edges << locator

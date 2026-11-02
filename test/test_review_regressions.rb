@@ -24,6 +24,16 @@ class TestReviewRegressions < Minitest::Test
       root = Schematrix::Compiler.new.compile([path]).values.first
       assert_predicate root.properties.fetch("tree"), :map_shaped?
     end
+    with_generated(schema) do |namespace|
+      source = { "tree" => { "branch" => { "leaf" => {} } } }
+      assert_equal source, namespace::Schema.from_h(source).to_h
+    end
+    with_schema(
+      "type" => "object",
+      "additionalProperties" => {
+        "$ref" => "#",
+      },
+    ) { |path| assert_empty Schematrix::Compiler.new.compile([path]) }
   end
 
   def test_nested_object_composition_retains_properties
