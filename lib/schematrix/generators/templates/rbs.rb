@@ -18,13 +18,18 @@ module Schematrix
           return "" if @properties.nil?
 
           keyword = immutable? ? "attr_reader" : "attr_accessor"
-          @properties
-            .map do |name, prop_schema|
-              "#{keyword} #{name}: #{
-                property_type_of(@path, name, prop_schema)
-              }"
+          entries =
+            @properties.map do |name, prop_schema|
+              code =
+                "#{keyword} #{name}: #{
+                  property_type_of(@path, name, prop_schema)
+                }"
+              [
+                with_property_comment(prop_schema, code),
+                !property_comment(prop_schema).empty?,
+              ]
             end
-            .join("\n")
+          join_commented(entries)
         end
 
         # Mirrors the generated Ruby constructor: the same required

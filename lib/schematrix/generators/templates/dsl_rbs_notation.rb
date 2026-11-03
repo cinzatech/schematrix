@@ -46,13 +46,17 @@ module Schematrix
           end
         end
 
-        # One signature line per property setter.
+        # One signature line per property setter, under the comment
+        # its description becomes.
         def dsl_rbs_setters
           return "" if @properties.nil?
 
           @properties
             .filter_map do |name, schema|
-              setter_signature(name, setter_kind(name, schema))
+              with_property_comment(
+                schema,
+                setter_signature(name, setter_kind(name, schema)),
+              )
             end
             .join("\n\n")
         end

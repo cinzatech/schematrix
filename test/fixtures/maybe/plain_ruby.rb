@@ -35,14 +35,15 @@ module M
       @_extra = {}
     end
 
-    attr_accessor :first_name,
-                  :age,
-                  :tag,
-                  :address,
-                  :tags,
-                  :labels,
-                  :nickname,
-                  :voids
+    # The legal first name.
+    attr_accessor :first_name
+    attr_accessor :age
+    attr_accessor :tag
+    attr_accessor :address
+    attr_accessor :tags
+    attr_accessor :labels
+    attr_accessor :nickname
+    attr_accessor :voids
 
     def [](key)
       @_extra[key]

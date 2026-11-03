@@ -3,6 +3,7 @@ module M
   class Schema
     ORIGINAL_KEYS: Hash[String, Symbol]
 
+    # The display name.
     attr_accessor name: String?
 
     def initialize: (?name: String?) -> void

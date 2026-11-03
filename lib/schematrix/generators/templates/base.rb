@@ -161,6 +161,37 @@ module Schematrix
           @class_name.split("::").last
         end
 
+        # The comment a property's description becomes, above its
+        # accessor or its setter: one comment line per description
+        # line, as for the class, split on an explicit newline so the
+        # result does not follow $/. Empty when the property has none.
+        def property_comment(property)
+          description = property&.description
+          return "" if description.nil? || description.empty?
+
+          description
+            .lines("\n", chomp: true)
+            .map { |line| "# #{line}".rstrip }
+            .join("\n")
+        end
+
+        def with_property_comment(property, code)
+          comment = property_comment(property)
+          comment.empty? ? code : "#{comment}\n#{code}"
+        end
+
+        # Joins per-property declarations, with a blank line ahead of
+        # each commented one after the first, so a comment is never
+        # glued to the declaration above it.
+        def join_commented(entries)
+          entries
+            .each_with_index
+            .map do |(code, commented), index|
+              commented && index.positive? ? "\n#{code}" : code
+            end
+            .join("\n")
+        end
+
         # The declaration lines down to the class: one line per
         # namespace segment, then the class. Container segments
         # (Props/Defs) open as modules, every other segment as a

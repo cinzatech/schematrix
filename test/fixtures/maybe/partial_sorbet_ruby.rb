@@ -56,6 +56,7 @@ module M
         @_extra = T.let({}, T::Hash[String, T.anything])
       end
 
+      # The legal first name.
       sig { returns(Maybe[T.nilable(String)]) }
       attr_accessor :first_name
 

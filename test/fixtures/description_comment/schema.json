@@ -4,7 +4,8 @@
   "description": "A described object",
   "properties": {
     "name": {
-      "type": "string"
+      "type": "string",
+      "description": "The display name."
     }
   }
 }

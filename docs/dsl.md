@@ -55,7 +55,8 @@ Each builder is a module that carries:
 - `self.build`, the entry point: a fresh `Builder`, the block run on
   it with `instance_exec`, and its document returned.
 - One setter per property, shaped by the property's compiled form (next
-  section). Setters return the receiver, so calls chain outside blocks.
+  section), under a comment when the property has a `description`.
+  Setters return the receiver, so calls chain outside blocks.
 - `extra`, when the shape is open: a home for keys the schema does not
   declare. A closed shape has no `extra`.
 - `to_h`, returning the document built so far.

@@ -37,6 +37,7 @@ module M
     )
     end
 
+    # The legal first name.
     sig { returns(String) }
     def first_name
     end

@@ -9,6 +9,7 @@ module M
     def initialize(name: nil)
     end
 
+    # The display name.
     sig { returns(T.nilable(String)) }
     def name
     end

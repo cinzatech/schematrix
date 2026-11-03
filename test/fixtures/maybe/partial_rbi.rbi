@@ -38,6 +38,7 @@ module M
       )
       end
 
+      # The legal first name.
       sig { returns(Maybe[T.nilable(String)]) }
       def first_name
       end

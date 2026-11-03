@@ -43,7 +43,9 @@ For each object schema the compiler found, one file per class:
 - A keyword-argument constructor. Required properties are positional
   keyword arguments without defaults; every other property defaults to
   `nil`, and properties carrying a schema `default` use that value.
-- One accessor per property, plus its entry in `ORIGINAL_KEYS`.
+- One accessor per property, plus its entry in `ORIGINAL_KEYS`. A
+  property with a `description` gets it as a comment above the
+  accessor, and the plain format then declares one accessor per line.
 - Catch-all accessors `[]` and `[]=` when the class accepts extra keys.
 - `from_h` and `to_h` for loading and dumping, with one `coerce_`
   method per property whose values carry a nested class or a coercing
