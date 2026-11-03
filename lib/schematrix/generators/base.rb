@@ -86,13 +86,11 @@ module Schematrix
       # ORIGINAL_KEYS still recording it.
       IMMUTABLE_RESERVED_METHOD_NAMES = %w[with _extra hash].freeze
       RESERVED_METHOD_NAMES = %w[initialize to_h].freeze
-      MODULE_NAME_PATTERN =
-        /\A(?:::)?[A-Z][A-Za-z0-9_]*(?:::[A-Z][A-Za-z0-9_]*)*\z/
 
       # `output_dir` is the directory files are written to (created on
       # demand), `module_name` the namespace generated code is placed
-      # in. Namespace segments must start with A-Z and contain only
-      # ASCII letters, digits, and underscores. An initial :: is allowed.
+      # in. Each namespace segment must be a valid Ruby constant name.
+      # An initial :: is allowed and removed before rendering.
       # `format: false` skips SyntaxTree formatting and emits the
       # template output as-is. `command` names the regenerating command
       # in the written files' banner; nil leaves that line out.
@@ -130,7 +128,7 @@ module Schematrix
         assert_namespace_valid(module_name)
         assert_immutable_supported if immutable
         @output_dir = output_dir
-        @module_name = module_name
+        @module_name = module_name.delete_prefix("::")
         @format = format
         @command = command
         @scalar_types = Schematrix::BUILTIN_SCALAR_TYPES.merge(scalar_types)
@@ -269,8 +267,20 @@ module Schematrix
       private
 
       def assert_namespace_valid(name)
-        return if name.is_a?(String) && MODULE_NAME_PATTERN.match?(name)
+        unless name.is_a?(String)
+          raise ArgumentError, "module_name must be a Ruby constant path"
+        end
 
+        namespace = name.delete_prefix("::")
+        if namespace.empty?
+          raise ArgumentError, "module_name must be a Ruby constant path"
+        end
+
+        validator = Module.new
+        namespace
+          .split("::", -1)
+          .each { |segment| validator.const_defined?(segment, false) }
+      rescue NameError
         raise ArgumentError, "module_name must be a Ruby constant path"
       end
 
