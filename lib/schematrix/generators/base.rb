@@ -445,12 +445,16 @@ module Schematrix
       end
 
       # One comment line per description line: raw newlines inside a
-      # description would leak the remaining lines as code.
+      # description would leak the remaining lines as code. The
+      # separator is explicit, so the split does not follow $/.
       def documentation_comment(schema)
         description = schema.description
         return "" if description.nil?
 
-        description.lines.map { |line| "# #{line.chomp}".rstrip }.join("\n")
+        description
+          .lines("\n", chomp: true)
+          .map { |line| "# #{line}".rstrip }
+          .join("\n")
       end
 
       # The file name for a resolved class name: snake-cased name plus

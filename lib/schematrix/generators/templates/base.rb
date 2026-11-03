@@ -163,12 +163,16 @@ module Schematrix
 
         # The comment a property's description becomes, above its
         # accessor or its setter: one comment line per description
-        # line, as for the class. Empty when the property has none.
+        # line, as for the class, split on an explicit newline so the
+        # result does not follow $/. Empty when the property has none.
         def property_comment(property)
           description = property&.description
           return "" if description.nil? || description.empty?
 
-          description.lines.map { |line| "# #{line.chomp}".rstrip }.join("\n")
+          description
+            .lines("\n", chomp: true)
+            .map { |line| "# #{line}".rstrip }
+            .join("\n")
         end
 
         def with_property_comment(property, code)
