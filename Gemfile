@@ -9,4 +9,5 @@ group :development do
   gem "rdoc", "~> 8.0"
   gem "rubocop", "~> 1.88"
   gem "rubocop-performance", "~> 1.26"
+  gem "sorbet", "~> 0.6", require: false
 end

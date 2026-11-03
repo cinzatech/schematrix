@@ -64,6 +64,19 @@ Output-path and enum member collisions are checked before the first
 file is written. Conversion errors occur during rendering, so earlier
 files may already have been written.
 
+## Type signatures
+
+The gem ships the Sorbet signatures of this API in `rbi/schematrix.rbi`.
+A project that typechecks with Sorbet gets them in two ways: the `srb`
+wrapper loads the `rbi/` directory of every gem in the bundle, and
+tapioca merges that directory into the RBI it generates for the gem.
+Either way a call to `Schematrix.generate` or a generator constructor
+is checked against the parameter types above. The file covers the
+documented surface only: the entry point, the errors, `ScalarType`,
+the coercers, the generator classes and their public methods. Sorbet
+checks the file in CI, and a test checks that every method it declares
+exists on the loaded code with the same parameters.
+
 ## Logging
 
 `Schematrix.logger` is `nil` by default and the pipeline runs silent.

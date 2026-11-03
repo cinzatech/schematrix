@@ -24,7 +24,8 @@ jobs:
         run: |
           stree_files=$( {
             git ls-files "lib/*.rb" "lib/**/*.rb" "exe/*.rb" \
-              "test/*.rb" "test/**/*.rb" "scripts/*.rb" "Rakefile"
+              "test/*.rb" "test/**/*.rb" "scripts/*.rb" "Rakefile" \
+              "rbi/*.rbi"
           } | grep -v "^lib/schematrix/meta/" )
           bundle exec stree check $stree_files
 
@@ -41,6 +42,24 @@ jobs:
           bundler-cache: true
       - name: RuboCop
         run: bundle exec rubocop
+
+  typecheck:
+    name: Typecheck (sorbet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+      - name: Sorbet
+        run: bundle exec srb tc
+        env:
+          # The srb wrapper also loads the RBIs other gems in the bundle
+          # ship; this job checks ours alone.
+          SRB_SKIP_GEM_RBIS: "1"
 
   test:
     name: Test (minitest)
