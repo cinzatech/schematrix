@@ -15,9 +15,11 @@ module Schematrix
     def initialize(
       store: DocumentStore.new,
       closed_shapes: false,
-      enums_classes: false
+      enums_classes: false,
+      max_compilation_work: CompilationBudget::DEFAULT_LIMIT
     )
       @store = store
+      @budget = CompilationBudget.new(max_compilation_work)
       @closed_shapes = closed_shapes
       @enums_classes = enums_classes
       @queue = []
@@ -49,6 +51,7 @@ module Schematrix
           @store,
           closed_shapes: @closed_shapes,
           enums_classes: @enums_classes,
+          budget: @budget,
         ).compile(node)
 
       @objects.merge!(visitor.objects)
@@ -59,8 +62,10 @@ module Schematrix
     # each locator compiles exactly once even under diamond-shaped
     # reference graphs.
     def discover(uri)
-      return unless @seen.add?(uri.to_s)
+      return if @seen.include?(uri.to_s)
 
+      @budget.consume!
+      @seen.add(uri.to_s)
       @queue << uri
     end
 

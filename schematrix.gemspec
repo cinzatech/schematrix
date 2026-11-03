@@ -19,6 +19,7 @@ Gem::Specification.new do |s|
   s.executables = s.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   s.require_paths = ["lib"]
 
+  s.add_dependency "rbs", ">= 4.2"
   s.add_dependency "syntax_tree", "~> 6.3"
   s.add_dependency "syntax_tree-rbs", "~> 1.0"
   s.add_dependency "tty-logger", "~> 0.6.0"
