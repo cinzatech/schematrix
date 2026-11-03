@@ -5,8 +5,8 @@ module Schematrix
     module Templates
       # The Sorbet signatures of the DSL builders, shared by the
       # inline format and the RBI one. Setters return self, so
-      # chains check; object-shaped slots carry the child builder's
-      # class in the block type; mixed slots admit anything in value
+      # chains check; object-shaped slots carry the child builder
+      # module in the block type; mixed slots admit anything in value
       # position, because hash literals are a legal spelling of
       # their object term. The document hash types as
       # T::Hash[String, T.untyped]: builders call <<, concat and
@@ -31,8 +31,16 @@ module Schematrix
           RUBY
         end
 
-        def fields_assignment
-          "@fields = T.let({}, T::Hash[String, T.untyped])"
+        # The document hash is declared where it is first read: a
+        # module has no initializer, and typed: strict accepts an
+        # instance variable declared nilable outside one.
+        def fields_method
+          <<~RUBY
+            def dsl_fields
+              @fields = T.let(@fields, T.nilable(T::Hash[String, T.untyped]))
+              @fields ||= {}
+            end
+          RUBY
         end
 
         # The constant carries type annotations in typed: strict
@@ -57,8 +65,8 @@ module Schematrix
           ].join("\n")
         end
 
-        def initialize_signature
-          "sig { void }"
+        def fields_signature
+          "sig { returns(T::Hash[String, T.untyped]) }"
         end
 
         def to_h_signature

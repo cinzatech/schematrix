@@ -2,9 +2,9 @@
 
 module M
   module Dsl
-    class Schema
+    module Schema
       module Props
-        class Option
+        module Option
           extend T::Sig
 
           ORIGINAL_KEYS =
@@ -18,10 +18,6 @@ module M
           def self.build(&block)
           end
 
-          sig { void }
-          def initialize
-          end
-
           sig { params(value: Integer).returns(T.self_type) }
           def foo(value)
           end
@@ -32,6 +28,16 @@ module M
 
           sig { returns(T::Hash[String, T.untyped]) }
           def to_h
+          end
+
+          private
+
+          sig { returns(T::Hash[String, T.untyped]) }
+          def dsl_fields
+          end
+
+          class Builder
+            include Option
           end
         end
       end

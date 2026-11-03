@@ -2,9 +2,9 @@
 
 module M
   module Dsl
-    class Schema
+    module Schema
       module Props
-        class Child
+        module Child
           extend T::Sig
 
           ORIGINAL_KEYS =
@@ -16,31 +16,38 @@ module M
             )
           end
           def self.build(&block)
-            builder = new
+            builder = Builder.new
             yield builder
             builder.to_h
           end
 
-          sig { void }
-          def initialize
-            @fields = T.let({}, T::Hash[String, T.untyped])
-          end
-
           sig { params(value: String).returns(T.self_type) }
           def value(value)
-            @fields["value"] = value
+            dsl_fields["value"] = value
             self
           end
 
           sig { params(key: String, value: T.anything).returns(T.self_type) }
           def extra(key, value)
-            @fields[key] = value
+            dsl_fields[key] = value
             self
           end
 
           sig { returns(T::Hash[String, T.untyped]) }
           def to_h
-            @fields.dup
+            dsl_fields.dup
+          end
+
+          private
+
+          sig { returns(T::Hash[String, T.untyped]) }
+          def dsl_fields
+            @fields = T.let(@fields, T.nilable(T::Hash[String, T.untyped]))
+            @fields ||= {}
+          end
+
+          class Builder
+            include Child
           end
         end
       end

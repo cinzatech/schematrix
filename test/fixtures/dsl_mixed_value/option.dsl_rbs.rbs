@@ -1,17 +1,23 @@
 module M
   module Dsl
-    class Schema
+    module Schema
       module Props
-        class Option
+        module Option
           def self.build: { (Option) -> void } -> Hash[String, top]
-
-          def initialize: -> void
 
           def foo: (Integer value) -> instance
 
           def extra: (String key, top value) -> instance
 
           def to_h: -> Hash[String, top]
+
+          private
+
+          def dsl_fields: -> Hash[String, top]
+
+          class Builder
+            include Option
+          end
         end
       end
     end

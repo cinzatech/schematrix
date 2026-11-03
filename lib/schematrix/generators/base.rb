@@ -190,7 +190,11 @@ module Schematrix
         uri = URI(locator)
         class_name = class_name_from_path(uri)
         code =
-          with_banner(transform(uri, class_name, object, enums:), class_name)
+          with_banner(
+            transform(uri, class_name, object, enums:),
+            class_name,
+            banner_kind,
+          )
 
         file_path = File.join(@output_dir, target_filename(class_name))
         FileUtils.mkdir_p(File.dirname(file_path))
@@ -367,6 +371,10 @@ module Schematrix
       # the output carries one, at the top otherwise. Worded after
       # tapioca's generated-file header. `subject` names the class or
       # module the file declares, `kind` says which.
+      # What the banner calls the file's subject: a class for the data
+      # and partial families, a module for the builders.
+      def banner_kind = "class"
+
       def with_banner(code, subject, kind = "class")
         lines = [
           "# DO NOT EDIT MANUALLY",
@@ -589,7 +597,7 @@ module Schematrix
       # setter, or the constructor; it takes the keyword treatment
       # instead (a trailing underscore), with ORIGINAL_KEYS still
       # recording the mapping.
-      RESERVED_METHOD_NAMES = %w[build to_h extra initialize].freeze
+      RESERVED_METHOD_NAMES = %w[build to_h extra dsl_fields].freeze
 
       def self.included(base)
         base.extend(ClassMethods)
@@ -607,6 +615,8 @@ module Schematrix
       def class_name_from_path(uri, name = nil)
         "Dsl::#{super}"
       end
+
+      def banner_kind = "module"
 
       def property_name(key)
         name = super

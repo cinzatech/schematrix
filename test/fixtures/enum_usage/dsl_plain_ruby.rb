@@ -1,20 +1,16 @@
 module M
   module Dsl
-    class Schema
+    module Schema
       ORIGINAL_KEYS = { "status" => :status }.freeze
 
       def self.build(&block)
-        builder = new
+        builder = Builder.new
         yield builder
         builder.to_h
       end
 
-      def initialize
-        @fields = {}
-      end
-
       def status(value)
-        @fields["status"] = (
+        dsl_fields["status"] = (
           if value.is_a?(::M::Schema::Props::Status)
             ::M::Schema::Props::Status.coerce(value)
           else
@@ -25,7 +21,17 @@ module M
       end
 
       def to_h
-        @fields.dup
+        dsl_fields.dup
+      end
+
+      private
+
+      def dsl_fields
+        @fields ||= {}
+      end
+
+      class Builder
+        include Schema
       end
     end
   end

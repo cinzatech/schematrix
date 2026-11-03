@@ -5,8 +5,8 @@ module Schematrix
     module Templates
       # The RBS notation of the DSL builders. Type names stay
       # relative, resolving lexically under the Dsl namespace the
-      # declaration tree opens; block types carry the child builder's
-      # class; setters return `instance` so chains check.
+      # declaration tree opens; block types carry the child builder
+      # module; setters return `instance` so chains check.
       module DslRbsNotation
         include RbsNotation
 
@@ -17,8 +17,16 @@ module Schematrix
             "-> Hash[String, #{untyped}]"
         end
 
-        def initialize_signature
-          "def initialize: () -> void"
+        def fields_signature
+          "def dsl_fields: () -> Hash[String, #{untyped}]"
+        end
+
+        def builder_class
+          <<~RBS
+            class Builder
+              include #{own_class_name}
+            end
+          RBS
         end
 
         def to_h_signature

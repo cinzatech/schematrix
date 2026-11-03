@@ -65,12 +65,13 @@ the command line, the four data generators write frozen value objects
 instead: readers instead of accessors, a `with` copier, and value
 equality. See [Immutable classes](generated-code.md).
 
-The `dsl_` generators write builders instead of data classes: classes
-whose methods define one instance of the schema. They nest under a `Dsl`
-module level and a `dsl/` file prefix, so both families can share an
-output directory. The call grammar, the parse contract, and the Sorbet
-story live in [The instance DSL](dsl.md); the rest of this page is about
-the data classes.
+The `dsl_` generators write builders instead of data classes: modules
+whose methods define one instance of the schema, to mix into a class
+or to run through `build`. They nest under a `Dsl` module level and a
+`dsl/` file prefix, so both families can share an output directory.
+The call grammar, the parse contract, and the Sorbet story live in
+[The instance DSL](dsl.md); the rest of this page is about the data
+classes.
 
 ## plain_ruby
 
@@ -175,12 +176,13 @@ module MyApp
 end
 ```
 
-The `dsl_` generators write builders instead of data classes: classes
-whose methods define one instance of the schema. They nest under a `Dsl`
-module level and a `dsl/` file prefix, so both families can share an
-output directory. The call grammar, the parse contract, and the Sorbet
-story live in [The instance DSL](dsl.md); the rest of this page is about
-the data classes.
+The `dsl_` generators write builders instead of data classes: modules
+whose methods define one instance of the schema, to mix into a class
+or to run through `build`. They nest under a `Dsl` module level and a
+`dsl/` file prefix, so both families can share an output directory.
+The call grammar, the parse contract, and the Sorbet story live in
+[The instance DSL](dsl.md); the rest of this page is about the data
+classes.
 
 The `partial_` generators write partial classes: every property wraps in
 the Maybe type, required ones included, so the class records which keys
@@ -292,8 +294,8 @@ class and renders nilable instead of collapsing to `nil`.
 Setter signatures on the DSL builders type the value the call admits,
 not the slot's nilability: an optional integer property takes
 `params(value: Integer)`, and an explicit `nil` rides the union only
-when the schema admits null. Block types carry the child builder's
-class (`T.proc.params(arg0: Person).void` in Sorbet,
+when the schema admits null. Block types carry the child builder
+module (`T.proc.params(arg0: Person).void` in Sorbet,
 `(Person) -> void` blocks in RBS). Builders type their document hash
 `T::Hash[String, T.untyped]` in Sorbet and `Hash[String, top]` in RBS:
 setters call `concat`, `<<`, and `merge` on their slot reads, and those

@@ -2,9 +2,9 @@
 
 module M
   module Dsl
-    class Schema
+    module Schema
       module Defs
-        class Value
+        module Value
           extend T::Sig
 
           ORIGINAL_KEYS = T.let({ "v" => :v }.freeze, T::Hash[String, Symbol])
@@ -17,10 +17,6 @@ module M
           def self.build(&block)
           end
 
-          sig { void }
-          def initialize
-          end
-
           sig { params(value: String).returns(T.self_type) }
           def v(value)
           end
@@ -31,6 +27,16 @@ module M
 
           sig { returns(T::Hash[String, T.untyped]) }
           def to_h
+          end
+
+          private
+
+          sig { returns(T::Hash[String, T.untyped]) }
+          def dsl_fields
+          end
+
+          class Builder
+            include Value
           end
         end
       end

@@ -4,8 +4,6 @@ module <%= @module_name %>
     <%= original_keys_constant %>
 
     <% end %>    <%= build_method %>
-
-    <%= initialize_method %>
     <% setter_methods.each do |method| %>
 
     <%= method %>
@@ -16,5 +14,11 @@ module <%= @module_name %>
     <% end %>
 
     <%= to_h_method %>
+
+    private
+
+    <%= fields_method %>
+
+    <%= builder_class %>
 <%= declaration_close %>
 end

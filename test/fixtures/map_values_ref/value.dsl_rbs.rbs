@@ -1,17 +1,23 @@
 module M
   module Dsl
-    class Schema
+    module Schema
       module Defs
-        class Value
+        module Value
           def self.build: { (Value) -> void } -> Hash[String, top]
-
-          def initialize: -> void
 
           def v: (String value) -> instance
 
           def extra: (String key, top value) -> instance
 
           def to_h: -> Hash[String, top]
+
+          private
+
+          def dsl_fields: -> Hash[String, top]
+
+          class Builder
+            include Value
+          end
         end
       end
     end

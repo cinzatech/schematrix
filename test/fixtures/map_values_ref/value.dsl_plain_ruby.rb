@@ -1,32 +1,38 @@
 module M
   module Dsl
-    class Schema
+    module Schema
       module Defs
-        class Value
+        module Value
           ORIGINAL_KEYS = { "v" => :v }.freeze
 
           def self.build(&block)
-            builder = new
+            builder = Builder.new
             yield builder
             builder.to_h
           end
 
-          def initialize
-            @fields = {}
-          end
-
           def v(value)
-            @fields["v"] = value
+            dsl_fields["v"] = value
             self
           end
 
           def extra(key, value)
-            @fields[key] = value
+            dsl_fields[key] = value
             self
           end
 
           def to_h
-            @fields.dup
+            dsl_fields.dup
+          end
+
+          private
+
+          def dsl_fields
+            @fields ||= {}
+          end
+
+          class Builder
+            include Value
           end
         end
       end

@@ -1,6 +1,6 @@
 # The instance DSL
 
-The four `dsl_` generators produce builders: Ruby classes whose methods
+The four `dsl_` generators produce builders: Ruby modules whose methods
 describe an instance of the schema. A schema for people generates
 `MyApp::Dsl::Person`, and a block of plain method calls on it defines one
 document:
@@ -29,7 +29,7 @@ The output formats are the usual four: `dsl_plain_ruby` (`.rb`), with
 
 ## Names and files
 
-Builder classes nest under a `Dsl` module level inside your module, and
+Builder modules nest under a `Dsl` module level inside your module, and
 their files under a `dsl` directory inside the output directory:
 
 ```text
@@ -44,18 +44,45 @@ and `Defs` levels (see [Names and files](naming.md)).
 
 ## Builder anatomy
 
-Each builder carries:
+Each builder is a module that carries:
 
 - `ORIGINAL_KEYS`, the map from method names to the schema's original
   property names. Loading and parsing both read it; the methods spell
   snake case, the document keeps its original keys.
-- `self.build`, the entry point: a fresh builder, yielded to the block,
-  and its document returned.
+- `self.build`, the entry point: a fresh `Builder`, yielded to the
+  block, and its document returned.
 - One setter per property, shaped by the property's compiled form (next
-  section). Setters return the builder, so calls chain outside blocks.
+  section). Setters return the receiver, so calls chain outside blocks.
 - `extra`, when the shape is open: a home for keys the schema does not
   declare. A closed shape has no `extra`.
 - `to_h`, returning the document built so far.
+- `Builder`, a nested empty class that includes the module. It is what
+  `build` runs the block on.
+
+The document lives in an instance variable that the first setter
+creates, so the module has no initializer and works on any receiver.
+
+## Mixing a builder in
+
+A builder is a module so that a project can make the DSL its own.
+`extend` puts the setters on a class, and the class body becomes the
+declaration:
+
+```ruby
+class Ada
+  extend MyApp::Dsl::Person
+
+  first_name "Ada"
+  last_name "Lovelace"
+end
+
+Ada.to_h # => { "firstName" => "Ada", "lastName" => "Lovelace" }
+```
+
+`include` puts them on instances, each holding its own document. A
+project class that includes a builder can add its own methods next to
+the setters; the generated names it has to leave alone are `build`,
+`to_h`, `extra`, `dsl_fields` and the nested `Builder`.
 
 ## The call grammar
 
@@ -136,7 +163,7 @@ everywhere in schematrix.
 
 The Sorbet format declares every setter, under `# typed: strict`. Setter
 value types come from the schema: `String` for a string property,
-`T.any(String, Integer)` for a union, the child builder's class in a
+`T.any(String, Integer)` for a union, the child builder module in a
 block's `T.proc` type. Setters return `T.self_type`, so chains check.
 
 Instance files type-check too. Mark them `# typed: true` and check them
@@ -156,7 +183,7 @@ slot before a parser ever reads the file.
 
 ## Reserved names
 
-A property named `build`, `to_h`, `extra`, or `initialize` would
+A property named `build`, `to_h`, `extra`, or `dsl_fields` would
 override a builder method of the same name. It takes the keyword
 treatment: a trailing underscore (`to_h` becomes `to_h_`), with
 `ORIGINAL_KEYS` still recording the mapping. Property names that fold

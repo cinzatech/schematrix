@@ -8,9 +8,6 @@ module <%= @module_name %>
 
     <% end %>    <%= build_signature %>
     <%= build_method %>
-
-    <%= initialize_signature %>
-    <%= initialize_method %>
     <% setter_methods(sigged: true).each do |method| %>
 
     <%= method %>
@@ -23,5 +20,12 @@ module <%= @module_name %>
 
     <%= to_h_signature %>
     <%= to_h_method %>
+
+    private
+
+    <%= fields_signature %>
+    <%= fields_method %>
+
+    <%= builder_class %>
 <%= declaration_close %>
 end

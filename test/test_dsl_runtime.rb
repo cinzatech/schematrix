@@ -134,7 +134,7 @@ class TestDslRuntime < Minitest::Test
 
   def test_setters_chain_outside_blocks
     with_dsl_builders(SCHEMA, "P") do |mod|
-      builder = mod::Dsl::Schema.new
+      builder = mod::Dsl::Schema::Builder.new
       result = builder.name("Ada").age(36).hobbies("chess")
 
       assert_same builder, result
@@ -152,14 +152,20 @@ class TestDslRuntime < Minitest::Test
         "properties": {
           "to_h": { "type": "string" },
           "extra": { "type": "string" },
-          "build": { "type": "string" }
+          "build": { "type": "string" },
+          "dsl_fields": { "type": "string" }
         }
       }
     JSON
 
     with_dsl_builders(schema, "R") do |mod|
       assert_equal(
-        { "to_h" => :to_h_, "extra" => :extra_, "build" => :build_ },
+        {
+          "to_h" => :to_h_,
+          "extra" => :extra_,
+          "build" => :build_,
+          "dsl_fields" => :dsl_fields_,
+        },
         mod::Dsl::Schema::ORIGINAL_KEYS,
       )
 
@@ -168,6 +174,7 @@ class TestDslRuntime < Minitest::Test
           schema.to_h_ "reserved"
           schema.extra_ "also reserved"
           schema.build_ "still reserved"
+          schema.dsl_fields_ "reserved too"
         end
 
       assert_equal(
@@ -175,9 +182,45 @@ class TestDslRuntime < Minitest::Test
           "to_h" => "reserved",
           "extra" => "also reserved",
           "build" => "still reserved",
+          "dsl_fields" => "reserved too",
         },
         document,
       )
+    end
+  end
+
+  def test_a_class_extended_with_a_builder_declares_in_its_body
+    with_dsl_builders(SCHEMA, "X") do |mod|
+      declaration =
+        Class.new do
+          extend mod::Dsl::Schema
+
+          name "Ada"
+          hobbies "chess"
+          address { |address| address.street "1 Main St" }
+        end
+
+      assert_equal(
+        {
+          "name" => "Ada",
+          "hobbies" => ["chess"],
+          "address" => {
+            "street" => "1 Main St",
+          },
+        },
+        declaration.to_h,
+      )
+    end
+  end
+
+  def test_an_object_including_a_builder_builds_its_own_document
+    with_dsl_builders(SCHEMA, "I") do |mod|
+      holder = Class.new { include mod::Dsl::Schema }
+      first = holder.new.name("Ada")
+      second = holder.new.name("Grace")
+
+      assert_equal({ "name" => "Ada" }, first.to_h)
+      assert_equal({ "name" => "Grace" }, second.to_h)
     end
   end
 

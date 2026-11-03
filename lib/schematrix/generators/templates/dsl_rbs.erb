@@ -1,9 +1,8 @@
 module <%= @module_name %>
 <%= declaration_open %>
     <%= build_signature %>
-
-    <%= initialize_signature %>
     <% unless dsl_rbs_setters.empty? %>
+
     <%= dsl_rbs_setters %>
     <% end %>
     <% unless @additional_properties.nil? %>
@@ -12,5 +11,11 @@ module <%= @module_name %>
     <% end %>
 
     <%= to_h_signature %>
+
+    private
+
+    <%= fields_signature %>
+
+    <%= builder_class %>
 <%= declaration_close %>
 end
