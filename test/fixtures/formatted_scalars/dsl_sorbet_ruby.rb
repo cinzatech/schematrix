@@ -17,7 +17,7 @@ module M
         )
 
       sig do
-        params(block: T.proc.bind(Schema).void).returns(
+        params(block: T.proc.bind(::M::Dsl::Schema).void).returns(
           T::Hash[String, T.untyped]
         )
       end
@@ -66,12 +66,11 @@ module M
 
       sig { returns(T::Hash[String, T.untyped]) }
       def dsl_fields
-        @fields = T.let(@fields, T.nilable(T::Hash[String, T.untyped]))
-        @fields ||= {}
+        @dsl_fields ||= T.let({}, T.nilable(T::Hash[String, T.untyped]))
       end
 
       class Builder
-        include Schema
+        include ::M::Dsl::Schema
       end
     end
   end

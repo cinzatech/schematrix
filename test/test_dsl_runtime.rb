@@ -213,6 +213,36 @@ class TestDslRuntime < Minitest::Test
     end
   end
 
+  def test_a_builder_named_builder_loads_and_builds
+    schema = <<~JSON
+      {
+        "type": "object",
+        "properties": {
+          "builder": {
+            "type": "object",
+            "properties": { "name": { "type": "string" } }
+          }
+        }
+      }
+    JSON
+
+    with_dsl_builders(schema, "Bn") do |mod|
+      document = mod::Dsl::Schema.build { builder { name "Ada" } }
+
+      assert_equal({ "builder" => { "name" => "Ada" } }, document)
+      assert_kind_of mod::Dsl::Schema::Props::Builder,
+                     mod::Dsl::Schema::Props::Builder::Builder.new
+    end
+  end
+
+  def test_a_frozen_builder_still_answers_to_h
+    with_dsl_builders(SCHEMA, "Fr") do |mod|
+      builder = mod::Dsl::Schema::Builder.new.name("Ada").freeze
+
+      assert_equal({ "name" => "Ada" }, builder.to_h)
+    end
+  end
+
   def test_an_object_including_a_builder_builds_its_own_document
     with_dsl_builders(SCHEMA, "I") do |mod|
       holder = Class.new { include mod::Dsl::Schema }

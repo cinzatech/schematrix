@@ -11,9 +11,9 @@ module M
             T.let({ "foo" => :foo }.freeze, T::Hash[String, Symbol])
 
           sig do
-            params(block: T.proc.bind(Option).void).returns(
-              T::Hash[String, T.untyped]
-            )
+            params(
+              block: T.proc.bind(::M::Dsl::Schema::Props::Option).void
+            ).returns(T::Hash[String, T.untyped])
           end
           def self.build(&block)
             builder = Builder.new
@@ -42,12 +42,11 @@ module M
 
           sig { returns(T::Hash[String, T.untyped]) }
           def dsl_fields
-            @fields = T.let(@fields, T.nilable(T::Hash[String, T.untyped]))
-            @fields ||= {}
+            @dsl_fields ||= T.let({}, T.nilable(T::Hash[String, T.untyped]))
           end
 
           class Builder
-            include Option
+            include ::M::Dsl::Schema::Props::Option
           end
         end
       end

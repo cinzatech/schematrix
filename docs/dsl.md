@@ -85,7 +85,8 @@ Ada.to_h # => { "firstName" => "Ada", "lastName" => "Lovelace" }
 `include` puts them on instances, each holding its own document. A
 project class that includes a builder can add its own methods next to
 the setters; the generated names it has to leave alone are `build`,
-`to_h`, `extra`, `dsl_fields` and the nested `Builder`.
+`to_h`, `extra`, `dsl_fields`, the nested `Builder`, and the instance
+variable `@dsl_fields` that holds the document.
 
 A nested object is declared the same way in a class body as in a
 `build` block: its block runs on the child builder, so a project

@@ -33,12 +33,13 @@ module Schematrix
 
         # The document hash is declared where it is first read: a
         # module has no initializer, and typed: strict accepts an
-        # instance variable declared nilable outside one.
+        # instance variable declared nilable inside its own ||=. A
+        # read of an initialized hash assigns nothing, so a frozen
+        # builder can still answer to_h.
         def fields_method
           <<~RUBY
             def dsl_fields
-              @fields = T.let(@fields, T.nilable(T::Hash[String, T.untyped]))
-              @fields ||= {}
+              @dsl_fields ||= T.let({}, T.nilable(T::Hash[String, T.untyped]))
             end
           RUBY
         end
@@ -59,7 +60,7 @@ module Schematrix
         def build_signature
           [
             "sig do",
-            "  params(block: #{block_type(own_class_name)})",
+            "  params(block: #{block_type(absolute_own_name)})",
             "    .returns(T::Hash[String, T.untyped])",
             "end",
           ].join("\n")
@@ -80,7 +81,9 @@ module Schematrix
                 setter_value_type(nil, :extra_scalars, nil)
               })."
             else
-              "params(key: String, block: #{block_type(extra_builder_term)})."
+              "params(key: String, block: #{
+                block_type(absolute_builder(extra_builder_term))
+              })."
             end
           "sig { #{params}returns(T.self_type) }"
         end
@@ -95,28 +98,38 @@ module Schematrix
           when :scalar
             "params(value: #{setter_value_type(name, kind, schema)})."
           when :object
-            "params(block: #{block_type(property_builder_term(name))})."
+            "params(block: #{
+              block_type(absolute_builder(property_builder_term(name)))
+            })."
           when :array_scalars
             "params(values: #{setter_value_type(name, kind, schema)})."
           when :array_objects
-            "params(block: #{block_type(element_builder_term(name))})."
+            "params(block: #{
+              block_type(absolute_builder(element_builder_term(name)))
+            })."
           when :mixed_array
             "params(values: #{untyped}, block: #{
-              nilable_block_type(element_builder_term(name))
+              nilable_block_type(absolute_builder(element_builder_term(name)))
             })."
           when :map_scalars
             "params(key: String, value: #{
               setter_value_type(name, kind, schema)
             })."
           when :map_objects
-            "params(key: String, block: #{block_type(map_builder_term(name))})."
+            "params(key: String, block: #{
+              block_type(absolute_builder(map_builder_term(name)))
+            })."
           when :mixed_value
             "params(value: #{untyped}, block: #{
-              nilable_block_type(property_builder_term(name))
+              nilable_block_type(absolute_builder(property_builder_term(name)))
             })."
           end
         end
 
+        # The block runs on the named builder, as instance_exec does.
+        # The name is absolute: sig blocks evaluate lazily inside the
+        # module, where a relative name can hit the nested Builder
+        # class.
         def block_type(klass)
           "T.proc.bind(#{klass}).void"
         end

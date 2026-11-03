@@ -8,7 +8,7 @@ module M
       ORIGINAL_KEYS = T.let({ "name" => :name }.freeze, T::Hash[String, Symbol])
 
       sig do
-        params(block: T.proc.bind(Schema).void).returns(
+        params(block: T.proc.bind(::M::Dsl::Schema).void).returns(
           T::Hash[String, T.untyped]
         )
       end
@@ -30,7 +30,7 @@ module M
       end
 
       class Builder
-        include Schema
+        include ::M::Dsl::Schema
       end
     end
   end

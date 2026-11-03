@@ -10,9 +10,9 @@ module M
           ORIGINAL_KEYS = T.let({ "v" => :v }.freeze, T::Hash[String, Symbol])
 
           sig do
-            params(block: T.proc.bind(Value).void).returns(
-              T::Hash[String, T.untyped]
-            )
+            params(
+              block: T.proc.bind(::M::Dsl::Schema::Defs::Value).void
+            ).returns(T::Hash[String, T.untyped])
           end
           def self.build(&block)
           end
@@ -36,7 +36,7 @@ module M
           end
 
           class Builder
-            include Value
+            include ::M::Dsl::Schema::Defs::Value
           end
         end
       end

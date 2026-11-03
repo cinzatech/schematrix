@@ -26,7 +26,7 @@ module Schematrix
         def builder_class
           <<~RBS
             class Builder
-              include #{own_class_name}
+              include #{absolute_own_name}
             end
           RBS
         end

@@ -17,7 +17,7 @@ module M
             def dsl_fields: -> Hash[String, top]
 
             class Builder
-              include Items
+              include ::M::Dsl::Schema::Props::Entries::Items
             end
           end
         end

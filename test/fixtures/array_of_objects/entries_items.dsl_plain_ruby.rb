@@ -29,11 +29,11 @@ module M
             private
 
             def dsl_fields
-              @fields ||= {}
+              @dsl_fields ||= {}
             end
 
             class Builder
-              include Items
+              include ::M::Dsl::Schema::Props::Entries::Items
             end
           end
         end

@@ -99,23 +99,39 @@ module Schematrix
         # The document under construction, created on first use. A
         # method instead of an initializer, so the module works on
         # any receiver it is mixed into, a class included in or an
-        # object extended with it.
+        # object extended with it. The variable carries the dsl
+        # prefix for the same reason: a host class may own @fields.
         def fields_method
           <<~RUBY
             def dsl_fields
-              @fields ||= {}
+              @dsl_fields ||= {}
             end
           RUBY
         end
 
         # The class build runs the block on: an empty class that
-        # includes its enclosing builder module.
+        # includes its enclosing builder module. The include names
+        # the module absolutely: inside the class, a bare name that
+        # matches the module's own, Builder, would resolve to the
+        # class itself.
         def builder_class
           <<~RUBY
             class Builder
-              include #{own_class_name}
+              include #{absolute_own_name}
             end
           RUBY
+        end
+
+        # This builder's module, from the root: the one name no
+        # nested constant can shadow.
+        def absolute_own_name
+          "::#{@module_name}::#{@class_name}"
+        end
+
+        # A builder module a signature refers to, from the root, for
+        # the same reason.
+        def absolute_builder(term)
+          "::#{qualified_builder(term)}"
         end
 
         # Every property setter in declaration order. `sigged` pairs

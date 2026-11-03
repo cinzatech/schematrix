@@ -16,7 +16,7 @@ module M
           def dsl_fields: -> Hash[String, top]
 
           class Builder
-            include Option
+            include ::M::Dsl::Schema::Props::Option
           end
         end
       end

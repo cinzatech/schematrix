@@ -12,7 +12,7 @@ module M
       def dsl_fields: -> Hash[String, top]
 
       class Builder
-        include Schema
+        include ::M::Dsl::Schema
       end
     end
   end

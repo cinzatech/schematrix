@@ -11,9 +11,9 @@ module M
             T.let({ "value" => :value }.freeze, T::Hash[String, Symbol])
 
           sig do
-            params(block: T.proc.bind(Child).void).returns(
-              T::Hash[String, T.untyped]
-            )
+            params(
+              block: T.proc.bind(::M::Dsl::Schema::Props::Child).void
+            ).returns(T::Hash[String, T.untyped])
           end
           def self.build(&block)
           end
@@ -37,7 +37,7 @@ module M
           end
 
           class Builder
-            include Child
+            include ::M::Dsl::Schema::Props::Child
           end
         end
       end

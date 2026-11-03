@@ -11,9 +11,9 @@ module M
             T.let({ "foo" => :foo }.freeze, T::Hash[String, Symbol])
 
           sig do
-            params(block: T.proc.bind(Option).void).returns(
-              T::Hash[String, T.untyped]
-            )
+            params(
+              block: T.proc.bind(::M::Dsl::Schema::Props::Option).void
+            ).returns(T::Hash[String, T.untyped])
           end
           def self.build(&block)
           end
@@ -37,7 +37,7 @@ module M
           end
 
           class Builder
-            include Option
+            include ::M::Dsl::Schema::Props::Option
           end
         end
       end
