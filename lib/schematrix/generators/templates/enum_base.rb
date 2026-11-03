@@ -55,9 +55,11 @@ module Schematrix
           "#{coercion_target(format_entry.coercer)}.coerce(#{expression})"
         end
 
-        def used_builtin_coercers
-          coercer = format_entry&.coercer
-          Schematrix::Coercers::BUILTIN.include?(coercer) ? [coercer] : []
+        # An enum file requires the shared coercion helper module when
+        # its format converts through a built-in coercer, which lives
+        # there.
+        def uses_coercion_helper?
+          Schematrix::Coercers::BUILTIN.include?(format_entry&.coercer)
         end
 
         def coerce_body

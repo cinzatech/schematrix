@@ -137,8 +137,9 @@ and dump: a document string loads through `Date.iso8601` /
 `Time.iso8601`, an instance dumps through `iso8601`, and anything else
 passes through unchanged. That covers plain scalar properties, array
 elements and tuple positions, map and catch-all values, and union
-branches. The coercion code is emitted into the generated file itself,
-so the output keeps no runtime dependency on this gem. See
+branches. The coercion code is emitted once per output directory, in
+the coercion helper module the `auxiliary_files` generator writes, so
+the output keeps no runtime dependency on this gem. See
 [Generated code](generated-code.md).
 
 One union shape cannot convert: branches that would convert the same

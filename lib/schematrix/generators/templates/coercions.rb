@@ -352,10 +352,20 @@ module Schematrix
         # module: every delegation whose literal is more than a
         # scalar coercer leaf runs through it, and so does the
         # catch-all delegation.
+        # Whether the class file requires the shared coercion helper
+        # module: any structured conversion runs through its
+        # interpreter, and any built-in coercer lives in it. A class
+        # whose only conversions call project coercers by name needs
+        # nothing from it.
         def uses_coercion_helper?
           literals = property_coercions.filter_map { |_name, literal| literal }
-          literals.any? { |literal| literal[0] != :coerce } ||
+          literals.any? { |literal| helper_literal?(literal) } ||
             !catch_all_spec.nil?
+        end
+
+        def helper_literal?(literal)
+          literal[0] != :coerce ||
+            Schematrix::Coercers::BUILTIN.include?(literal[1])
         end
 
         # The require of the shared coercion helper module, emitted
@@ -392,14 +402,15 @@ module Schematrix
         end
 
         # The constant reference a scalar leaf calls through:
-        # built-in coercers resolve top-level under the output module,
-        # where every generated file that needs one emits its copy;
-        # project coercers are carried by their own name.
+        # built-in coercers live in the shared coercion helper module
+        # of the output directory, under Coercers; project coercers
+        # are carried by their own name.
         def coercion_target(coercer)
           return coercer if coercer.is_a?(String)
 
           if Schematrix::Coercers::BUILTIN.include?(coercer)
-            return "::#{@module_name}::#{coercer.name}"
+            leaf = coercer.name.split("::").last
+            return "::#{@module_name}::CoercionHelper::Coercers::#{leaf}"
           end
 
           coercer.name
@@ -427,93 +438,6 @@ module Schematrix
               "[#{spec[1].map { |sub| spec_literal(sub) }.join(", ")}]"
             end
           "[:#{spec[0]}, #{inner}]"
-        end
-
-        # The built-in coercers this class's conversions call through,
-        # in first-use order: the scalar leaves of every property
-        # literal and of the catch-all literal.
-        def used_builtin_coercers
-          literals = property_coercions.filter_map { |_name, literal| literal }
-          literals << catch_all_spec if catch_all_spec
-          coercers = []
-          literals.each { |literal| collect_coercers(literal, coercers) }
-          coercers
-            .select do |coercer|
-              Schematrix::Coercers::BUILTIN.include?(coercer)
-            end
-            .uniq
-        end
-
-        def collect_coercers(spec, out)
-          case spec[0]
-          when :coerce
-            out << spec[1]
-          when :array
-            element = spec[1]
-            if element[0] == :tuple
-              element[1].each { |sub| collect_coercers(sub, out) if sub }
-              collect_coercers(element[2], out) if element[2]
-            else
-              collect_coercers(element, out)
-            end
-          when :map, :try
-            collect_coercers(spec[1], out)
-          when :union
-            spec[1].each { |sub| collect_coercers(sub, out) }
-          end
-        end
-
-        # The built-in coercer modules this class uses, emitted once
-        # per class after the class body, nested under the output
-        # module (where the scalar delegations resolve them), so
-        # every file stays self contained like the coercion helpers
-        # are. Empty string when no conversion calls a built-in
-        # coercer. `sig` prefixes each coerce method where the output
-        # annotates signatures, `requires` emits the stdlib load
-        # lines executable output needs, and `stub` renders the empty
-        # bodies signature files carry.
-        def coercer_modules_block(sig: nil, requires: true, stub: false)
-          coercers = used_builtin_coercers
-          return "" if coercers.empty?
-
-          bodies =
-            coercers
-              .map do |coercer|
-                coercer_module_body(coercer, sig:, requires:, stub:)
-              end
-              .join("\n\n")
-          block = [
-            "module Schematrix",
-            "  module Coercers",
-            indented(bodies, 2),
-            "  end",
-            "end",
-          ].join("\n")
-          indented(block, 1)
-        end
-
-        def coercer_module_body(coercer, sig:, requires:, stub:)
-          lines = []
-          if requires
-            lines << "require #{coercer::GENERATED_REQUIRE.inspect}"
-            lines << ""
-          end
-          # The sig blocks the Sorbet formats annotate the coerce
-          # method with only resolve when the module extends T::Sig.
-          lines << "extend T::Sig" if sig
-          lines << sig if sig
-          lines << coercer_method_body(coercer, stub:)
-          <<~RUBY.rstrip
-            module #{coercer.name.split("::").last}
-            #{indented(lines.join("\n"), 1)}
-            end
-          RUBY
-        end
-
-        def coercer_method_body(coercer, stub:)
-          return coercer::GENERATED_BODY.rstrip unless stub
-
-          "#{coercer::GENERATED_BODY.lines.first.strip}; end"
         end
 
         def indented(code, levels)

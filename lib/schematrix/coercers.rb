@@ -4,11 +4,12 @@ require "time"
 module Schematrix
   # The value converters the standard formats ship with. A coercer is
   # any module answering `coerce(value)`: a document value loads, an
-  # instance dumps, anything else passes through. Generated output
-  # emits its own copy of a built-in coercer next to the coercion
-  # helpers (see Generators::Templates::Coercions), so generated code
-  # keeps its property of having no runtime dependency on this gem;
-  # GENERATED_BODY and GENERATED_REQUIRE are what it emits.
+  # instance dumps, anything else passes through. The auxiliary files
+  # generator emits one copy of every built-in coercer into the shared
+  # coercion helper module of each output directory (see
+  # Generators::AuxiliaryFiles), so generated code keeps its property
+  # of having no runtime dependency on this gem; GENERATED_BODY and
+  # GENERATED_REQUIRE are what it emits.
   module Coercers
     # Loads an ISO 8601 full-date string, dumps back to ISO 8601.
     module Date
@@ -24,7 +25,7 @@ module Schematrix
       RUBY
 
       # One body serves both sides: the gem's own method and the copy
-      # generated output emits can never drift apart.
+      # the coercion helper carries can never drift apart.
       module_eval(GENERATED_BODY, __FILE__, __LINE__ + 2)
     end
 

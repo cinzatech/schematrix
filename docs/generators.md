@@ -54,8 +54,9 @@ For each object schema the compiler found, one file per class:
   maps, catch-all values, and union branches all convert; class
   entries dispatch through `CoercionHelper.coerce_class_slot`, which
   carries the symmetric load/dump dispatch once, and a slot that is
-  one scalar coercer calls it directly. The built-in coercers the
-  file calls are emitted next to the delegations (a project coercer
+  one scalar coercer calls it directly. The built-in coercers live
+  in that same helper module, under `CoercionHelper::Coercers`, and
+  a class file that calls one requires the helper (a project coercer
   is referenced by name).
 
 The details live in [Generated code](generated-code.md).
@@ -222,11 +223,12 @@ schematrix -g plain_ruby -g auxiliary_files -m MyApp -o app/generated person.sch
 ```
 
 A class requires the module when any of its conversions is
-structured: a nested class, an array, a map, a tuple, or a union. A
-slot whose conversion is one coercer calls the coercer directly, and
-a class with only such slots emits no reference to the module. A run
-that omits the auxiliary generator leaves the requires dangling,
-which fails at load time.
+structured (a nested class, an array, a map, a tuple, or a union), or
+when any of them calls a built-in coercer, because the built-in
+coercers live in the module. A slot whose conversion is one project
+coercer calls that coercer by name, and a class with only such slots
+emits no reference to the module. A run that omits the auxiliary
+generator leaves the requires dangling, which fails at load time.
 
 ## Type mappings
 

@@ -215,9 +215,9 @@ algebra renders the formatted type: scalar properties, array elements
 and tuple positions, map and catch-all values, and union branches.
 The built-in table maps the standard
 formats this way (`date` to `Date`, `date-time` to `Time`) and emits
-the converter into the generated file; a project coercer is referenced
-by its name and required by the generate script, as any class it names
-is. A union whose branches convert the same JSON type through
+the converters once, into the coercion helper module of the output
+directory; a project coercer is referenced by its name and required by
+the generate script, as any class it names is. A union whose branches convert the same JSON type through
 different coercers has no correct converter and fails the run with
 `CoercionConflictError` (see [Limits](limits.md)).
 

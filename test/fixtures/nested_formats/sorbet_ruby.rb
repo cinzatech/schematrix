@@ -72,7 +72,7 @@ module M
     def self.coerce_log(value)
       ::M::CoercionHelper.coerce_spec(
         value,
-        [:array, [:coerce, ::M::Schematrix::Coercers::DateTime]]
+        [:array, [:coerce, ::M::CoercionHelper::Coercers::DateTime]]
       )
     end
 
@@ -85,8 +85,8 @@ module M
           [
             :tuple,
             [
-              [:coerce, ::M::Schematrix::Coercers::Date],
-              [:coerce, ::M::Schematrix::Coercers::DateTime]
+              [:coerce, ::M::CoercionHelper::Coercers::Date],
+              [:coerce, ::M::CoercionHelper::Coercers::DateTime]
             ],
             nil
           ]
@@ -98,13 +98,13 @@ module M
     def self.coerce_rates(value)
       ::M::CoercionHelper.coerce_spec(
         value,
-        [:map, [:coerce, ::M::Schematrix::Coercers::DateTime]]
+        [:map, [:coerce, ::M::CoercionHelper::Coercers::DateTime]]
       )
     end
 
     sig { params(value: T.untyped).returns(T.untyped) }
     def self.coerce_milestone(value)
-      ::M::Schematrix::Coercers::Date.coerce(value)
+      ::M::CoercionHelper::Coercers::Date.coerce(value)
     end
 
     sig { params(value: T.untyped).returns(T.untyped) }
@@ -115,7 +115,7 @@ module M
           :union,
           [
             [:class, M::Schema::Defs::Money],
-            [:coerce, ::M::Schematrix::Coercers::DateTime]
+            [:coerce, ::M::CoercionHelper::Coercers::DateTime]
           ]
         ]
       )
@@ -158,46 +158,8 @@ module M
     def self.coerce_extra(value)
       ::M::CoercionHelper.coerce_spec(
         value,
-        [:coerce, ::M::Schematrix::Coercers::Date]
+        [:coerce, ::M::CoercionHelper::Coercers::Date]
       )
-    end
-  end
-
-  module Schematrix
-    module Coercers
-      module DateTime
-        require "time"
-
-        extend T::Sig
-        sig { params(value: T.untyped).returns(T.untyped) }
-        def self.coerce(value)
-          case value
-          when String
-            ::Time.iso8601(value)
-          when ::Time
-            value.iso8601
-          else
-            value
-          end
-        end
-      end
-
-      module Date
-        require "date"
-
-        extend T::Sig
-        sig { params(value: T.untyped).returns(T.untyped) }
-        def self.coerce(value)
-          case value
-          when String
-            ::Date.iso8601(value)
-          when ::Date
-            value.iso8601
-          else
-            value
-          end
-        end
-      end
     end
   end
 end

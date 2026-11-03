@@ -1,3 +1,5 @@
+require_relative "coercion_helper"
+
 module M
   class Schema
     ORIGINAL_KEYS = {
@@ -27,11 +29,11 @@ module M
     end
 
     def self.coerce_created_at(value)
-      ::M::Schematrix::Coercers::DateTime.coerce(value)
+      ::M::CoercionHelper::Coercers::DateTime.coerce(value)
     end
 
     def self.coerce_birthday(value)
-      ::M::Schematrix::Coercers::Date.coerce(value)
+      ::M::CoercionHelper::Coercers::Date.coerce(value)
     end
 
     def self.from_h(hash)
@@ -63,40 +65,6 @@ module M
       result["count"] = @count unless @count.nil?
       @_extra.each { |key, value| result[key] = value }
       result
-    end
-  end
-
-  module Schematrix
-    module Coercers
-      module DateTime
-        require "time"
-
-        def self.coerce(value)
-          case value
-          when String
-            ::Time.iso8601(value)
-          when ::Time
-            value.iso8601
-          else
-            value
-          end
-        end
-      end
-
-      module Date
-        require "date"
-
-        def self.coerce(value)
-          case value
-          when String
-            ::Date.iso8601(value)
-          when ::Date
-            value.iso8601
-          else
-            value
-          end
-        end
-      end
     end
   end
 end

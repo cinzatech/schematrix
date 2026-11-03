@@ -49,9 +49,4 @@ module <%= @module_name %>
     <%= protected_extra_reader %>
     <% end %>
 <%= declaration_close %>
-<% coercer_block = coercer_modules_block %>
-<% unless coercer_block.empty? %>
-
-<%= coercer_block %>
-<% end %>
 end

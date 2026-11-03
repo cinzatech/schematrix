@@ -70,11 +70,11 @@ class TestEnumCoercions < Minitest::Test
       ) do |root, source, namespace|
         value = root.from_h("value" => "2026-01-02").value
         if mode == :classes
-          refute_includes source, "Schematrix::Coercers::Date.coerce(value)"
+          refute_includes source, "CoercionHelper::Coercers::Date.coerce(value)"
           enum = namespace::Record::Props::Value
           assert_same enum.deserialize(Date.new(2026, 1, 2)), value
         else
-          assert_includes source, "Schematrix::Coercers::Date.coerce(value)"
+          assert_includes source, "CoercionHelper::Coercers::Date.coerce(value)"
           assert_equal Date.new(2026, 1, 2), value
         end
         assert_equal(
