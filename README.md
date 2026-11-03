@@ -295,7 +295,8 @@ Schematrix.generate(
 Collisions (two classes on one file) are detected before the first
 write, and the compile raises instead of producing partial output. See
 the [library manual](docs/library-api.md) for the parameters, the error
-types, and logging.
+types, and logging. The gem exports the Sorbet signatures of this API
+in `rbi/`, which tapioca picks up.
 
 ---
 
@@ -363,8 +364,9 @@ bundle exec rake test
 Format and lint:
 
 ```sh
-bundle exec stree check lib test exe Rakefile
+bundle exec stree check lib test exe rbi Rakefile
 bundle exec rubocop
+SRB_SKIP_GEM_RBIS=1 bundle exec srb tc
 ```
 
 ---
