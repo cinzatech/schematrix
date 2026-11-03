@@ -10,7 +10,7 @@ module M
           ORIGINAL_KEYS = T.let({ "v" => :v }.freeze, T::Hash[String, Symbol])
 
           sig do
-            params(block: T.proc.params(arg0: Value).void).returns(
+            params(block: T.proc.bind(Value).void).returns(
               T::Hash[String, T.untyped]
             )
           end

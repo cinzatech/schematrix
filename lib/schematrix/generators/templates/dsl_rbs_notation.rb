@@ -5,15 +5,17 @@ module Schematrix
     module Templates
       # The RBS notation of the DSL builders. Type names stay
       # relative, resolving lexically under the Dsl namespace the
-      # declaration tree opens; block types carry the child builder
-      # module; setters return `instance` so chains check.
+      # declaration tree opens; setters return `instance` so chains
+      # check. Blocks are declared bare: RBS can bind a block's self
+      # to the child builder, but syntax_tree-rbs 1.0 drops the
+      # binding when it formats, so the output does not carry it.
       module DslRbsNotation
         include RbsNotation
 
         private
 
         def build_signature
-          "def self.build: () { (#{own_class_name}) -> void } " \
+          "def self.build: () #{bound_block(own_class_name)} " \
             "-> Hash[String, #{untyped}]"
         end
 
@@ -39,7 +41,7 @@ module Schematrix
               param_type(setter_value_type(nil, :extra_scalars, nil))
             } value) -> instance"
           else
-            "def extra: (String key) { (#{extra_builder_term}) -> void } " \
+            "def extra: (String key) #{bound_block(extra_builder_term)} " \
               "-> instance"
           end
         end
@@ -65,22 +67,29 @@ module Schematrix
           when :scalar
             "(#{param_type(setter_value_type(name, kind, schema))} value) "
           when :object
-            "() { (#{property_builder_term(name)}) -> void } "
+            "() #{bound_block(property_builder_term(name))} "
           when :array_scalars
             "(*#{param_type(setter_value_type(name, kind, schema))} values) "
           when :array_objects
-            "() { (#{element_builder_term(name)}) -> void } "
+            "() #{bound_block(element_builder_term(name))} "
           when :mixed_array
-            "(*#{untyped} values) ?{ (#{element_builder_term(name)}) -> void } "
+            "(*#{untyped} values) ?#{bound_block(element_builder_term(name))} "
           when :map_scalars
             "(String key, #{
               param_type(setter_value_type(name, kind, schema))
             } value) "
           when :map_objects
-            "(String key) { (#{map_builder_term(name)}) -> void } "
+            "(String key) #{bound_block(map_builder_term(name))} "
           when :mixed_value
-            "(#{untyped} value) ?{ (#{property_builder_term(name)}) -> void } "
+            "(#{untyped} value) ?#{bound_block(property_builder_term(name))} "
           end
+        end
+
+        # A block that takes nothing. The child builder it runs on is
+        # not declared: `[self: term]` is the RBS spelling, and the
+        # formatter removes it.
+        def bound_block(_term)
+          "{ () -> void }"
         end
 
         # Union types parenthesize in parameter position, so the `|`

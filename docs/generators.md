@@ -294,9 +294,10 @@ class and renders nilable instead of collapsing to `nil`.
 Setter signatures on the DSL builders type the value the call admits,
 not the slot's nilability: an optional integer property takes
 `params(value: Integer)`, and an explicit `nil` rides the union only
-when the schema admits null. Block types carry the child builder
-module (`T.proc.params(arg0: Person).void` in Sorbet,
-`(Person) -> void` blocks in RBS). Builders type their document hash
+when the schema admits null. A block is bound to the child builder
+module in Sorbet, `T.proc.bind(Person).void`, which is how a block run
+with `instance_exec` is typed. RBS declares the block bare, `{ -> void }`:
+the notation has a self binding, but the formatter the gem uses drops it. Builders type their document hash
 `T::Hash[String, T.untyped]` in Sorbet and `Hash[String, top]` in RBS:
 setters call `concat`, `<<`, and `merge` on their slot reads, and those
 are the types that admit every call.

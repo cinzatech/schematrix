@@ -11,7 +11,7 @@ module M
             T.let({ "value" => :value }.freeze, T::Hash[String, Symbol])
 
           sig do
-            params(block: T.proc.params(arg0: Child).void).returns(
+            params(block: T.proc.bind(Child).void).returns(
               T::Hash[String, T.untyped]
             )
           end

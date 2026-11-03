@@ -4,7 +4,7 @@ module M
       module Props
         module Entries
           module Items
-            def self.build: { (Items) -> void } -> Hash[String, top]
+            def self.build: { -> void } -> Hash[String, top]
 
             def name: (String value) -> instance
 

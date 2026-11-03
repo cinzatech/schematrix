@@ -22,9 +22,7 @@ class TestEnumFormats < Minitest::Test
           )
           assert_equal(
             { "value" => raw },
-            namespace::Dsl::Schema.build do |builder|
-              builder.value(loaded.value)
-            end,
+            namespace::Dsl::Schema.build { value(loaded.value) },
           )
         end
         assert_raises(KeyError) do

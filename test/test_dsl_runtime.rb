@@ -56,35 +56,35 @@ class TestDslRuntime < Minitest::Test
   def test_build_produces_the_document_the_dsl_declares
     with_dsl_builders(SCHEMA, "L") do |mod|
       document =
-        mod::Dsl::Schema.build do |schema|
-          schema.name "Ada"
-          schema.age 36
-          schema.score 9.5
+        mod::Dsl::Schema.build do
+          name "Ada"
+          age 36
+          score 9.5
 
-          schema.address { |address| address.street "1 Main St" }
-          schema.address { |address| address.street "2 Main St" }
+          address { street "1 Main St" }
+          address { street "2 Main St" }
 
-          schema.hobbies "chess", "programming"
-          schema.hobbies "paper folding"
+          hobbies "chess", "programming"
+          hobbies "paper folding"
 
-          schema.friends { |friend| friend.name "Grace Hopper" }
-          schema.friends { |friend| friend.name "Alan Turing" }
+          friends { name "Grace Hopper" }
+          friends { name "Alan Turing" }
 
-          schema.labels "verified", true
+          labels "verified", true
 
-          schema.metadata "mentor" do |mentor|
-            mentor.name "Charles Babbage"
+          metadata "mentor" do
+            name "Charles Babbage"
           end
 
-          schema.option "fast"
-          schema.option { |option| option.foo 1 }
+          option "fast"
+          option { foo 1 }
 
-          schema.mixed "scalar element"
-          schema.mixed { |element| element.name "object element" }
+          mixed "scalar element"
+          mixed { name "object element" }
 
-          schema.matrix [1, 2], [3, 4]
+          matrix [1, 2], [3, 4]
 
-          schema.extra "nickname", "Ada"
+          extra "nickname", "Ada"
         end
 
       assert_equal(
@@ -123,9 +123,9 @@ class TestDslRuntime < Minitest::Test
   def test_object_blocks_merge_when_the_slot_holds_a_hash
     with_dsl_builders(SCHEMA, "N") do |mod|
       document =
-        mod::Dsl::Schema.build do |schema|
-          schema.address { |address| address.street "1 Main St" }
-          schema.address { |address| address.street "2 Main St" }
+        mod::Dsl::Schema.build do
+          address { street "1 Main St" }
+          address { street "2 Main St" }
         end
 
       assert_equal({ "street" => "2 Main St" }, document["address"])
@@ -170,11 +170,11 @@ class TestDslRuntime < Minitest::Test
       )
 
       document =
-        mod::Dsl::Schema.build do |schema|
-          schema.to_h_ "reserved"
-          schema.extra_ "also reserved"
-          schema.build_ "still reserved"
-          schema.dsl_fields_ "reserved too"
+        mod::Dsl::Schema.build do
+          to_h_ "reserved"
+          extra_ "also reserved"
+          build_ "still reserved"
+          dsl_fields_ "reserved too"
         end
 
       assert_equal(
@@ -197,7 +197,7 @@ class TestDslRuntime < Minitest::Test
 
           name "Ada"
           hobbies "chess"
-          address { |address| address.street "1 Main St" }
+          address { street "1 Main St" }
         end
 
       assert_equal(
@@ -239,9 +239,9 @@ class TestDslRuntime < Minitest::Test
       Dir.glob("#{dir}/**/*.rb").each { |file| require file }
 
       document =
-        Co::Dsl::Schema.build do |schema|
-          schema.name "Ada"
-          schema.address { |address| address.street "1 Main St" }
+        Co::Dsl::Schema.build do
+          name "Ada"
+          address { street "1 Main St" }
         end
 
       person = Co::Schema.from_h(document)

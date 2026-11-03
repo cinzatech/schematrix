@@ -6,19 +6,22 @@ describe an instance of the schema. A schema for people generates
 document:
 
 ```ruby
-MyApp::Dsl::Person.build do |person|
-  person.first_name "Ada"
-  person.last_name "Lovelace"
-  person.age 36
+MyApp::Dsl::Person.build do
+  first_name "Ada"
+  last_name "Lovelace"
+  age 36
 end
 # => { "firstName" => "Ada", "lastName" => "Lovelace", "age" => 36 }
 ```
 
+The block takes no parameter. `build` runs it on a fresh builder with
+`instance_exec`, so inside the block `self` is the builder and every
+call is a setter. The same holds for the block of a nested object.
+
 The same source serves two readers:
 
-- Ruby runs it. `build` yields the builder and returns the document as a
-  Hash, ready for `JSON.generate` or for a generated data class'
-  `from_h`.
+- Ruby runs it. `build` returns the document as a Hash, ready for
+  `JSON.generate` or for a generated data class' `from_h`.
 - A parser reads it. The call grammar below is small and regular, so a
   syntax walker (for example over Prism) reconstructs the same document
   statically, without running the file.
@@ -49,8 +52,8 @@ Each builder is a module that carries:
 - `ORIGINAL_KEYS`, the map from method names to the schema's original
   property names. Loading and parsing both read it; the methods spell
   snake case, the document keeps its original keys.
-- `self.build`, the entry point: a fresh `Builder`, yielded to the
-  block, and its document returned.
+- `self.build`, the entry point: a fresh `Builder`, the block run on
+  it with `instance_exec`, and its document returned.
 - One setter per property, shaped by the property's compiled form (next
   section). Setters return the receiver, so calls chain outside blocks.
 - `extra`, when the shape is open: a home for keys the schema does not
@@ -84,6 +87,24 @@ project class that includes a builder can add its own methods next to
 the setters; the generated names it has to leave alone are `build`,
 `to_h`, `extra`, `dsl_fields` and the nested `Builder`.
 
+A nested object is declared the same way in a class body as in a
+`build` block: its block runs on the child builder, so a project
+method of the enclosing class is not callable inside it, while
+constants still resolve lexically.
+
+```ruby
+module Schemas
+  module Ada
+    extend MyApp::Dsl::Person
+
+    first_name "Ada"
+    address do
+      street "Plaza Santa Rita"
+    end
+  end
+end
+```
+
 ## The call grammar
 
 A setter's form follows the property's compiled shape. Each call writes
@@ -93,15 +114,15 @@ under the property's original key.
 | -------------- | ---- | --------------- | ----------- |
 | scalar, union, enum in `:unions` mode | `age 36` | `doc["age"] = 36` | last call wins |
 | enum in `:classes` mode | `status MyApp::Person::Props::Status::Active` | stores the member's serialized value | last call wins |
-| object | `address do \|a\| ... end` | child document through `Address.build` | merges into a held Hash, replaces anything else |
+| object | `address do ... end` | child document through `Address.build` | merges into a held Hash, replaces anything else |
 | array of scalars | `hobbies "a", "b"` | appends one element per argument | appends |
-| array of objects | `friends do \|f\| ... end` | appends one built element per call | appends |
+| array of objects | `friends do ... end` | appends one built element per call | appends |
 | map | `labels "k", 1` | `doc["labels"]["k"] = 1` | last call wins per key |
-| map of objects | `metadata "k" do \|m\| ... end` | entry built through the value builder | last call wins per key |
+| map of objects | `metadata "k" do ... end` | entry built through the value builder | last call wins per key |
 | open shape (catch-all) | `extra "k", v` | `doc["k"] = v` | last call wins |
 
 A property whose shape unions scalars with an object class takes both
-forms (`option "fast"` and `option do |o| o.foo 1 end`); the block's
+forms (`option "fast"` and `option do foo 1 end`); the block's
 presence decides. An array whose element does the same accepts variadic
 scalar elements and block elements on one method.
 
@@ -126,14 +147,14 @@ Class-mode enums are the exception to the literal contract. Their
 setter signatures accept enum members, not raw strings or integers:
 
 ```ruby
-MyApp::Dsl::Person.build do |person|
-  person.status MyApp::Person::Props::Status::Active
+MyApp::Dsl::Person.build do
+  status MyApp::Person::Props::Status::Active
 end
 # => { "status" => "active" }
 ```
 
 A parser must resolve the member constant to its serialized value.
-`person.status "active"` still runs in the plain builder, but fails
+`status "active"` still runs in the plain builder, but fails
 `srb tc` against the class-mode signature. Sorbet runtime signature
 checks can also reject it. The setter body serializes members and
 passes non-members through without validation. Arrays serialize each
@@ -163,8 +184,15 @@ everywhere in schematrix.
 
 The Sorbet format declares every setter, under `# typed: strict`. Setter
 value types come from the schema: `String` for a string property,
-`T.any(String, Integer)` for a union, the child builder module in a
-block's `T.proc` type. Setters return `T.self_type`, so chains check.
+`T.any(String, Integer)` for a union. A block is declared with
+`T.proc.bind(Child).void`, the type of a block that `instance_exec`
+runs on the child builder, so the calls inside it typecheck against the
+child. Setters return `T.self_type`, so chains check.
+
+The RBS format declares the same setters, with a bare block, `{ -> void }`.
+RBS can bind a block's `self` to the child builder, but syntax_tree-rbs
+1.0, which formats the output, drops that binding, so a Steep user sees
+an untyped block.
 
 Instance files type-check too. Mark them `# typed: true` and check them
 together with the generated builders:
@@ -172,9 +200,9 @@ together with the generated builders:
 ```ruby
 # typed: true
 
-MyApp::Dsl::Person.build do |person|
-  person.age "36"        # Expected Integer, found String
-  person.first_nmae "x"  # Method does not exist, did you mean first_name?
+MyApp::Dsl::Person.build do
+  age "36"        # Expected Integer, found String
+  first_nmae "x"  # Method does not exist, did you mean first_name?
 end
 ```
 

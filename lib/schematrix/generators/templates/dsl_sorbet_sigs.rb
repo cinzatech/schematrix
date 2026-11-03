@@ -5,13 +5,13 @@ module Schematrix
     module Templates
       # The Sorbet signatures of the DSL builders, shared by the
       # inline format and the RBI one. Setters return self, so
-      # chains check; object-shaped slots carry the child builder
-      # module in the block type; mixed slots admit anything in value
-      # position, because hash literals are a legal spelling of
-      # their object term. The document hash types as
-      # T::Hash[String, T.untyped]: builders call <<, concat and
-      # merge on their slot reads, and T.untyped is the only value
-      # type that accepts every call.
+      # chains check; object-shaped slots bind the block to the child
+      # builder module, which is what instance_exec does at runtime;
+      # mixed slots admit anything in value position, because hash
+      # literals are a legal spelling of their object term. The
+      # document hash types as T::Hash[String, T.untyped]: builders
+      # call <<, concat and merge on their slot reads, and T.untyped
+      # is the only value type that accepts every call.
       module DslSorbetSigs
         include SorbetHelpers
 
@@ -118,14 +118,14 @@ module Schematrix
         end
 
         def block_type(klass)
-          "T.proc.params(arg0: #{klass}).void"
+          "T.proc.bind(#{klass}).void"
         end
 
         # Mixed setters branch on the block's presence, so their
         # signature declares it nilable and the branch stays
         # reachable.
         def nilable_block_type(klass)
-          "T.nilable(T.proc.params(arg0: #{klass}).void)"
+          "T.nilable(T.proc.bind(#{klass}).void)"
         end
       end
     end

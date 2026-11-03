@@ -3,7 +3,7 @@ module M
     module Schema
       module Props
         module Child
-          def self.build: { (Child) -> void } -> Hash[String, top]
+          def self.build: { -> void } -> Hash[String, top]
 
           def value: (String value) -> instance
 

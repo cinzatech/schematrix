@@ -74,13 +74,15 @@ module Schematrix
           @property_keys.to_h.key(name.to_sym)
         end
 
-        # The entry point: builds a fresh Builder, hands it to the
-        # block, and returns the document.
+        # The entry point: builds a fresh Builder, runs the block on
+        # it, and returns the document. The block takes no parameter:
+        # inside it, self is the builder, so the calls read as a
+        # declaration and a parser has one shape to walk.
         def build_method
           <<~RUBY
             def self.build(&block)
               builder = Builder.new
-              yield builder
+              builder.instance_exec(&block)
               builder.to_h
             end
           RUBY

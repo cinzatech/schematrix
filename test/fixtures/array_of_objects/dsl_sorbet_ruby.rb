@@ -9,20 +9,20 @@ module M
         T.let({ "entries" => :entries }.freeze, T::Hash[String, Symbol])
 
       sig do
-        params(block: T.proc.params(arg0: Schema).void).returns(
+        params(block: T.proc.bind(Schema).void).returns(
           T::Hash[String, T.untyped]
         )
       end
       def self.build(&block)
         builder = Builder.new
-        yield builder
+        builder.instance_exec(&block)
         builder.to_h
       end
 
       sig do
-        params(
-          block: T.proc.params(arg0: Schema::Props::Entries::Items).void
-        ).returns(T.self_type)
+        params(block: T.proc.bind(Schema::Props::Entries::Items).void).returns(
+          T.self_type
+        )
       end
       def entries(&block)
         target = (dsl_fields["entries"] ||= [])

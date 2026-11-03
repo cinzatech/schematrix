@@ -1,9 +1,9 @@
 module M
   module Dsl
     module Schema
-      def self.build: { (Schema) -> void } -> Hash[String, top]
+      def self.build: { -> void } -> Hash[String, top]
 
-      def vars: (String key) { (Schema::Defs::Value) -> void } -> instance
+      def vars: (String key) { -> void } -> instance
 
       def extra: (String key, top value) -> instance
 

@@ -17,13 +17,13 @@ module M
         )
 
       sig do
-        params(block: T.proc.params(arg0: Schema).void).returns(
+        params(block: T.proc.bind(Schema).void).returns(
           T::Hash[String, T.untyped]
         )
       end
       def self.build(&block)
         builder = Builder.new
-        yield builder
+        builder.instance_exec(&block)
         builder.to_h
       end
 

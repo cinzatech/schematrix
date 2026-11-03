@@ -8,7 +8,7 @@ module M
       ORIGINAL_KEYS = T.let({ "vars" => :vars }.freeze, T::Hash[String, Symbol])
 
       sig do
-        params(block: T.proc.params(arg0: Schema).void).returns(
+        params(block: T.proc.bind(Schema).void).returns(
           T::Hash[String, T.untyped]
         )
       end
@@ -18,7 +18,7 @@ module M
       sig do
         params(
           key: String,
-          block: T.proc.params(arg0: Schema::Defs::Value).void
+          block: T.proc.bind(Schema::Defs::Value).void
         ).returns(T.self_type)
       end
       def vars(key, &block)

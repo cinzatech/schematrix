@@ -3,7 +3,7 @@ module M
     module Schema
       module Props
         module Option
-          def self.build: { (Option) -> void } -> Hash[String, top]
+          def self.build: { -> void } -> Hash[String, top]
 
           def foo: (Integer value) -> instance
 

@@ -9,20 +9,20 @@ module M
         T.let({ "option" => :option }.freeze, T::Hash[String, Symbol])
 
       sig do
-        params(block: T.proc.params(arg0: Schema).void).returns(
+        params(block: T.proc.bind(Schema).void).returns(
           T::Hash[String, T.untyped]
         )
       end
       def self.build(&block)
         builder = Builder.new
-        yield builder
+        builder.instance_exec(&block)
         builder.to_h
       end
 
       sig do
         params(
           value: T.anything,
-          block: T.nilable(T.proc.params(arg0: Schema::Props::Option).void)
+          block: T.nilable(T.proc.bind(Schema::Props::Option).void)
         ).returns(T.self_type)
       end
       def option(value = nil, &block)

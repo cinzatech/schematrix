@@ -1,7 +1,7 @@
 module M
   module Dsl
     module Schema
-      def self.build: { (Schema) -> void } -> Hash[String, top]
+      def self.build: { -> void } -> Hash[String, top]
 
       def created_at: (Time value) -> instance
 

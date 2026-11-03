@@ -9,7 +9,7 @@ module M
         T.let({ "child" => :child }.freeze, T::Hash[String, Symbol])
 
       sig do
-        params(block: T.proc.params(arg0: Schema).void).returns(
+        params(block: T.proc.bind(Schema).void).returns(
           T::Hash[String, T.untyped]
         )
       end
@@ -17,7 +17,7 @@ module M
       end
 
       sig do
-        params(block: T.proc.params(arg0: Schema::Props::Child).void).returns(
+        params(block: T.proc.bind(Schema::Props::Child).void).returns(
           T.self_type
         )
       end

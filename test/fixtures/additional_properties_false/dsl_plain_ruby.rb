@@ -5,7 +5,7 @@ module M
 
       def self.build(&block)
         builder = Builder.new
-        yield builder
+        builder.instance_exec(&block)
         builder.to_h
       end
 

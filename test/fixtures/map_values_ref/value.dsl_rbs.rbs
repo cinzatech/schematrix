@@ -3,7 +3,7 @@ module M
     module Schema
       module Defs
         module Value
-          def self.build: { (Value) -> void } -> Hash[String, top]
+          def self.build: { -> void } -> Hash[String, top]
 
           def v: (String value) -> instance
 
