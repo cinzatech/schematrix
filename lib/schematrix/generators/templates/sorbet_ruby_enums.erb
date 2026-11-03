@@ -1,11 +1,10 @@
 # typed: strict
+<% if uses_coercion_helper? %>
+
+<%= coercion_helper_require %>
+<% end %>
 
 module <%= @module_name %>
-<% coercer_block = coercer_modules_block(sig: "sig { params(value: T.anything).returns(T.anything) }") %>
-<% unless coercer_block.empty? %>
-<%= coercer_block %>
-
-<% end %>
 <%= declaration_open %>
     extend ::T::Sig
     enums do

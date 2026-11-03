@@ -1,9 +1,8 @@
-module <%= @module_name %>
-<% coercer_block = coercer_modules_block %>
-<% unless coercer_block.empty? %>
-<%= coercer_block %>
+<% if uses_coercion_helper? %>
+<%= coercion_helper_require %>
 
 <% end %>
+module <%= @module_name %>
 <%= declaration_open %>
     def initialize(value)
       @value = value.freeze

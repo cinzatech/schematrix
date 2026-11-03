@@ -1,8 +1,9 @@
 module Schematrix
   module Generators
     # Writes the shared coercion helper module once per output
-    # directory: the coerce_class_slot dispatcher and the coerce_spec
-    # interpreter that generated classes call through qualified names.
+    # directory: the built-in coercers under Coercers, the
+    # coerce_class_slot dispatcher and the coerce_spec interpreter
+    # that generated classes call through qualified names.
     # A run-once generator: the pipeline hands it the whole compiled
     # record set instead of one locator at a time, and the files land
     # next to the class files that require_relative them.
@@ -25,7 +26,8 @@ module Schematrix
 
       # Renders and writes the helper files. The content is the same
       # for every run: the helpers carry no per-class state, the spec
-      # literal travels with each delegation.
+      # literal travels with each delegation, and every built-in
+      # coercer is emitted whether or not a class in the run calls it.
       def write_run_once(_objects)
         FileUtils.mkdir_p(@output_dir)
         run_once_render.each do |filename, code|
@@ -49,8 +51,12 @@ module Schematrix
 
       def ruby_code
         <<~RUBY
+          #{builtin_requires}
+
           module #{@module_name}
             module CoercionHelper
+          #{indent(coercers_ruby, 2)}
+
               def self.coerce_class_slot(value, klass)
                 if value.is_a?(klass)
                   value.to_h
@@ -126,6 +132,8 @@ module Schematrix
         <<~RBS
           module #{@module_name}
             module CoercionHelper
+          #{indent(coercers_rbs, 2)}
+
               def self.coerce_class_slot: (top value, top klass) -> top
 
               def self.coerce_spec: (top value, top spec) -> top
@@ -134,6 +142,55 @@ module Schematrix
             end
           end
         RBS
+      end
+
+      # The stdlib requires the built-in coercers need, one line each,
+      # ahead of the module so the file loads on its own.
+      def builtin_requires
+        Schematrix::Coercers::BUILTIN
+          .map { |coercer| "require #{coercer::GENERATED_REQUIRE.inspect}" }
+          .uniq
+          .join("\n")
+      end
+
+      # The built-in coercers as a Coercers module, one copy per output
+      # directory. The bodies are the gem's own, so the helper and the
+      # gem cannot drift apart.
+      def coercers_ruby
+        bodies =
+          Schematrix::Coercers::BUILTIN.map do |coercer|
+            <<~RUBY.rstrip
+              module #{coercer.name.split("::").last}
+              #{indent(coercer::GENERATED_BODY.rstrip, 1)}
+              end
+            RUBY
+          end
+        <<~RUBY.rstrip
+          module Coercers
+          #{indent(bodies.join("\n\n"), 1)}
+          end
+        RUBY
+      end
+
+      def coercers_rbs
+        bodies =
+          Schematrix::Coercers::BUILTIN.map do |coercer|
+            <<~RBS.rstrip
+              module #{coercer.name.split("::").last}
+                def self.coerce: (top value) -> top
+              end
+            RBS
+          end
+        <<~RBS.rstrip
+          module Coercers
+          #{indent(bodies.join("\n\n"), 1)}
+          end
+        RBS
+      end
+
+      def indent(code, levels)
+        prefix = "  " * levels
+        code.lines.map { |line| line.strip.empty? ? line : prefix + line }.join
       end
     end
   end

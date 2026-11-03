@@ -76,22 +76,4 @@ module M
     def to_h
     end
   end
-
-  module Schematrix
-    module Coercers
-      module DateTime
-        extend T::Sig
-        sig { params(value: T.anything).returns(T.anything) }
-        def self.coerce(value)
-        end
-      end
-
-      module Date
-        extend T::Sig
-        sig { params(value: T.anything).returns(T.anything) }
-        def self.coerce(value)
-        end
-      end
-    end
-  end
 end

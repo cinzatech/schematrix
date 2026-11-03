@@ -165,15 +165,16 @@ class TestScalarTypes < Minitest::Test
                       "params(id: Id, created_at: Time, amount: Money).void"
       assert_includes code, "MoneyCoercer.coerce(value)"
       assert_includes code,
-                      "Billing::Schematrix::Coercers::DateTime.coerce(value)"
+                      "Billing::CoercionHelper::Coercers::DateTime.coerce(value)"
+      assert_includes code, 'require_relative "coercion_helper"'
       refute_includes code, "def self.coerce_id"
       assert_includes code,
                       "created_at: coerce_created_at(hash[\"created_at\"])"
       assert_includes code, "id: hash[\"id\"]"
-      # The project coercer is referenced by name, never emitted; the
-      # built-in one still is.
+      # Neither coercer is emitted into the class file: the project one
+      # is referenced by name, the built-in one lives in the helper.
       refute_includes code, "module MoneyCoercer"
-      assert_includes code, "module DateTime"
+      refute_includes code, "module DateTime"
     end
   end
 
@@ -212,6 +213,48 @@ class TestScalarTypes < Minitest::Test
       assert_includes code, "MoneyCoercer.coerce(value)"
       refute_includes code, "module DateTime"
       refute_includes code, "Coercers"
+      refute_includes code, "coercion_helper"
+    end
+  end
+
+  def test_builtin_coercers_are_written_once_in_the_helper
+    Dir.mktmpdir do |dir|
+      schema = File.join(dir, "event.json")
+      File.write(schema, <<~JSON)
+        {
+          "type": "object",
+          "properties": {
+            "at": { "type": "string", "format": "date-time" },
+            "day": { "type": "string", "format": "date" }
+          }
+        }
+      JSON
+      output = File.join(dir, "out")
+      Schematrix.generate(
+        generators: [
+          Schematrix::Generators::PlainRuby.new(output, "Once"),
+          Schematrix::Generators::AuxiliaryFiles.new(output, "Once"),
+        ],
+        input_files: [schema],
+      )
+      klass = File.read(File.join(output, "event.rb"))
+      helper = File.read(File.join(output, "coercion_helper.rb"))
+
+      refute_includes klass, "module Coercers"
+      assert_includes klass, 'require_relative "coercion_helper"'
+      assert_equal 1, helper.scan("module Coercers").size
+      assert_includes helper, "module Date\n"
+      assert_includes helper, "module DateTime\n"
+
+      require File.join(output, "event.rb")
+      document = { "at" => "2026-01-02T03:04:05Z", "day" => "2026-01-02" }
+      event = Once::Event.from_h(document)
+
+      assert_equal Time.utc(2026, 1, 2, 3, 4, 5), event.at
+      assert_equal Date.new(2026, 1, 2), event.day
+      assert_equal document, event.to_h
+    ensure
+      Object.send(:remove_const, :Once) if Object.const_defined?(:Once)
     end
   end
 

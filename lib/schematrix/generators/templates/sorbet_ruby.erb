@@ -67,9 +67,4 @@ module <%= @module_name %>
     attr_reader :_extra
     <% end %>
 <%= declaration_close %>
-<% coercer_block = coercer_modules_block(sig: sorbet_coercion_signature) %>
-<% unless coercer_block.empty? %>
-
-<%= coercer_block %>
-<% end %>
 end
