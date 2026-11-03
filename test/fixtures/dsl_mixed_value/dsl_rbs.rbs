@@ -1,15 +1,21 @@
 module M
   module Dsl
-    class Schema
-      def self.build: { (Schema) -> void } -> Hash[String, top]
+    module Schema
+      def self.build: { -> void } -> Hash[String, top]
 
-      def initialize: -> void
-
-      def option: (top value) ?{ (Schema::Props::Option) -> void } -> instance
+      def option: (top value) ?{ -> void } -> instance
 
       def extra: (String key, top value) -> instance
 
       def to_h: -> Hash[String, top]
+
+      private
+
+      def dsl_fields: -> Hash[String, top]
+
+      class Builder
+        include ::M::Dsl::Schema
+      end
     end
   end
 end

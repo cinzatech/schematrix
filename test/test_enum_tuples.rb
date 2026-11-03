@@ -51,11 +51,11 @@ class TestEnumTuples < Minitest::Test
       assert_raises(KeyError) do
         namespace::Record.from_h("values" => ["bad", 2])
       end
-      builder = namespace::Dsl::Record.new
+      builder = namespace::Dsl::Record::Builder.new
       builder.values(first::A)
       builder.values(second::N2)
       assert_equal instance.to_h, builder.to_h
-      builder = namespace::Dsl::Record.new
+      builder = namespace::Dsl::Record::Builder.new
       builder.values("a", 2)
       assert_equal instance.to_h, builder.to_h
       signatures = File.read(File.join(output, "record.rbs"))

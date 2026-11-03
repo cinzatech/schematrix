@@ -4,7 +4,7 @@
 
 `schematrix` is a Ruby gem and CLI tool that reads [JSON Schema](https://json-schema.org/) files and produces idiomatic Ruby source code. Point it at a schema, choose a generator, and get ready-to-use Ruby classes and type signatures written into your project.
 
-Sixteen per-class output formats share one compiler: plain Ruby classes, Ruby classes with inline Sorbet signatures, Sorbet RBI files, RBS signature files, and each of those four notations again as a builder DSL, a partial class family, and enum classes. The DSL classes define instances of the schema through plain method calls; running one builds the document as a Hash, and parsing one reconstructs the same document statically.
+Sixteen per-class output formats share one compiler: plain Ruby classes, Ruby classes with inline Sorbet signatures, Sorbet RBI files, RBS signature files, and each of those four notations again as a builder DSL, a partial class family, and enum classes. The DSL modules define instances of the schema through plain method calls, and a project mixes them into its own classes; running one builds the document as a Hash, and parsing one reconstructs the same document statically.
 
 Qualifying string and integer enums can generate named member classes with the four `*_enums` generators, or render as literal unions in RBS. See [Enums](docs/schema-features.md#enums).
 

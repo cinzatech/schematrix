@@ -1,33 +1,39 @@
 module M
   module Dsl
-    class Schema
+    module Schema
       module Props
-        class Entries
-          class Items
+        module Entries
+          module Items
             ORIGINAL_KEYS = { "name" => :name }.freeze
 
             def self.build(&block)
-              builder = new
-              yield builder
+              builder = Builder.new
+              builder.instance_exec(&block)
               builder.to_h
             end
 
-            def initialize
-              @fields = {}
-            end
-
             def name(value)
-              @fields["name"] = value
+              dsl_fields["name"] = value
               self
             end
 
             def extra(key, value)
-              @fields[key] = value
+              dsl_fields[key] = value
               self
             end
 
             def to_h
-              @fields.dup
+              dsl_fields.dup
+            end
+
+            private
+
+            def dsl_fields
+              @dsl_fields ||= {}
+            end
+
+            class Builder
+              include ::M::Dsl::Schema::Props::Entries::Items
             end
           end
         end

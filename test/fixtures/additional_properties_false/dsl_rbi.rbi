@@ -2,21 +2,17 @@
 
 module M
   module Dsl
-    class Schema
+    module Schema
       extend T::Sig
 
       ORIGINAL_KEYS = T.let({ "name" => :name }.freeze, T::Hash[String, Symbol])
 
       sig do
-        params(block: T.proc.params(arg0: Schema).void).returns(
+        params(block: T.proc.bind(::M::Dsl::Schema).void).returns(
           T::Hash[String, T.untyped]
         )
       end
       def self.build(&block)
-      end
-
-      sig { void }
-      def initialize
       end
 
       sig { params(value: String).returns(T.self_type) }
@@ -25,6 +21,16 @@ module M
 
       sig { returns(T::Hash[String, T.untyped]) }
       def to_h
+      end
+
+      private
+
+      sig { returns(T::Hash[String, T.untyped]) }
+      def dsl_fields
+      end
+
+      class Builder
+        include ::M::Dsl::Schema
       end
     end
   end

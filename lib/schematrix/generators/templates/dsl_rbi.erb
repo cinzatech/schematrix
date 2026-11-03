@@ -8,9 +8,6 @@ module <%= @module_name %>
 
     <% end %>    <%= build_signature %>
     def self.build(&block); end
-
-    <%= initialize_signature %>
-    def initialize; end
     <% setter_methods(sigged: true, stub: true).each do |method| %>
 
     <%= method %>
@@ -23,5 +20,12 @@ module <%= @module_name %>
 
     <%= to_h_signature %>
     def to_h; end
+
+    private
+
+    <%= fields_signature %>
+    def dsl_fields; end
+
+    <%= builder_class %>
 <%= declaration_close %>
 end

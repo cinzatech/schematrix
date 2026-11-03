@@ -183,45 +183,45 @@ class TestDslPrism < Minitest::Test
   }.freeze
 
   SOURCE = <<~RUBY
-    M::Dsl::Schema.build do |schema|
-      schema.name "Ada"
-      schema.age 36
-      schema.score 9.5
+    M::Dsl::Schema.build do
+      name "Ada"
+      age 36
+      score 9.5
 
-      schema.address do |address|
-        address.street "1 Main St"
+      address do
+        street "1 Main St"
       end
 
-      schema.hobbies "chess", "programming"
-      schema.hobbies "paper folding"
+      hobbies "chess", "programming"
+      hobbies "paper folding"
 
-      schema.friends do |friend|
-        friend.name "Grace Hopper"
+      friends do
+        name "Grace Hopper"
       end
-      schema.friends do |friend|
-        friend.name "Alan Turing"
-      end
-
-      schema.labels "verified", true
-
-      schema.metadata "mentor" do |mentor|
-        mentor.name "Charles Babbage"
+      friends do
+        name "Alan Turing"
       end
 
-      schema.option "fast"
-      schema.option do |option|
-        option.foo 1
+      labels "verified", true
+
+      metadata "mentor" do
+        name "Charles Babbage"
       end
 
-      schema.mixed "scalar element"
-      schema.mixed do |element|
-        element.name "object element"
+      option "fast"
+      option do
+        foo 1
       end
 
-      schema.matrix [1, 2], [3, 4]
+      mixed "scalar element"
+      mixed do
+        name "object element"
+      end
 
-      schema.extra "nickname", "Ada"
-      schema.extra "config", { "retries" => 3 }
+      matrix [1, 2], [3, 4]
+
+      extra "nickname", "Ada"
+      extra "config", { "retries" => 3 }
     end
   RUBY
 
@@ -237,8 +237,8 @@ class TestDslPrism < Minitest::Test
 
   def test_non_literal_values_are_out_of_contract
     source = <<~RUBY
-      M::Dsl::Schema.build do |schema|
-        schema.age user_age
+      M::Dsl::Schema.build do
+        age user_age
       end
     RUBY
 

@@ -2,24 +2,20 @@
 
 module M
   module Dsl
-    class Schema
+    module Schema
       module Props
-        class Option
+        module Option
           extend T::Sig
 
           ORIGINAL_KEYS =
             T.let({ "foo" => :foo }.freeze, T::Hash[String, Symbol])
 
           sig do
-            params(block: T.proc.params(arg0: Option).void).returns(
-              T::Hash[String, T.untyped]
-            )
+            params(
+              block: T.proc.bind(::M::Dsl::Schema::Props::Option).void
+            ).returns(T::Hash[String, T.untyped])
           end
           def self.build(&block)
-          end
-
-          sig { void }
-          def initialize
           end
 
           sig { params(value: Integer).returns(T.self_type) }
@@ -32,6 +28,16 @@ module M
 
           sig { returns(T::Hash[String, T.untyped]) }
           def to_h
+          end
+
+          private
+
+          sig { returns(T::Hash[String, T.untyped]) }
+          def dsl_fields
+          end
+
+          class Builder
+            include ::M::Dsl::Schema::Props::Option
           end
         end
       end

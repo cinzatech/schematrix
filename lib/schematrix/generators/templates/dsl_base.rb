@@ -5,16 +5,20 @@ require_relative "type_composer"
 module Schematrix
   module Generators
     module Templates
-      # Base class for the DSL generator templates: builders whose
-      # methods define an instance of the schema through plain method
-      # calls. Holds the classification of every property into a
+      # Base class for the DSL generator templates: builder modules
+      # whose methods define an instance of the schema through plain
+      # method calls. A project mixes a builder into its own class,
+      # with extend for a class body or include for instances, or
+      # calls build, which runs the block on the module's own Builder
+      # class. Holds the classification of every property into a
       # setter form and the bodies those forms render to; the
       # notation modules add signatures where the output carries
       # them.
       #
-      # The builder runtime is one hash. Every setter writes the
+      # The builder runtime is one hash, created on first use so the
+      # module needs no initializer. Every setter writes the
       # property's original key into it, nested slots build through
-      # their own builder classes, and to_h hands the hash out. No
+      # their own builder modules, and to_h hands the hash out. No
       # defaults apply and nothing validates, so a document built at
       # runtime holds exactly what the DSL source declared; the parse
       # contract (docs/dsl.md) reconstructs the same hash statically.
@@ -36,12 +40,21 @@ module Schematrix
 
         private
 
-        # The injected leading Dsl segment is the DSL namespace, not
-        # a schema-owned class: it always opens as a module. A later
-        # segment named Dsl is schema property provenance and stays
-        # a class.
-        def container_segment?(segment, index)
-          super || (index.zero? && segment == "Dsl")
+        # Every segment of a builder's name is a module: the Dsl
+        # namespace, the Props and Defs containers, the intermediate
+        # builders a nested one sits under, and the builder itself.
+        # The data classes open their intermediates as classes, and
+        # the two trees never share a constant, so the kinds never
+        # clash.
+        def declaration_open
+          segments = @class_name.split("::")
+          leaf = segments.pop
+          lines = segments.map { |segment| "module #{segment}" }
+          unless @documentation_comment.empty?
+            lines.concat(@documentation_comment.split("\n"))
+          end
+          lines << "module #{leaf}"
+          lines.map { |line| "  #{line}" }.join("\n")
         end
 
         # The original-name key map the builder carries, the same
@@ -61,36 +74,64 @@ module Schematrix
           @property_keys.to_h.key(name.to_sym)
         end
 
-        # The entry point: builds a fresh builder, hands it to the
-        # block, and returns the document.
+        # The entry point: builds a fresh Builder, runs the block on
+        # it, and returns the document. The block takes no parameter:
+        # inside it, self is the builder, so the calls read as a
+        # declaration and a parser has one shape to walk.
         def build_method
           <<~RUBY
             def self.build(&block)
-              builder = new
-              yield builder
+              builder = Builder.new
+              builder.instance_exec(&block)
               builder.to_h
             end
           RUBY
         end
 
-        def initialize_method
-          <<~RUBY
-            def initialize
-              #{fields_assignment}
-            end
-          RUBY
-        end
-
-        def fields_assignment
-          "@fields = {}"
-        end
-
         def to_h_method
           <<~RUBY
             def to_h
-              @fields.dup
+              dsl_fields.dup
             end
           RUBY
+        end
+
+        # The document under construction, created on first use. A
+        # method instead of an initializer, so the module works on
+        # any receiver it is mixed into, a class included in or an
+        # object extended with it. The variable carries the dsl
+        # prefix for the same reason: a host class may own @fields.
+        def fields_method
+          <<~RUBY
+            def dsl_fields
+              @dsl_fields ||= {}
+            end
+          RUBY
+        end
+
+        # The class build runs the block on: an empty class that
+        # includes its enclosing builder module. The include names
+        # the module absolutely: inside the class, a bare name that
+        # matches the module's own, Builder, would resolve to the
+        # class itself.
+        def builder_class
+          <<~RUBY
+            class Builder
+              include #{absolute_own_name}
+            end
+          RUBY
+        end
+
+        # This builder's module, from the root: the one name no
+        # nested constant can shadow.
+        def absolute_own_name
+          "::#{@module_name}::#{@class_name}"
+        end
+
+        # A builder module a signature refers to, from the root, for
+        # the same reason.
+        def absolute_builder(term)
+          "::#{qualified_builder(term)}"
         end
 
         # Every property setter in declaration order. `sigged` pairs
@@ -186,7 +227,7 @@ module Schematrix
           false
         end
 
-        # The builder class a slot delegates to, qualified from the
+        # The builder module a slot delegates to, qualified from the
         # output module root through the Dsl namespace so nested
         # declarations can never shadow it.
         def qualified_builder(term)
@@ -228,14 +269,14 @@ module Schematrix
           if kind == :extra_objects
             <<~RUBY
               def extra(key, &block)
-                @fields[key] = #{qualified_builder(extra_builder_term)}.build(&block)
+                dsl_fields[key] = #{qualified_builder(extra_builder_term)}.build(&block)
                 self
               end
             RUBY
           else
             <<~RUBY
               def extra(key, value)
-                @fields[key] = value
+                dsl_fields[key] = value
                 self
               end
             RUBY
@@ -300,7 +341,7 @@ module Schematrix
           when :scalar
             <<~RUBY
               def #{name}(value)
-                @fields[#{key}] = #{value}
+                dsl_fields[#{key}] = #{value}
                 self
               end
             RUBY
@@ -308,8 +349,8 @@ module Schematrix
             <<~RUBY
               def #{name}(&block)
                 child = #{qualified_builder(property_builder_term(name))}.build(&block)
-                current = @fields[#{key}]
-                @fields[#{key}] = current.is_a?(Hash) ? current.merge(child) : child
+                current = dsl_fields[#{key}]
+                dsl_fields[#{key}] = current.is_a?(Hash) ? current.merge(child) : child
                 self
               end
             RUBY
@@ -317,7 +358,7 @@ module Schematrix
             values = enum_array_values(name, value)
             <<~RUBY
               def #{name}(*values)
-                target = (@fields[#{key}] ||= [])
+                target = (dsl_fields[#{key}] ||= [])
                 target.concat(#{values})
                 self
               end
@@ -325,7 +366,7 @@ module Schematrix
           when :array_objects
             <<~RUBY
               def #{name}(&block)
-                target = (@fields[#{key}] ||= [])
+                target = (dsl_fields[#{key}] ||= [])
                 target << #{qualified_builder(element_builder_term(name))}.build(&block)
                 self
               end
@@ -334,7 +375,7 @@ module Schematrix
             builder = qualified_builder(element_builder_term(name))
             <<~RUBY
               def #{name}(*values, &block)
-                target = (@fields[#{key}] ||= [])
+                target = (dsl_fields[#{key}] ||= [])
                 target.concat(values)
                 target << #{builder}.build(&block) if block
                 self
@@ -343,7 +384,7 @@ module Schematrix
           when :map_scalars
             <<~RUBY
               def #{name}(key, value)
-                target = (@fields[#{key}] ||= {})
+                target = (dsl_fields[#{key}] ||= {})
                 target[key] = #{value}
                 self
               end
@@ -351,7 +392,7 @@ module Schematrix
           when :map_objects
             <<~RUBY
               def #{name}(key, &block)
-                target = (@fields[#{key}] ||= {})
+                target = (dsl_fields[#{key}] ||= {})
                 target[key] = #{qualified_builder(map_builder_term(name))}.build(&block)
                 self
               end
@@ -362,10 +403,10 @@ module Schematrix
               def #{name}(value = nil, &block)
                 if block
                   child = #{builder}.build(&block)
-                  current = @fields[#{key}]
-                  @fields[#{key}] = current.is_a?(Hash) ? current.merge(child) : child
+                  current = dsl_fields[#{key}]
+                  dsl_fields[#{key}] = current.is_a?(Hash) ? current.merge(child) : child
                 else
-                  @fields[#{key}] = value
+                  dsl_fields[#{key}] = value
                 end
                 self
               end

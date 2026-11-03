@@ -1,35 +1,41 @@
 module M
   module Dsl
-    class Schema
+    module Schema
       ORIGINAL_KEYS = { "color" => :color, "count" => :count }.freeze
 
       def self.build(&block)
-        builder = new
-        yield builder
+        builder = Builder.new
+        builder.instance_exec(&block)
         builder.to_h
       end
 
-      def initialize
-        @fields = {}
-      end
-
       def color(value)
-        @fields["color"] = value
+        dsl_fields["color"] = value
         self
       end
 
       def count(value)
-        @fields["count"] = value
+        dsl_fields["count"] = value
         self
       end
 
       def extra(key, value)
-        @fields[key] = value
+        dsl_fields[key] = value
         self
       end
 
       def to_h
-        @fields.dup
+        dsl_fields.dup
+      end
+
+      private
+
+      def dsl_fields
+        @dsl_fields ||= {}
+      end
+
+      class Builder
+        include ::M::Dsl::Schema
       end
     end
   end

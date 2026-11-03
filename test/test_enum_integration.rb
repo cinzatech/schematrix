@@ -59,7 +59,7 @@ class TestEnumIntegration < Minitest::Test
     with_generated do |namespace, _output|
       klass = namespace::Schema
       affiliation = klass::Defs::Affiliation
-      builder = namespace::Dsl::Schema.new
+      builder = namespace::Dsl::Schema::Builder.new
       assert_same builder, builder.status(klass::Props::Status::Active)
       builder.affiliation(affiliation::Employee)
       builder.second(affiliation::Employee)

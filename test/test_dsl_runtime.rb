@@ -56,35 +56,35 @@ class TestDslRuntime < Minitest::Test
   def test_build_produces_the_document_the_dsl_declares
     with_dsl_builders(SCHEMA, "L") do |mod|
       document =
-        mod::Dsl::Schema.build do |schema|
-          schema.name "Ada"
-          schema.age 36
-          schema.score 9.5
+        mod::Dsl::Schema.build do
+          name "Ada"
+          age 36
+          score 9.5
 
-          schema.address { |address| address.street "1 Main St" }
-          schema.address { |address| address.street "2 Main St" }
+          address { street "1 Main St" }
+          address { street "2 Main St" }
 
-          schema.hobbies "chess", "programming"
-          schema.hobbies "paper folding"
+          hobbies "chess", "programming"
+          hobbies "paper folding"
 
-          schema.friends { |friend| friend.name "Grace Hopper" }
-          schema.friends { |friend| friend.name "Alan Turing" }
+          friends { name "Grace Hopper" }
+          friends { name "Alan Turing" }
 
-          schema.labels "verified", true
+          labels "verified", true
 
-          schema.metadata "mentor" do |mentor|
-            mentor.name "Charles Babbage"
+          metadata "mentor" do
+            name "Charles Babbage"
           end
 
-          schema.option "fast"
-          schema.option { |option| option.foo 1 }
+          option "fast"
+          option { foo 1 }
 
-          schema.mixed "scalar element"
-          schema.mixed { |element| element.name "object element" }
+          mixed "scalar element"
+          mixed { name "object element" }
 
-          schema.matrix [1, 2], [3, 4]
+          matrix [1, 2], [3, 4]
 
-          schema.extra "nickname", "Ada"
+          extra "nickname", "Ada"
         end
 
       assert_equal(
@@ -123,9 +123,9 @@ class TestDslRuntime < Minitest::Test
   def test_object_blocks_merge_when_the_slot_holds_a_hash
     with_dsl_builders(SCHEMA, "N") do |mod|
       document =
-        mod::Dsl::Schema.build do |schema|
-          schema.address { |address| address.street "1 Main St" }
-          schema.address { |address| address.street "2 Main St" }
+        mod::Dsl::Schema.build do
+          address { street "1 Main St" }
+          address { street "2 Main St" }
         end
 
       assert_equal({ "street" => "2 Main St" }, document["address"])
@@ -134,7 +134,7 @@ class TestDslRuntime < Minitest::Test
 
   def test_setters_chain_outside_blocks
     with_dsl_builders(SCHEMA, "P") do |mod|
-      builder = mod::Dsl::Schema.new
+      builder = mod::Dsl::Schema::Builder.new
       result = builder.name("Ada").age(36).hobbies("chess")
 
       assert_same builder, result
@@ -152,22 +152,29 @@ class TestDslRuntime < Minitest::Test
         "properties": {
           "to_h": { "type": "string" },
           "extra": { "type": "string" },
-          "build": { "type": "string" }
+          "build": { "type": "string" },
+          "dsl_fields": { "type": "string" }
         }
       }
     JSON
 
     with_dsl_builders(schema, "R") do |mod|
       assert_equal(
-        { "to_h" => :to_h_, "extra" => :extra_, "build" => :build_ },
+        {
+          "to_h" => :to_h_,
+          "extra" => :extra_,
+          "build" => :build_,
+          "dsl_fields" => :dsl_fields_,
+        },
         mod::Dsl::Schema::ORIGINAL_KEYS,
       )
 
       document =
-        mod::Dsl::Schema.build do |schema|
-          schema.to_h_ "reserved"
-          schema.extra_ "also reserved"
-          schema.build_ "still reserved"
+        mod::Dsl::Schema.build do
+          to_h_ "reserved"
+          extra_ "also reserved"
+          build_ "still reserved"
+          dsl_fields_ "reserved too"
         end
 
       assert_equal(
@@ -175,9 +182,75 @@ class TestDslRuntime < Minitest::Test
           "to_h" => "reserved",
           "extra" => "also reserved",
           "build" => "still reserved",
+          "dsl_fields" => "reserved too",
         },
         document,
       )
+    end
+  end
+
+  def test_a_class_extended_with_a_builder_declares_in_its_body
+    with_dsl_builders(SCHEMA, "X") do |mod|
+      declaration =
+        Class.new do
+          extend mod::Dsl::Schema
+
+          name "Ada"
+          hobbies "chess"
+          address { street "1 Main St" }
+        end
+
+      assert_equal(
+        {
+          "name" => "Ada",
+          "hobbies" => ["chess"],
+          "address" => {
+            "street" => "1 Main St",
+          },
+        },
+        declaration.to_h,
+      )
+    end
+  end
+
+  def test_a_builder_named_builder_loads_and_builds
+    schema = <<~JSON
+      {
+        "type": "object",
+        "properties": {
+          "builder": {
+            "type": "object",
+            "properties": { "name": { "type": "string" } }
+          }
+        }
+      }
+    JSON
+
+    with_dsl_builders(schema, "Bn") do |mod|
+      document = mod::Dsl::Schema.build { builder { name "Ada" } }
+
+      assert_equal({ "builder" => { "name" => "Ada" } }, document)
+      assert_kind_of mod::Dsl::Schema::Props::Builder,
+                     mod::Dsl::Schema::Props::Builder::Builder.new
+    end
+  end
+
+  def test_a_frozen_builder_still_answers_to_h
+    with_dsl_builders(SCHEMA, "Fr") do |mod|
+      builder = mod::Dsl::Schema::Builder.new.name("Ada").freeze
+
+      assert_equal({ "name" => "Ada" }, builder.to_h)
+    end
+  end
+
+  def test_an_object_including_a_builder_builds_its_own_document
+    with_dsl_builders(SCHEMA, "I") do |mod|
+      holder = Class.new { include mod::Dsl::Schema }
+      first = holder.new.name("Ada")
+      second = holder.new.name("Grace")
+
+      assert_equal({ "name" => "Ada" }, first.to_h)
+      assert_equal({ "name" => "Grace" }, second.to_h)
     end
   end
 
@@ -196,9 +269,9 @@ class TestDslRuntime < Minitest::Test
       Dir.glob("#{dir}/**/*.rb").each { |file| require file }
 
       document =
-        Co::Dsl::Schema.build do |schema|
-          schema.name "Ada"
-          schema.address { |address| address.street "1 Main St" }
+        Co::Dsl::Schema.build do
+          name "Ada"
+          address { street "1 Main St" }
         end
 
       person = Co::Schema.from_h(document)
