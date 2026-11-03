@@ -134,18 +134,18 @@ module Schematrix
           "::#{qualified_builder(term)}"
         end
 
-        # Every property setter in declaration order. `sigged` pairs
-        # each method with its signature; `stub` renders signature
-        # files' empty bodies.
+        # Every property setter in declaration order, each under the
+        # comment its description becomes. `sigged` pairs each method
+        # with its signature; `stub` renders signature files' empty
+        # bodies.
         def setter_methods(sigged: false, stub: false)
           return [] if @properties.nil?
 
           @properties.filter_map do |name, schema|
             kind = setter_kind(name, schema)
             method = setter_method(name, kind, stub:)
-            next method unless sigged
-
-            "#{setter_signature(name, kind)}\n#{method}"
+            method = "#{setter_signature(name, kind)}\n#{method}" if sigged
+            with_property_comment(schema, method)
           end
         end
 

@@ -14,6 +14,7 @@ module M
       @_extra = T.let({}, T::Hash[String, T.anything])
     end
 
+    # The display name.
     sig { returns(T.nilable(String)) }
     attr_accessor :name
 

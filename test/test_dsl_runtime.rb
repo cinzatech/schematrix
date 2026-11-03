@@ -243,6 +243,45 @@ class TestDslRuntime < Minitest::Test
     end
   end
 
+  def test_a_property_description_comments_its_setter_in_every_flavour
+    schema = <<~JSON
+      {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "The display name." },
+          "age": { "type": "integer" }
+        }
+      }
+    JSON
+    flavours = %w[dsl_plain_ruby dsl_sorbet_ruby dsl_rbi dsl_rbs]
+    sig = "sig { params(value: String).returns(T.self_type) }"
+    expected = {
+      "dsl_plain_ruby" => ["def name(value)"],
+      "dsl_sorbet_ruby" => [sig, "def name(value)"],
+      "dsl_rbi" => [sig, "def name(value)"],
+      "dsl_rbs" => ["def name: (String value) -> instance"],
+    }
+
+    Dir.mktmpdir do |dir|
+      schema_file = File.join(dir, "schema.json")
+      File.write(schema_file, schema)
+      generators =
+        flavours.map do |name|
+          Schematrix::GENERATORS.fetch(name).new(File.join(dir, name), "Dc")
+        end
+      Schematrix.generate(generators:, input_files: [schema_file])
+
+      flavours.each do |name|
+        extension = Schematrix::GENERATORS.fetch(name).file_extension
+        source = File.read(File.join(dir, name, "dsl/schema#{extension}"))
+        commented = ["# The display name.", *expected.fetch(name)]
+
+        assert_includes source, commented.join("\n      "), name
+        refute_includes source, "# The display name.\n      def age", name
+      end
+    end
+  end
+
   def test_an_object_including_a_builder_builds_its_own_document
     with_dsl_builders(SCHEMA, "I") do |mod|
       holder = Class.new { include mod::Dsl::Schema }

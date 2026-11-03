@@ -58,6 +58,13 @@ module Schematrix
         end
 
         def sorbet_attr_accessor(path, name, property)
+          with_property_comment(
+            property,
+            sorbet_attr_accessor_code(path, name, property),
+          )
+        end
+
+        def sorbet_attr_accessor_code(path, name, property)
           type = property_type_of(path, name, property)
           reader = <<~RUBY
             sig { returns(

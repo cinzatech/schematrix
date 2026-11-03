@@ -32,8 +32,10 @@ with `InvalidSchemaError`.
   unconstrained (`T.anything` / `top`) and creates no class. A schema
   that is just `false` accepts nothing and contributes nothing.
 
-The `description` annotation becomes a comment above the generated
-class. `title` is captured but unused. Constraint keywords such as
+The `description` annotation becomes a comment: above the generated
+class for an object's description, and above the accessor, the DSL
+setter and the signature for a property's description, in every
+notation. `title` is captured but unused. Constraint keywords such as
 `pattern`, `minimum`, `minLength` never reach the output: the generated
 classes shape data, they do not validate it.
 

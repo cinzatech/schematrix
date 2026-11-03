@@ -9,6 +9,7 @@ module M
       @_extra = {}
     end
 
+    # The display name.
     attr_accessor :name
 
     def [](key)
