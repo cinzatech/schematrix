@@ -223,11 +223,12 @@ schematrix -g plain_ruby -g auxiliary_files -m MyApp -o app/generated person.sch
 ```
 
 A class requires the module when any of its conversions is
-structured: a nested class, an array, a map, a tuple, or a union. A
-slot whose conversion is one coercer calls the coercer directly, and
-a class with only such slots emits no reference to the module. A run
-that omits the auxiliary generator leaves the requires dangling,
-which fails at load time.
+structured (a nested class, an array, a map, a tuple, or a union), or
+when any of them calls a built-in coercer, because the built-in
+coercers live in the module. A slot whose conversion is one project
+coercer calls that coercer by name, and a class with only such slots
+emits no reference to the module. A run that omits the auxiliary
+generator leaves the requires dangling, which fails at load time.
 
 ## Type mappings
 
