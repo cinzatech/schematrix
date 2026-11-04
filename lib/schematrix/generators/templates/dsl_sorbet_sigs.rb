@@ -17,10 +17,10 @@ module Schematrix
 
         private
 
-        def enum_serialization_expression(klass)
+        def enum_serialization_expression(klass, value)
           <<~RUBY.strip
             begin
-              enum_value = T.let(value, T.anything)
+              enum_value = T.let(#{value}, T.anything)
               case enum_value
               when #{klass}
                 #{klass}.coerce(enum_value)
@@ -29,6 +29,17 @@ module Schematrix
               end
             end
           RUBY
+        end
+
+        # A definition file is data. An unremapped built-in date or
+        # date-time slot types as String, so its source spells the ISO
+        # string the parser accepts; a project remap keeps its own
+        # spelling through the merged scalar type table.
+        def scalar_type(type, format = nil)
+          entry = lookup_scalar_type(type, format)
+          return super unless entry && dsl_builtin_date_entry?(entry)
+
+          "String"
         end
 
         # The document hash is declared where it is first read: a

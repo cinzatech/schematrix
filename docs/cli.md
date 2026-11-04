@@ -48,7 +48,7 @@ any file is written. See [Names and files](naming.md).
 Required. One or more generator names, given as repeated flags or as a
 comma-separated list. The names are `plain_ruby`, `sorbet_ruby`, `rbi`,
 `rbs`, the `dsl_` prefixed builders of each (`dsl_plain_ruby`,
-`dsl_sorbet_ruby`, `dsl_rbi`, `dsl_rbs`), the four `partial_` generators,
+`dsl_sorbet_ruby`, `dsl_rbi`, `dsl_rbs`), `dsl_parser`, the four `partial_` generators,
 and `plain_ruby_enums`, `sorbet_ruby_enums`, `rbi_enums`, `rbs_enums`.
 Only the `*_enums` generators write enum files. There is also
 `auxiliary_files`, the run-once generator that writes
@@ -59,6 +59,18 @@ with a fatal log message and exit status 1.
 schematrix -g plain_ruby,rbs,auxiliary_files -m MyApp schema.json
 schematrix -g plain_ruby -g rbs -g auxiliary_files -m MyApp schema.json
 ```
+
+Generate a standalone parser for DSL source:
+
+```sh
+schematrix -g dsl_parser -m MyApp -o out input.json
+```
+
+This writes `out/parser/input.rb` and automatically includes
+`out/parser/runtime.rb` and `out/parser/parse_error.rb`. It needs no
+builder or enum generator and no separate support generator. Generated
+parsers require Prism 1.4 or later, but do not need Schematrix at runtime.
+See [The instance DSL](dsl.md) for parsing and error handling.
 
 ### `-m, --module`
 

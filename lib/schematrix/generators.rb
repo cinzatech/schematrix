@@ -1,6 +1,7 @@
 require_relative "generators/base"
 require_relative "generators/auxiliary_files"
 require_relative "generators/maybe"
+require_relative "generators/dsl_parser"
 
 module Schematrix
   # The generator registry the CLI resolves `-g` names against:
@@ -19,6 +20,7 @@ module Schematrix
     "rbs" => Generators::Rbs,
     "sorbet_ruby" => Generators::SorbetRuby,
     "rbi" => Generators::Rbi,
+    "dsl_parser" => Generators::DslParser,
     "dsl_plain_ruby" => Generators::DslPlainRuby,
     "dsl_sorbet_ruby" => Generators::DslSorbetRuby,
     "dsl_rbi" => Generators::DslRbi,

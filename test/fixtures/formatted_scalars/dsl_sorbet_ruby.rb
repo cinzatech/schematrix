@@ -1,5 +1,8 @@
 # typed: strict
 
+require "time"
+require "date"
+
 module M
   module Dsl
     module Schema
@@ -27,15 +30,15 @@ module M
         builder.to_h
       end
 
-      sig { params(value: Time).returns(T.self_type) }
+      sig { params(value: String).returns(T.self_type) }
       def created_at(value)
-        dsl_fields["created_at"] = value
+        dsl_fields["created_at"] = (value.is_a?(::Time) ? value.iso8601 : value)
         self
       end
 
-      sig { params(value: Date).returns(T.self_type) }
+      sig { params(value: String).returns(T.self_type) }
       def birthday(value)
-        dsl_fields["birthday"] = value
+        dsl_fields["birthday"] = (value.is_a?(::Date) ? value.iso8601 : value)
         self
       end
 

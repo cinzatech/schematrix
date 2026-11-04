@@ -1,6 +1,7 @@
 require_relative "base"
 require_relative "coercions"
 require_relative "type_composer"
+require_relative "dsl_values"
 
 module Schematrix
   module Generators
@@ -25,6 +26,7 @@ module Schematrix
       class DslBase < Base
         include Coercions
         include TypeComposer
+        include DslValues
 
         # The argument list each setter form renders.
         SETTER_PARAMS = {
@@ -276,67 +278,19 @@ module Schematrix
           else
             <<~RUBY
               def extra(key, value)
-                dsl_fields[key] = value
+                dsl_fields[key] = #{dsl_serialize(dsl_extra_spec, "value")}
                 self
               end
             RUBY
           end
         end
 
-        def enum_setter_value(name, kind)
-          schema = @properties.fetch(name)
-          path = nested_locator(@path, "properties/#{name}")
-          slot = nil
-          case kind
-          when :array_scalars
-            schema = schema.items
-            slot = "items"
-          when :map_scalars
-            schema = schema.additional_properties
-            slot = "additionalProperties"
-          end
-          serialized_enum_value(path, slot, schema)
-        end
-
-        def serialized_enum_value(path, slot, schema)
-          return "value" unless @enums == :classes && schema&.enum_class?
-
-          klass = enum_class_name(path, slot, schema)
-          enum_serialization_expression("::#{@module_name}::#{klass}")
-        end
-
-        def enum_serialization_expression(klass)
-          "value.is_a?(#{klass}) ? #{klass}.coerce(value) : value"
-        end
-
-        def enum_array_values(name, tail)
-          schema = @properties.fetch(name)
-          unless @enums == :classes && schema.prefix_items.any?(&:enum_class?)
-            return tail == "value" ? "values" : "values.map { |value| #{tail} }"
-          end
-
-          path = nested_locator(@path, "properties/#{name}")
-          branches =
-            schema.prefix_items.each_with_index.map do |item, index|
-              value = serialized_enum_value(path, "prefixItems/#{index}", item)
-              "when #{index}\n#{value}"
-            end
-          <<~RUBY.strip
-            values.each_with_index.map do |value, index|
-              case target.size + index
-              #{branches.join("\n")}
-              else
-                #{tail}
-              end
-            end
-          RUBY
-        end
-
         def setter_method(name, kind, stub: false)
           return "def #{name}(#{SETTER_PARAMS[kind]}); end" if stub
 
           key = original_key_of(name).inspect
-          value = enum_setter_value(name, kind)
+          spec = dsl_setter_spec(name, kind)
+          value = dsl_serialize(spec, "value")
           case kind
           when :scalar
             <<~RUBY
@@ -355,7 +309,7 @@ module Schematrix
               end
             RUBY
           when :array_scalars
-            values = enum_array_values(name, value)
+            values = dsl_serialize(spec, "values", offset: "target.size")
             <<~RUBY
               def #{name}(*values)
                 target = (dsl_fields[#{key}] ||= [])
@@ -376,7 +330,7 @@ module Schematrix
             <<~RUBY
               def #{name}(*values, &block)
                 target = (dsl_fields[#{key}] ||= [])
-                target.concat(values)
+                target.concat(#{dsl_serialize(spec, "values", offset: "target.size")})
                 target << #{builder}.build(&block) if block
                 self
               end
@@ -406,7 +360,7 @@ module Schematrix
                   current = dsl_fields[#{key}]
                   dsl_fields[#{key}] = current.is_a?(Hash) ? current.merge(child) : child
                 else
-                  dsl_fields[#{key}] = value
+                  dsl_fields[#{key}] = #{value}
                 end
                 self
               end
