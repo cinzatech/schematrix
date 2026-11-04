@@ -81,10 +81,13 @@ call with a block that takes no parameters. It also accepts a class or
 module declaration containing `extend MyApp::Dsl::Person` and setter
 calls, including declarations inside nested namespace wrappers. The
 `extend` may sit anywhere in the body, as long as it is the only one
-for that builder, and every other statement is a setter call. The
-parser neither executes the source nor creates its declared constants.
-Builder and enum classes do not need to be loaded; enum constants
-resolve statically from the generated metadata.
+for that builder, and every other statement is a setter call. That
+order rule is parse-only: Ruby runs a class body in order, so a
+setter that precedes the `extend` raises `NoMethodError` when the
+file executes, while the parser accepts it. The parser neither
+executes the source nor creates its declared constants. Builder and
+enum classes do not need to be loaded; enum constants resolve
+statically from the generated metadata.
 
 Unknown setters, variables, expressions, `require`, assignments,
 interpolation, splats, and extra top-level statements are rejected.
@@ -94,9 +97,12 @@ Prism 1.4 or later, but does not need Schematrix at runtime.
 
 Errors raise `MyApp::Parser::ParseError`, with `filename`, `line`,
 `column`, `keyword`, and `reason` fields. Lines and columns are 1-based.
-The `keyword` names the setter being applied, and is `nil` when the
-rejected node is not a setter call. If a scalar reader raises, the
-parse error retains that exception as its `cause`.
+The `keyword` names the setter being applied. Failures inside a
+setter's arguments or block keep that setter's keyword, even when the
+exact node is a value expression or a reader call; `keyword` is `nil`
+only when the rejected statement itself is not a setter call. If a
+scalar reader raises, the parse error retains that exception as its
+`cause`.
 
 ## Builder anatomy
 
