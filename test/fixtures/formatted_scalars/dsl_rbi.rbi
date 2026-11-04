@@ -24,11 +24,11 @@ module M
       def self.build(&block)
       end
 
-      sig { params(value: Time).returns(T.self_type) }
+      sig { params(value: String).returns(T.self_type) }
       def created_at(value)
       end
 
-      sig { params(value: Date).returns(T.self_type) }
+      sig { params(value: String).returns(T.self_type) }
       def birthday(value)
       end
 

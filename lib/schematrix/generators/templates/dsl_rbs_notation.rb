@@ -14,6 +14,15 @@ module Schematrix
 
         private
 
+        # A definition file is data: the String spelling of the DSL
+        # date slots, mirroring the Sorbet signatures. See DslValues.
+        def scalar_type(type, format = nil)
+          entry = lookup_scalar_type(type, format)
+          return super unless entry && dsl_builtin_date_entry?(entry)
+
+          "String"
+        end
+
         def build_signature
           "def self.build: () #{bound_block(own_class_name)} " \
             "-> Hash[String, #{untyped}]"

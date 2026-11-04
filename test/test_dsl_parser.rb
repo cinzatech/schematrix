@@ -429,7 +429,7 @@ class TestDslParser < Minitest::Test
           "lookup" => {
             "key" => "read:fifth()",
           },
-          "nested" => [%w[read:sixth() coerced:literal]],
+          "nested" => [%w[read:sixth() literal]],
           "other" => "read:seventh()",
         },
         parser.parse(source),
@@ -437,16 +437,21 @@ class TestDslParser < Minitest::Test
     end
   end
 
-  def test_custom_literal_coercion_runs_once_in_builder_and_parser
+  def test_json_literals_pass_through_custom_coercers_in_both_paths
     with_generated(
       object_schema(format: "custom"),
       builders: true,
       scalar_types: custom_types,
     ) do |parser, namespace, _output|
       source = "#{namespace}::Dsl::Schema.build do; value 'literal'; end"
-      expected = { "value" => "coerced:literal" }
+      expected = { "value" => "literal" }
       assert_equal expected, parser.parse(source)
       assert_equal expected, eval(source) # rubocop:disable Security/Eval
+      builder = Object.const_get(namespace)::Dsl::Schema
+      assert_equal(
+        { "value" => "coerced:#{Color.new("raw")}" },
+        builder.build { value Color.new("raw") },
+      )
     end
   end
 
@@ -476,7 +481,7 @@ class TestDslParser < Minitest::Test
           values "third", "fourth"
         end
       RUBY
-      expected = { "values" => [1, "coerced:second", "third", "fourth"] }
+      expected = { "values" => [1, "second", "third", "fourth"] }
       assert_equal expected, parser.parse(source)
       assert_equal expected, eval(source) # rubocop:disable Security/Eval
     end
@@ -601,6 +606,174 @@ class TestDslParser < Minitest::Test
           )
         end
       end
+    end
+  end
+
+  def test_builders_generate_alongside_conflicting_readers_without_a_parser
+    schema = {
+      type: "object",
+      properties: {
+        value: {
+          anyOf: [
+            { type: "string", format: "color" },
+            { type: "integer", format: "id" },
+          ],
+        },
+      },
+    }
+    types = {
+      %w[string color] =>
+        Schematrix::ScalarType.new(
+          sorbet: "String",
+          rbs: "String",
+          reader: ColorReader,
+        ),
+      %w[integer id] =>
+        Schematrix::ScalarType.new(
+          sorbet: "Integer",
+          rbs: "Integer",
+          reader: Reader,
+        ),
+    }
+    Dir.mktmpdir do |dir|
+      input = File.join(dir, "schema.json")
+      File.write(input, JSON.generate(schema))
+      output = File.join(dir, "output")
+      generator =
+        Schematrix::Generators::DslPlainRuby.new(
+          output,
+          "NoParser",
+          scalar_types: types,
+        )
+      Schematrix.generate(generators: [generator], input_files: [input])
+      assert File.file?(File.join(output, "dsl/schema.rb"))
+    end
+  end
+
+  def test_unremapped_date_slots_type_as_string_and_remaps_keep_their_spelling
+    schema = {
+      type: "object",
+      properties: {
+        day: {
+          type: "string",
+          format: "date",
+        },
+        stamp: {
+          type: "string",
+          format: "date-time",
+        },
+      },
+    }
+    remap =
+      Schematrix::ScalarType.new(
+        sorbet: "MyDate",
+        rbs: "MyDate",
+        coercer: Schematrix::Coercers::Date,
+        reader: DateReader,
+      )
+    Dir.mktmpdir do |dir|
+      input = File.join(dir, "schema.json")
+      File.write(input, JSON.generate(schema))
+
+      plain = File.join(dir, "plain")
+      Schematrix.generate(
+        generators: [Schematrix::Generators::DslSorbetRuby.new(plain, "Sigs")],
+        input_files: [input],
+      )
+      code = File.read(File.join(plain, "dsl/schema.rb"))
+      assert_includes code, "params(value: String)"
+      refute_includes code, "params(value: Time)"
+      refute_includes code, "params(value: Date)"
+
+      remapped = File.join(dir, "remapped")
+      types = { %w[string date] => remap, %w[string date-time] => remap }
+      Schematrix.generate(
+        generators: [
+          Schematrix::Generators::DslSorbetRuby.new(
+            remapped,
+            "Sigs",
+            scalar_types: types,
+          ),
+        ],
+        input_files: [input],
+      )
+      code = File.read(File.join(remapped, "dsl/schema.rb"))
+      assert_includes code, "params(value: MyDate)"
+    end
+  end
+
+  def test_parsed_document_round_trips_through_a_data_class
+    Dir.mktmpdir do |dir|
+      input = File.join(dir, "schema.json")
+      File.write(input, JSON.generate(object_schema))
+      output = File.join(dir, "output")
+      Schematrix.generate(
+        generators: [
+          Schematrix::Generators::PlainRuby.new(output, "Round"),
+          Schematrix::Generators::DslPlainRuby.new(output, "Round"),
+          Schematrix::Generators::DslParser.new(output, "Round"),
+          Schematrix::Generators::AuxiliaryFiles.new(output, "Round"),
+        ],
+        input_files: [input],
+      )
+      Dir.glob("#{output}/**/*.rb").each { |file| require file }
+      source = "Round::Dsl::Schema.build do; value '42'; end"
+      document = Round::Parser::Schema.parse(source)
+      record = Round::Schema.from_h(document)
+      assert_equal document, record.to_h
+    ensure
+      Object.send(:remove_const, :Round) if Object.const_defined?(:Round)
+    end
+  end
+
+  def test_extend_may_appear_anywhere_in_the_declaration_body
+    with_generated(object_schema) do |parser, namespace, _output|
+      first = <<~RUBY
+        module Late
+          value "hello"
+          extend #{namespace}::Dsl::Schema
+          value "world"
+        end
+      RUBY
+      assert_equal({ "value" => "world" }, parser.parse(first))
+
+      middle = <<~RUBY
+        module Mid
+          value "a"
+          extend #{namespace}::Dsl::Schema
+        end
+      RUBY
+      assert_equal({ "value" => "a" }, parser.parse(middle))
+    end
+  end
+
+  def test_non_setter_rejections_omit_the_stale_keyword
+    schema = {
+      type: "object",
+      properties: {
+        other: {
+          type: "integer",
+        },
+        value: {
+          type: "string",
+        },
+      },
+    }
+    with_generated(schema) do |parser, namespace, _output|
+      source = <<~RUBY
+        module Strict
+          extend #{namespace}::Dsl::Schema
+          other 1
+          value "x" if ENV["STRICT"]
+        end
+      RUBY
+      error =
+        assert_raises(Object.const_get(namespace)::Parser::ParseError) do
+          parser.parse(source, filename: "expense.rb")
+        end
+      assert_nil error.keyword
+      assert_equal 4, error.line
+      assert_equal "expected a receiverless setter call", error.reason
     end
   end
 

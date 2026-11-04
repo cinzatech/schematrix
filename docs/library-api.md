@@ -261,11 +261,13 @@ The application must load the reader and its dependencies; generated
 parsers reference it by name. Readers are trusted code and are called
 only for nonliteral nodes at the configured formatted positions,
 including nested arrays, maps, tuples, and extra values. A reader must
-return the final document value, with no second coercion. Literal
-values follow the normal parser path and are normalized by the coercer.
-Reader failures become generated `ParseError` instances with the
-original exception as `cause`. No automatic `Date` constructor reader
-is supplied.
+return the final document value, with no second coercion. JSON
+literal values pass through project coercers unchanged on both paths;
+the coercer runs when a setter receives a value that is not a JSON
+scalar. Reader failures become generated `ParseError` instances with
+the original exception as `cause`. Two distinct readers on one DSL
+value slot fail parser generation with `CoercionConflictError`. No
+automatic `Date` constructor reader is supplied.
 
 Seventeen per-class generator classes exist: `PlainRuby`, `SorbetRuby`, `Rbi`, and
 `Rbs` for the data classes, plus `DslPlainRuby`, `DslSorbetRuby`,

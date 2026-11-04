@@ -3,9 +3,9 @@ module M
     module Schema
       def self.build: { -> void } -> Hash[String, top]
 
-      def created_at: (Time value) -> instance
+      def created_at: (String value) -> instance
 
-      def birthday: (Date value) -> instance
+      def birthday: (String value) -> instance
 
       def email: (String value) -> instance
 

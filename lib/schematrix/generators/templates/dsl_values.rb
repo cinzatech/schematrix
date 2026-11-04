@@ -54,11 +54,6 @@ module Schematrix
           return specs.first if specs.size == 1
 
           conversion_spec(path, name, schema)
-          readers = specs.flat_map { |spec| dsl_slot_readers(spec) }.uniq
-          if readers.size > 1
-            raise CoercionConflictError,
-                  "#{nested}: different readers cannot share one DSL value slot"
-          end
           [:union, specs]
         end
 
@@ -75,6 +70,18 @@ module Schematrix
           else
             []
           end
+        end
+
+        # Whether the entry is the built-in date or date-time rendering
+        # itself, compared by identity: a project remap of either format
+        # replaces the entry object, and keeps its own spelling.
+        def dsl_builtin_date_entry?(entry)
+          entry.equal?(
+            Schematrix::BUILTIN_SCALAR_TYPES[[TYPE_STRING, "date"]],
+          ) ||
+            entry.equal?(
+              Schematrix::BUILTIN_SCALAR_TYPES[[TYPE_STRING, "date-time"]],
+            )
         end
 
         def dsl_property_spec(name)
@@ -172,7 +179,9 @@ module Schematrix
           elsif entry.coercer == Coercers::DateTime
             "(#{value}.is_a?(::Time) ? #{value}.iso8601 : #{value})"
           else
-            "::#{entry.coercer.name}.coerce(#{value})"
+            "(case #{value} when ::String, ::Integer, ::Float, true, false, " \
+              "nil then #{value} " \
+              "else ::#{entry.coercer.name}.coerce(#{value}) end)"
           end
         end
 
@@ -252,6 +261,12 @@ module Schematrix
             prefix = spec[1].map { |sub| dsl_parser_value(sub) }
             "[:array, [#{prefix.join(", ")}], #{dsl_parser_value(spec[2])}]"
           when :union
+            readers = spec[1].flat_map { |sub| dsl_slot_readers(sub) }.uniq
+            if readers.size > 1
+              raise CoercionConflictError,
+                    "#{@path}: different readers cannot share one DSL " \
+                      "value slot"
+            end
             branches = spec[1].map { |sub| dsl_parser_value(sub) }
             "[:union, [#{branches.join(", ")}]]"
           end

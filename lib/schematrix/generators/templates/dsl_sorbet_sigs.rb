@@ -31,6 +31,17 @@ module Schematrix
           RUBY
         end
 
+        # A definition file is data. An unremapped built-in date or
+        # date-time slot types as String, so its source spells the ISO
+        # string the parser accepts; a project remap keeps its own
+        # spelling through the merged scalar type table.
+        def scalar_type(type, format = nil)
+          entry = lookup_scalar_type(type, format)
+          return super unless entry && dsl_builtin_date_entry?(entry)
+
+          "String"
+        end
+
         # The document hash is declared where it is first read: a
         # module has no initializer, and typed: strict accepts an
         # instance variable declared nilable inside its own ||=. A

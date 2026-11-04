@@ -79,10 +79,12 @@ included in an application class. An override can call `super`.
 The parser accepts one fully qualified `MyApp::Dsl::Person.build`
 call with a block that takes no parameters. It also accepts a class or
 module declaration containing `extend MyApp::Dsl::Person` and setter
-calls, including declarations inside nested namespace wrappers. It
-neither executes the source nor creates its declared constants. Builder
-and enum classes do not need to be loaded; enum constants resolve
-statically from the generated metadata.
+calls, including declarations inside nested namespace wrappers. The
+`extend` may sit anywhere in the body, as long as it is the only one
+for that builder, and every other statement is a setter call. The
+parser neither executes the source nor creates its declared constants.
+Builder and enum classes do not need to be loaded; enum constants
+resolve statically from the generated metadata.
 
 Unknown setters, variables, expressions, `require`, assignments,
 interpolation, splats, and extra top-level statements are rejected.
@@ -92,8 +94,9 @@ Prism 1.4 or later, but does not need Schematrix at runtime.
 
 Errors raise `MyApp::Parser::ParseError`, with `filename`, `line`,
 `column`, `keyword`, and `reason` fields. Lines and columns are 1-based.
-If a scalar reader raises, the parse error retains that exception as
-its `cause`.
+The `keyword` names the setter being applied, and is `nil` when the
+rejected node is not a setter call. If a scalar reader raises, the
+parse error retains that exception as its `cause`.
 
 ## Builder anatomy
 
@@ -221,23 +224,28 @@ absolute enum class references such as
 namespace shadowing. Only the `*_enums` generators write those classes.
 
 Built-in date and date-time setters dump `Date` and `Time` objects to
-ISO strings and leave literal ISO strings untouched. There is no
+ISO strings and leave literal ISO strings untouched. Their DSL setter
+signatures type the slot as `String`, so a definition file spells the
+ISO string the parser accepts. A `scalar_types:` remap of either
+format replaces that spelling like any other format. There is no
 built-in reader for expressions such as `Date.new(2025, 1, 1)`.
 
-Project coercers run once for supplied values. The parser also
-normalizes literal values through the configured coercer. This applies
-to nested arrays, maps, tuple positions, and extra values with formats.
-For other values, the runtime stores what the setter receives. The
-parse contract bounds what a data file may contain, not what the
-setter body accepts.
+JSON scalar literals pass through project coercers unchanged, on both
+paths: a literal string stays the string it spells, and the document
+holds document values, ready for a data class's `from_h`. A coercer
+runs when the setter receives a project value that is not a JSON
+scalar. This applies to nested arrays, maps, tuple positions, and
+extra values with formats. For other values, the runtime stores what
+the setter receives. The parse contract bounds what a data file may
+contain, not what the setter body accepts.
 
 ### Trusted scalar readers
 
 A `ScalarType` can have a `reader:` module or class with a `.read(node)`
 method. The parser calls it only for a nonliteral Prism node in that
 configured format slot. It must return the final document value; the
-parser does not coerce that result again. Literal nodes still use the
-normal literal path and coercer.
+parser does not coerce that result again. Literal nodes keep the
+values they spell.
 
 Readers apply at the same formatted positions as coercers, including
 nested containers and extra values. They do not enable expressions in
@@ -258,7 +266,10 @@ everywhere in schematrix.
 
 The Sorbet format declares every setter, under `# typed: strict`. Setter
 value types come from the schema: `String` for a string property,
-`T.any(String, Integer)` for a union. A block is declared with
+`T.any(String, Integer)` for a union. Unremapped built-in `date` and
+`date-time` slots type as `String`, so a typed definition file spells
+the ISO string the parser accepts; a `scalar_types:` remap keeps its
+own spelling. A block is declared with
 `T.proc.bind(Child).void`, the type of a block that `instance_exec`
 runs on the child builder, so the calls inside it typecheck against the
 child. Setters return `T.self_type`, so chains check.

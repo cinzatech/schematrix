@@ -4,6 +4,8 @@ module Schematrix
       module DslParserRuntime
         BODY = <<~'RUBY'
           # Reports source coordinates with callback failures retained as causes.
+          # The keyword names the setter being applied, and stays nil for
+          # rejections that are not setter calls.
           class ParseError < StandardError
             attr_reader :filename, :line, :column, :keyword, :reason
 
@@ -13,7 +15,8 @@ module Schematrix
               @column = column
               @keyword = keyword
               @reason = reason
-              super("#{filename}:#{line}:#{column}: #{keyword}: #{reason}")
+              subject = keyword ? "#{keyword}: #{reason}" : reason
+              super("#{filename}:#{line}:#{column}: #{subject}")
             end
           end
 
@@ -39,31 +42,31 @@ module Schematrix
             def initialize(filename)
               @filename = filename
               @nesting = []
-              @keyword = "source"
+              @keyword = nil
             end
 
             def parse(source, contract)
               result = Prism.parse(source, filepath: @filename)
               unless result.success?
                 error = result.errors.first
-                fail_at(error.location, error.message)
+                fail_at(error.location, error.message, keyword: nil)
               end
               if result.data_loc
-                fail_at(result.data_loc, "trailing data is not supported")
+                fail_at(result.data_loc, "trailing data is not supported", keyword: nil)
               end
               entry(statements(result.value.statements), contract)
             end
 
             private
 
-            def fail_at(node, reason)
+            def fail_at(node, reason, keyword: @keyword)
               location = node.respond_to?(:location) ? node.location : node
               error =
                 ParseError.new(
                   filename: @filename,
                   line: location&.start_line || 1,
                   column: (location&.start_character_column || 0) + 1,
-                  keyword: @keyword,
+                  keyword: keyword,
                   reason: reason,
                 )
               raise error
@@ -80,7 +83,7 @@ module Schematrix
 
             def entry(nodes, contract)
               unless nodes.length == 1
-                fail_at(nodes[1] || nodes.first, "expected exactly one document")
+                fail_at(nodes[1] || nodes.first, "expected exactly one document", keyword: nil)
               end
               node = nodes.first
               case node
@@ -90,35 +93,37 @@ module Schematrix
                 valid = node.name == :build && !node.safe_navigation?
                 valid &&= constant_path(node.receiver) == contract.fetch(:builder)
                 valid &&= arguments(node).empty?
-                fail_at(node, "expected the qualified builder.build entry") unless valid
+                fail_at(node, "expected the qualified builder.build entry", keyword: nil) unless valid
                 document(block_body(node.block, node), contract)
               else
-                fail_at(node, "unsupported document entry")
+                fail_at(node, "unsupported document entry", keyword: nil)
               end
             end
 
             def declaration(node, contract)
               if node.is_a?(Prism::ClassNode) && node.superclass
-                fail_at(node, "class superclasses are not supported")
+                fail_at(node, "class superclasses are not supported", keyword: nil)
               end
               path = constant_path(node.constant_path)
-              fail_at(node, "invalid declaration name") unless path
+              fail_at(node, "invalid declaration name", keyword: nil) unless path
               rooted = node.constant_path.location.slice.start_with?("::")
               full = rooted || @nesting.empty? ? path : "#{@nesting.first}::#{path}"
               @nesting.unshift(full)
               body = statements(node.body)
-              first = body.first
-              if first.is_a?(Prism::CallNode) && first.name == :extend
-                valid = first.receiver.nil? && first.block.nil?
-                valid &&= arguments(first).length == 1
-                valid &&=
-                  constant_path(arguments(first).first) == contract.fetch(:builder)
-                fail_at(first, "expected extend with the qualified builder") unless valid
-                document(body.drop(1), contract)
+              extends =
+                body.select do |statement|
+                  statement.is_a?(Prism::CallNode) && statement.name == :extend &&
+                    statement.receiver.nil? && statement.block.nil? &&
+                    arguments(statement).length == 1 &&
+                    constant_path(arguments(statement).first) == contract.fetch(:builder)
+                end
+              if extends.length == 1
+                document(body - [extends.first], contract)
               else
+                first = body.first
                 wrapper = first.is_a?(Prism::ModuleNode) || first.is_a?(Prism::ClassNode)
                 unless body.length == 1 && wrapper
-                  fail_at(first || node, "declaration body must start with extend")
+                  fail_at(extends[1] || first || node, "expected extend with the qualified builder", keyword: nil)
                 end
                 entry(body, contract)
               end
@@ -158,9 +163,10 @@ module Schematrix
 
             def document(nodes, contract)
               output = {}
+              @keyword = nil
               nodes.each do |node|
                 unless node.is_a?(Prism::CallNode) && node.receiver.nil?
-                  fail_at(node, "expected a receiverless setter call")
+                  fail_at(node, "expected a receiverless setter call", keyword: nil)
                 end
                 @keyword = node.name.to_s
                 setter = contract.fetch(:setters)[@keyword]
