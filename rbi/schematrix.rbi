@@ -22,6 +22,11 @@ module Schematrix
       T::Hash[[String, T.nilable(String)], Schematrix::ScalarType],
     )
 
+  # The cumulative compilation work limit the pipeline enforces.
+  class CompilationBudget
+    DEFAULT_LIMIT = T.let(T.unsafe(nil), Integer)
+  end
+
   class << self
     # The pipeline logs through this object when one is set; nil keeps a
     # library run silent. Anything answering debug, info, warn and fatal
@@ -44,13 +49,15 @@ module Schematrix
         input_files: T::Array[String],
         closed_shapes: T::Boolean,
         schema_dirs: T::Array[String],
+        max_compilation_work: Integer,
       ).returns(T::Hash[String, Schematrix::Schema])
     end
     def generate(
       generators:,
       input_files:,
       closed_shapes: false,
-      schema_dirs: []
+      schema_dirs: [],
+      max_compilation_work: CompilationBudget::DEFAULT_LIMIT
     )
     end
   end
@@ -67,9 +74,10 @@ module Schematrix
         sorbet: String,
         rbs: String,
         coercer: T.nilable(T::Module[T.anything]),
+        reader: T.nilable(T::Module[T.anything]),
       ).void
     end
-    def initialize(sorbet:, rbs:, coercer: nil)
+    def initialize(sorbet:, rbs:, coercer: nil, reader: nil)
     end
 
     sig { returns(String) }
@@ -82,6 +90,10 @@ module Schematrix
 
     sig { returns(T.nilable(T::Module[T.anything])) }
     def coercer
+    end
+
+    sig { returns(T.nilable(T::Module[T.anything])) }
+    def reader
     end
 
     sig { returns(T::Boolean) }
@@ -283,6 +295,9 @@ module Schematrix
     end
 
     class DslRbs < Base
+    end
+
+    class DslParser < Base
     end
 
     class PartialPlainRuby < Base

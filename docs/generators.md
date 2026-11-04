@@ -1,6 +1,6 @@
 # Generators
 
-A generator renders compiled schema records as source files. Sixteen
+A generator renders compiled schema records as source files. Seventeen
 per-class generators exist:
 
 | Name | Files | Contents |
@@ -13,6 +13,7 @@ per-class generators exist:
 | `dsl_sorbet_ruby` | `.rb` | Instance DSL builders with inline Sorbet `sig` blocks, `# typed: strict`. |
 | `dsl_rbi` | `.rbi` | Sorbet interface files for the instance DSL builders. |
 | `dsl_rbs` | `.rbs` | RBS signature files for the instance DSL builders. |
+| `dsl_parser` | `.rb` | Prism parsers that reconstruct DSL documents without executing their source. |
 | `partial_plain_ruby` | `.rb` | Partial classes, no type annotations. |
 | `partial_sorbet_ruby` | `.rb` | Partial classes with inline Sorbet `sig` blocks, `# typed: strict`. |
 | `partial_rbi` | `.rbi` | Sorbet interface files for the partial classes. |
@@ -68,13 +69,35 @@ the command line, the four data generators write frozen value objects
 instead: readers instead of accessors, a `with` copier, and value
 equality. See [Immutable classes](generated-code.md).
 
-The `dsl_` generators write builders instead of data classes: modules
-whose methods define one instance of the schema, to mix into a class
-or to run through `build`. They nest under a `Dsl` module level and a
-`dsl/` file prefix, so both families can share an output directory.
-The call grammar, the parse contract, and the Sorbet story live in
-[The instance DSL](dsl.md); the rest of this page is about the data
-classes.
+The four DSL builder generators write modules whose methods define
+one instance of the schema, to mix into a class or to run through
+`build`. They nest under a `Dsl` module level and a `dsl/` file prefix,
+so both families can share an output directory. The call grammar, the
+parse contract, and the Sorbet story live in [The instance DSL](dsl.md).
+
+## dsl_parser
+
+`dsl_parser` writes parser modules under `MyApp::Parser`, in `parser/`.
+It also writes `parser/runtime.rb` and `parser/parse_error.rb`
+automatically. No separate support generator is needed.
+
+```sh
+schematrix -g dsl_parser -m MyApp -o out input.json
+```
+
+Each module provides `parse(source, filename: "(dsl)")` and
+`parse_file(path)`, returning a document Hash. The methods can also be
+included in an application class and overridden with `super`.
+Generated parsers need Prism 1.4 or later and the standard library, but
+no Schematrix, builder, or enum classes at runtime. They resolve enum
+constants statically and reject source outside the DSL grammar.
+Configured scalar readers are an explicit trusted exception for
+nonliteral values in formatted slots.
+
+The parser refuses `immutable: true` and `optionals: :maybe`, as the
+builders do. It does not apply defaults, check required properties, or
+validate schemas. See [The instance DSL](dsl.md) for accepted source
+forms, errors, and scalar readers.
 
 ## plain_ruby
 
@@ -178,14 +201,6 @@ module MyApp
   end
 end
 ```
-
-The `dsl_` generators write builders instead of data classes: modules
-whose methods define one instance of the schema, to mix into a class
-or to run through `build`. They nest under a `Dsl` module level and a
-`dsl/` file prefix, so both families can share an output directory.
-The call grammar, the parse contract, and the Sorbet story live in
-[The instance DSL](dsl.md); the rest of this page is about the data
-classes.
 
 The `partial_` generators write partial classes: every property wraps in
 the Maybe type, required ones included, so the class records which keys

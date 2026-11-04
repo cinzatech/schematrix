@@ -1,0 +1,19 @@
+<%= parser_requires %>
+<% unless dsl_builtin_requires.empty? %><%= dsl_builtin_requires %>
+<% end %>
+module <%= @module_name %>
+<%= declaration_open %>
+    CONTRACT = <%= parser_contract %>
+
+    def parse(source, filename: "(dsl)")
+      ::<%= @module_name %>::Parser::Runtime.parse(source, filename: filename, contract: CONTRACT)
+    end
+
+    def parse_file(path)
+      parse(File.read(path), filename: path.to_s)
+    end
+
+    extend self
+<%= declaration_close %>
+end
+<%= parser_child_requires %>

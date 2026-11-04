@@ -79,6 +79,13 @@ module Schematrix
     schema_dirs: [],
     max_compilation_work: CompilationBudget::DEFAULT_LIMIT
   )
+    support =
+      generators
+        .flat_map(&:support_generators)
+        .uniq do |generator|
+          [generator.class, generator.output_dir, generator.module_name]
+        end
+    generators += support
     mode = enum_mode(generators)
     enum_writers =
       generators.any? { |generator| generator.class.enum_generator? }

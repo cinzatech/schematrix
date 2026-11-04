@@ -4,7 +4,7 @@
 
 `schematrix` is a Ruby gem and CLI tool that reads [JSON Schema](https://json-schema.org/) files and produces idiomatic Ruby source code. Point it at a schema, choose a generator, and get ready-to-use Ruby classes and type signatures written into your project.
 
-Sixteen per-class output formats share one compiler: plain Ruby classes, Ruby classes with inline Sorbet signatures, Sorbet RBI files, RBS signature files, and each of those four notations again as a builder DSL, a partial class family, and enum classes. The DSL modules define instances of the schema through plain method calls, and a project mixes them into its own classes; running one builds the document as a Hash, and parsing one reconstructs the same document statically.
+Seventeen per-class output formats share one compiler: plain Ruby classes, Ruby classes with inline Sorbet signatures, Sorbet RBI files, RBS signature files, and each of those four notations again as a builder DSL, a partial class family, and enum classes, plus a standalone DSL parser. The DSL modules define instances of the schema through plain method calls, and a project mixes them into its own classes; running one builds the document as a Hash, and parsing one reconstructs the same document statically.
 
 Qualifying string and integer enums can generate named member classes with the four `*_enums` generators, or render as literal unions in RBS. See [Enums](docs/schema-features.md#enums).
 
@@ -183,6 +183,16 @@ Generate plain Ruby classes for a single schema:
 schematrix -g plain_ruby -g auxiliary_files -m MyApp -o app/generated schema.json
 ```
 
+Generate a standalone DSL parser, with its support files included:
+
+```sh
+schematrix -g dsl_parser -m MyApp -o out input.json
+```
+
+The generated parser needs Prism 1.4 or later, but no Schematrix runtime.
+See [The instance DSL](docs/dsl.md) for the accepted grammar and reader
+extensions.
+
 Process multiple schemas at once:
 
 ```sh
@@ -256,6 +266,7 @@ The four enum generators write qualifying enum schema files:
 | `dsl_sorbet_ruby`   | Instance DSL builders with inline Sorbet `sig` blocks           |
 | `dsl_rbi`           | Sorbet signature files for the instance DSL builders            |
 | `dsl_rbs`           | RBS signature files for the instance DSL builders               |
+| `dsl_parser`        | Prism parsers for DSL source, without executing the source      |
 | `partial_plain_ruby` | Partial classes, every property wrapped in the Maybe type       |
 | `partial_sorbet_ruby` | Partial classes with inline Sorbet `sig` blocks                |
 | `partial_rbi`       | Sorbet signature files for the partial classes                  |

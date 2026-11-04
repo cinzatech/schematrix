@@ -1,6 +1,6 @@
 # The instance DSL
 
-The four `dsl_` generators produce builders: Ruby modules whose methods
+The four DSL builder generators produce Ruby modules whose methods
 describe an instance of the schema. A schema for people generates
 `MyApp::Dsl::Person`, and a block of plain method calls on it defines one
 document:
@@ -22,9 +22,8 @@ The same source serves two readers:
 
 - Ruby runs it. `build` returns the document as a Hash, ready for
   `JSON.generate` or for a generated data class' `from_h`.
-- A parser reads it. The call grammar below is small and regular, so a
-  syntax walker (for example over Prism) reconstructs the same document
-  statically, without running the file.
+- A generated `dsl_parser` reads it with Prism and reconstructs the same
+  document statically, without running the file.
 
 The output formats are the usual four: `dsl_plain_ruby` (`.rb`), with
 `dsl_sorbet_ruby` (`.rb`, `# typed: strict`), `dsl_rbi` (`.rbi`), and
@@ -45,13 +44,64 @@ prefix keeps them apart as constants and as files. Below the prefix the
 names follow the same rules as the data classes, including the `Props`
 and `Defs` levels (see [Names and files](naming.md)).
 
+## Parsing without execution
+
+Generate a parser on its own:
+
+```sh
+schematrix -g dsl_parser -m MyApp -o out input.json
+```
+
+For a `person.json` schema, the generator writes
+`parser/person.rb`, `parser/runtime.rb`, and `parser/parse_error.rb`
+under the output directory. The support files are automatic; do not
+select a separate generator for them.
+
+```ruby
+require_relative "out/parser/person"
+
+MyApp::Parser::Person.parse(<<~RUBY, filename: "ada.rb")
+  MyApp::Dsl::Person.build do
+    first_name "Ada"
+    age 36
+  end
+RUBY
+# => { "firstName" => "Ada", "age" => 36 }
+
+MyApp::Parser::Person.parse_file("ada.rb")
+```
+
+`parse(source, filename: "(dsl)")` returns a Hash. `parse_file(path)`
+reads the file and uses its path in diagnostics. Parser modules use
+`extend self`: both methods are callable on the module and can be
+included in an application class. An override can call `super`.
+
+The parser accepts one fully qualified `MyApp::Dsl::Person.build`
+call with a block that takes no parameters. It also accepts a class or
+module declaration containing `extend MyApp::Dsl::Person` and setter
+calls, including declarations inside nested namespace wrappers. It
+neither executes the source nor creates its declared constants. Builder
+and enum classes do not need to be loaded; enum constants resolve
+statically from the generated metadata.
+
+Unknown setters, variables, expressions, `require`, assignments,
+interpolation, splats, and extra top-level statements are rejected.
+A configured scalar reader is the only explicit exception for nonliteral
+values (see below). The generated code needs the standard library and
+Prism 1.4 or later, but does not need Schematrix at runtime.
+
+Errors raise `MyApp::Parser::ParseError`, with `filename`, `line`,
+`column`, `keyword`, and `reason` fields. Lines and columns are 1-based.
+If a scalar reader raises, the parse error retains that exception as
+its `cause`.
+
 ## Builder anatomy
 
 Each builder is a module that carries:
 
 - `ORIGINAL_KEYS`, the map from method names to the schema's original
-  property names. Loading and parsing both read it; the methods spell
-  snake case, the document keeps its original keys.
+  property names. The methods spell snake case; the document keeps its
+  original keys. The parser carries its own generated mapping.
 - `self.build`, the entry point: a fresh `Builder`, the block run on
   it with `instance_exec`, and its document returned.
 - One setter per property, shaped by the property's compiled form (next
@@ -170,13 +220,35 @@ absolute enum class references such as
 `::MyApp::Person::Props::Status`, without a `Dsl` prefix, to avoid
 namespace shadowing. Only the `*_enums` generators write those classes.
 
-For other values, the runtime stores whatever the setter receives.
-The parse contract bounds what a data file may contain, not what the
+Built-in date and date-time setters dump `Date` and `Time` objects to
+ISO strings and leave literal ISO strings untouched. There is no
+built-in reader for expressions such as `Date.new(2025, 1, 1)`.
+
+Project coercers run once for supplied values. The parser also
+normalizes literal values through the configured coercer. This applies
+to nested arrays, maps, tuple positions, and extra values with formats.
+For other values, the runtime stores what the setter receives. The
+parse contract bounds what a data file may contain, not what the
 setter body accepts.
+
+### Trusted scalar readers
+
+A `ScalarType` can have a `reader:` module or class with a `.read(node)`
+method. The parser calls it only for a nonliteral Prism node in that
+configured format slot. It must return the final document value; the
+parser does not coerce that result again. Literal nodes still use the
+normal literal path and coercer.
+
+Readers apply at the same formatted positions as coercers, including
+nested containers and extra values. They do not enable expressions in
+unrelated slots. A reader is trusted application code, so its behavior
+is outside the parser's no-execution guarantee. The application must
+load the reader and its dependencies before parsing. See
+[Scalar types](library-api.md#scalar-types) for configuration.
 
 ## Required and defaults
 
-Builders do not enforce `required` and do not apply `default`. The
+Builders and parsers do not enforce `required` and do not apply `default`. The
 document holds exactly what the source declared, so the parse path and
 the run path cannot diverge. Defaults materialize when a data class
 loads the document; validation happens outside the generated code, as
@@ -221,7 +293,7 @@ together warn, as they do for data classes.
 
 ## Limits
 
-- Builders shape data; they never validate. `pattern`, `minimum`, and
+- Builders and parsers shape data; they never validate. `pattern`, `minimum`, and
   their friends have no effect, as for data classes.
 - Schema `default` does not appear in builder output (see above).
 - Tuples (`prefixItems`) feed the array setter positionally; a call

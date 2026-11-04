@@ -17,10 +17,10 @@ module Schematrix
 
         private
 
-        def enum_serialization_expression(klass)
+        def enum_serialization_expression(klass, value)
           <<~RUBY.strip
             begin
-              enum_value = T.let(value, T.anything)
+              enum_value = T.let(#{value}, T.anything)
               case enum_value
               when #{klass}
                 #{klass}.coerce(enum_value)

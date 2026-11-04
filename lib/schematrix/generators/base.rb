@@ -140,6 +140,7 @@ module Schematrix
         assert_optionals_valid
         assert_maybe_valid
         assert_coercers_valid(@scalar_types)
+        assert_readers_valid(@scalar_types)
       end
 
       attr_reader :output_dir, :module_name, :format, :command, :enums
@@ -264,6 +265,8 @@ module Schematrix
       # Whether the generator needs the generated Maybe module in its
       # output directory: the maybe option is on and no project Maybe
       # was supplied.
+      def support_generators = []
+
       def maybe_needed?
         !self.class.enum_generator? && @optionals == :maybe && @maybe.nil?
       end
@@ -383,6 +386,20 @@ module Schematrix
 
       # Whether the generated `coercer.name.coerce(value)` call can
       # resolve: the name must exist and the method with it.
+      def assert_readers_valid(table)
+        table.each_value do |entry|
+          reader = entry.reader
+          next if reader.nil?
+          if reader.is_a?(Module) && reader.name && reader.respond_to?(:read)
+            next
+          end
+
+          raise ArgumentError,
+                "scalar_types reader #{reader.inspect} must be a named " \
+                  "module answering .read(node)"
+        end
+      end
+
       def callable_coercer?(coercer)
         coercer.is_a?(Module) && !coercer.name.nil? &&
           coercer.respond_to?(:coerce)

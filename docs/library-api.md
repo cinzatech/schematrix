@@ -32,6 +32,7 @@ opaque unless you are extending the tool.
 | `input_files`   | array   | Schema document paths, JSON or YAML.                                   |
 | `closed_shapes` | boolean | Absent `additionalProperties` behaves as `false`. Default `false`.     |
 | `schema_dirs`   | array   | Directories remote schema URIs resolve through, in order. Default `[]`.|
+| `max_compilation_work` | integer | Compilation work limit. Default `CompilationBudget::DEFAULT_LIMIT`. |
 
 The library default for `schema_dirs` is empty: unlike the CLI, the
 library does not fall back to `vendor/schemas`. Pass the directories
@@ -114,7 +115,7 @@ generator.write(locator, node) # renders, formats, writes, returns the path
   the project's own, merged over the built-in table (below).
 - Pass `immutable: true` to write data classes as frozen value
   objects: readers instead of accessors, a `with` copier, and value
-  equality. The data generators accept it; the `dsl_` builders refuse
+  equality. The data generators accept it; the DSL builders and parser refuse
   it. See [Immutable classes](generated-code.md).
 - Pass `optionals: :maybe` to type every optional property as
   `Maybe[T]` instead of a nilable type, keeping absent and null apart
@@ -122,7 +123,7 @@ generator.write(locator, node) # renders, formats, writes, returns the path
   `from(value)` and `empty`, and whose instances answer `present?` and
   `when_present`, and the generated code calls through it; without it
   the generator writes its own `Maybe` module once per output
-  directory. The `dsl_` builders refuse the option. See
+  directory. The DSL builders and parser refuse the option. See
   [Maybe optionals](generated-code.md).
 
 Run-once generators write auxiliary files once per run instead of one
@@ -181,8 +182,10 @@ Schematrix.generate(
 
 `:classes` without an enum writer logs a warning asking for a
 `*_enums` generator. It does not fail, but the referenced enum constants
-must come from elsewhere. With the default `nil` logger, no warning is
-visible. DSL and partial generators do not write enum files.
+must come from elsewhere for generated data classes and builders.
+Generated parsers resolve enum constants statically and do not need the
+classes loaded. With the default `nil` logger, no warning is visible.
+DSL and partial generators do not write enum files.
 
 An enum writer with explicit `:unions` still writes enum classes;
 slots use union rendering without converting through those classes.
@@ -239,15 +242,61 @@ anonymous module, a nameless value, or a missing method raises
 `ArgumentError` at generator construction, before any file is
 written.
 
-Sixteen per-class generator classes exist: `PlainRuby`, `SorbetRuby`, `Rbi`, and
+`ScalarType.new` also accepts `reader: nil`. Supply a named module or
+class answering `.read(node)` to accept nonliteral Prism nodes in that
+format slot when parsing DSL source:
+
+```ruby
+Schematrix::ScalarType.new(
+  sorbet: "Money",
+  rbs: "Money",
+  coercer: Money,
+  reader: MoneyReader,
+)
+```
+
+The generator validates the reader at construction, just as it validates
+the coercer. The `reader` accessor returns the configured reader.
+The application must load the reader and its dependencies; generated
+parsers reference it by name. Readers are trusted code and are called
+only for nonliteral nodes at the configured formatted positions,
+including nested arrays, maps, tuples, and extra values. A reader must
+return the final document value, with no second coercion. Literal
+values follow the normal parser path and are normalized by the coercer.
+Reader failures become generated `ParseError` instances with the
+original exception as `cause`. No automatic `Date` constructor reader
+is supplied.
+
+Seventeen per-class generator classes exist: `PlainRuby`, `SorbetRuby`, `Rbi`, and
 `Rbs` for the data classes, plus `DslPlainRuby`, `DslSorbetRuby`,
-`DslRbi`, and `DslRbs` for the instance builders, plus `PartialPlainRuby`,
+`DslRbi`, and `DslRbs` for the instance builders, `DslParser` for static
+DSL parsing, plus `PartialPlainRuby`,
 `PartialSorbetRuby`, `PartialRbi`, and `PartialRbs` for the partial
 classes, plus `PlainRubyEnums`, `SorbetRubyEnums`, `RbiEnums`, and
 `RbsEnums` for enum classes. They share the rendering described in
 [Generators](generators.md); the builders place every class under a
 `Dsl` module level and the partials under a `Partial` module level, so
 the families can write to one directory without colliding.
+
+## Generating a DSL parser
+
+```ruby
+Schematrix.generate(
+  generators: [Schematrix::Generators::DslParser.new("out", "MyApp")],
+  input_files: ["person.json"],
+)
+```
+
+This writes `out/parser/person.rb` and its support files,
+`out/parser/runtime.rb` and `out/parser/parse_error.rb`. No additional
+generator is needed. Require the person parser and call
+`MyApp::Parser::Person.parse(source, filename: "(dsl)")` or
+`MyApp::Parser::Person.parse_file(path)` to get a Hash. The module also
+supports inclusion and method overrides that call `super`.
+
+The generated parser uses Prism 1.4 or later and the standard library.
+It does not load Schematrix, builders, or enum classes. See
+[The instance DSL](dsl.md) for the grammar and `ParseError` fields.
 
 ## The generated loading model
 

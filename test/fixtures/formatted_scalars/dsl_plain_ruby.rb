@@ -1,3 +1,6 @@
+require "time"
+require "date"
+
 module M
   module Dsl
     module Schema
@@ -15,12 +18,12 @@ module M
       end
 
       def created_at(value)
-        dsl_fields["created_at"] = value
+        dsl_fields["created_at"] = (value.is_a?(::Time) ? value.iso8601 : value)
         self
       end
 
       def birthday(value)
-        dsl_fields["birthday"] = value
+        dsl_fields["birthday"] = (value.is_a?(::Date) ? value.iso8601 : value)
         self
       end
 

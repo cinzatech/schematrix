@@ -6,8 +6,8 @@ module Schematrix
   # that converts its values on load and dump when the Ruby type is
   # not the JSON one. A nil coercer means the value passes through.
   ScalarType =
-    Data.define(:sorbet, :rbs, :coercer) do
-      def initialize(sorbet:, rbs:, coercer: nil) = super
+    Data.define(:sorbet, :rbs, :coercer, :reader) do
+      def initialize(sorbet:, rbs:, coercer: nil, reader: nil) = super
 
       def coerces? = !coercer.nil?
     end

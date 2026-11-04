@@ -151,6 +151,38 @@ class TestCLI < Minitest::Test
     Schematrix.logger = previous_logger
   end
 
+  def test_parser_only_generation_loads_and_parses_without_builders
+    previous_logger = Schematrix.logger
+    namespace = "CliParser#{object_id}"
+    schema = File.join(__dir__, "fixtures", "enum_usage", "schema.json")
+
+    Dir.mktmpdir do |output|
+      cli = Schematrix::CLI.new
+      cli.parse(["-g", "dsl_parser", "-m", namespace, "-o", output, schema])
+      assert_empty cli.params.errors.to_a
+      cli.run
+
+      assert_equal %w[parser/parse_error.rb parser/runtime.rb parser/schema.rb],
+                   Dir.glob("**/*.rb", base: output).sort
+      require File.join(output, "parser", "schema.rb")
+      generated = Object.const_get(namespace)
+      refute generated.const_defined?(:Dsl, false)
+      refute generated.const_defined?(:Schema, false)
+      parser = generated.const_get(:Parser).const_get(:Schema)
+      source = "#{namespace}::Dsl::Schema.build do\n  status \"active\"\nend\n"
+      assert_equal({ "status" => "active" }, parser.parse(source))
+
+      path = File.join(output, "instance.rb")
+      File.write(path, source)
+      assert_equal({ "status" => "active" }, parser.parse_file(path))
+    end
+  ensure
+    Schematrix.logger = previous_logger
+    if namespace && Object.const_defined?(namespace)
+      Object.send(:remove_const, namespace)
+    end
+  end
+
   def test_immutable_flag_parses
     cli = Schematrix::CLI.new
     cli.parse(%w[-g plain_ruby -m M --immutable schema.json])
