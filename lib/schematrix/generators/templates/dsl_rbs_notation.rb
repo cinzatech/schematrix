@@ -80,11 +80,11 @@ module Schematrix
           when :scalar
             "(#{param_type(setter_value_type(name, kind, schema))} value) "
           when :object
-            "() #{bound_block(property_builder_term(name))} "
+            "() ?#{bound_block(property_builder_term(name))} "
           when :array_scalars
             "(*#{param_type(setter_value_type(name, kind, schema))} values) "
           when :array_objects
-            "() #{bound_block(element_builder_term(name))} "
+            "() ?#{bound_block(element_builder_term(name))} "
           when :mixed_array
             "(*#{untyped} values) ?#{bound_block(element_builder_term(name))} "
           when :map_scalars
@@ -92,7 +92,7 @@ module Schematrix
               param_type(setter_value_type(name, kind, schema))
             } value) "
           when :map_objects
-            "(String key) #{bound_block(map_builder_term(name))} "
+            "(String key) ?#{bound_block(map_builder_term(name))} "
           when :mixed_value
             "(#{untyped} value) ?#{bound_block(property_builder_term(name))} "
           end

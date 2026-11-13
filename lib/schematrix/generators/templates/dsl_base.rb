@@ -302,7 +302,7 @@ module Schematrix
           when :object
             <<~RUBY
               def #{name}(&block)
-                child = #{qualified_builder(property_builder_term(name))}.build(&block)
+                child = block ? #{qualified_builder(property_builder_term(name))}.build(&block) : {}
                 current = dsl_fields[#{key}]
                 dsl_fields[#{key}] = current.is_a?(Hash) ? current.merge(child) : child
                 self
@@ -321,7 +321,7 @@ module Schematrix
             <<~RUBY
               def #{name}(&block)
                 target = (dsl_fields[#{key}] ||= [])
-                target << #{qualified_builder(element_builder_term(name))}.build(&block)
+                target << (block ? #{qualified_builder(element_builder_term(name))}.build(&block) : {})
                 self
               end
             RUBY
@@ -347,7 +347,7 @@ module Schematrix
             <<~RUBY
               def #{name}(key, &block)
                 target = (dsl_fields[#{key}] ||= {})
-                target[key] = #{qualified_builder(map_builder_term(name))}.build(&block)
+                target[key] = block ? #{qualified_builder(map_builder_term(name))}.build(&block) : {}
                 self
               end
             RUBY

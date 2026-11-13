@@ -67,6 +67,33 @@ class TestDslParserRuntime < Minitest::Test
     assert_nil parse("choice")["choice"]
   end
 
+  def test_object_setters_without_a_block_declare_an_empty_object
+    assert_equal({ "address" => {} }, parse("address"))
+    assert_equal({ "people" => [{}] }, parse("people"))
+    assert_equal({ "groups" => { "g" => {} } }, parse("groups 'g'"))
+  end
+
+  def test_blockless_object_setters_follow_the_repeat_rules
+    result = parse(<<~RUBY)
+      address { name "A" }
+      address
+      people
+      people { name "P" }
+      people
+      groups("g") { name "G" }
+      groups "g"
+      groups "h"
+    RUBY
+    assert_equal({ "name" => "A" }, result["address"])
+    assert_equal [{}, { "name" => "P" }, {}], result["people"]
+    assert_equal({ "g" => {}, "h" => {} }, result["groups"])
+  end
+
+  def test_blockless_mixed_array_declares_an_empty_array
+    assert_equal({ "mixed" => [] }, parse("mixed"))
+    assert_equal [4], parse("mixed 4\nmixed")["mixed"]
+  end
+
   def test_wrappers_and_static_enum_resolution
     @contract[:setters]["name"][:value] = [
       :value,
@@ -196,7 +223,6 @@ class TestDslParserRuntime < Minitest::Test
       "name",
       "name 1, 2",
       "name(1) {}",
-      "address",
       "address(1) {}",
       "address { |x| name 'x' }",
       "numbers(1) {}",

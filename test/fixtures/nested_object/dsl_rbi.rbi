@@ -17,9 +17,9 @@ module M
       end
 
       sig do
-        params(block: T.proc.bind(::M::Dsl::Schema::Props::Child).void).returns(
-          T.self_type
-        )
+        params(
+          block: T.nilable(T.proc.bind(::M::Dsl::Schema::Props::Child).void)
+        ).returns(T.self_type)
       end
       def child(&block)
       end

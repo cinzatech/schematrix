@@ -293,6 +293,49 @@ class TestDslParser < Minitest::Test
     end
   end
 
+  def test_generated_parser_matches_real_builder_for_blockless_object_setters
+    shape = { type: "object", properties: { name: { type: "string" } } }
+    schema = {
+      type: "object",
+      properties: {
+        person: shape,
+        people: {
+          type: "array",
+          items: shape,
+        },
+        contacts: {
+          type: "object",
+          additionalProperties: shape,
+        },
+      },
+    }
+    with_generated(schema, builders: true) do |parser, namespace, _output|
+      source = <<~RUBY
+        #{namespace}::Dsl::Schema.build do
+          person
+          people
+          people do
+            name "Ada"
+          end
+          contacts "mentor"
+          contacts "peer" do
+            name "Grace"
+          end
+        end
+      RUBY
+      expected = eval(source) # rubocop:disable Security/Eval
+      assert_equal expected, parser.parse(source)
+      assert_equal(
+        {
+          "person" => {},
+          "people" => [{}, { "name" => "Ada" }],
+          "contacts" => { "mentor" => {}, "peer" => { "name" => "Grace" } },
+        },
+        expected,
+      )
+    end
+  end
+
   def test_wrappers_and_instance_methods_do_not_create_constants
     with_generated(object_schema) do |parser, namespace, output|
       source = <<~RUBY

@@ -28,13 +28,13 @@ module Schematrix
           class Walker
             SIGNATURES = {
               scalar: [1..1, :forbidden],
-              object: [0..0, :required],
+              object: [0..0, :implied],
               array_scalars: [0.., :forbidden],
-              array_objects: [0..0, :required],
+              array_objects: [0..0, :implied],
               mixed_array: [0.., :optional],
               mixed_value: [0..1, :optional],
               map_scalars: [2..2, :forbidden],
-              map_objects: [1..1, :required],
+              map_objects: [1..1, :implied],
               extra_scalars: [2..2, :forbidden],
               extra_objects: [1..1, :required],
             }.freeze
@@ -184,7 +184,12 @@ module Schematrix
               if block == :forbidden && node.block
                 fail_at(node.block, "block is not permitted")
               end
-              body = block_body(node.block, node) if node.block || block == :required
+              body =
+                if node.block || block == :required
+                  block_body(node.block, node)
+                elsif block == :implied
+                  []
+                end
               key = setter[:key]
               spec = setter[:value]
               case kind
