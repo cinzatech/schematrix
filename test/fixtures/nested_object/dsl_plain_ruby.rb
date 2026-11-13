@@ -10,7 +10,7 @@ module M
       end
 
       def child(&block)
-        child = M::Dsl::Schema::Props::Child.build(&block)
+        child = block ? M::Dsl::Schema::Props::Child.build(&block) : {}
         current = dsl_fields["child"]
         dsl_fields["child"] = current.is_a?(Hash) ? current.merge(child) : child
         self

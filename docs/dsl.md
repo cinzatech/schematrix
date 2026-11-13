@@ -175,17 +175,43 @@ under the property's original key.
 | -------------- | ---- | --------------- | ----------- |
 | scalar, union, enum in `:unions` mode | `age 36` | `doc["age"] = 36` | last call wins |
 | enum in `:classes` mode | `status MyApp::Person::Props::Status::Active` | stores the member's serialized value | last call wins |
-| object | `address do ... end` | child document through `Address.build` | merges into a held Hash, replaces anything else |
-| array of scalars | `hobbies "a", "b"` | appends one element per argument | appends |
-| array of objects | `friends do ... end` | appends one built element per call | appends |
+| object | `address do ... end`, or `address` | child document through `Address.build`; `{}` without a block | merges into a held Hash, replaces anything else |
+| array of scalars | `hobbies "a", "b"`, or `hobbies` | appends one element per argument; none without arguments | appends |
+| array of objects | `friends do ... end`, or `friends` | appends one built element per block; none without a block | appends |
 | map | `labels "k", 1` | `doc["labels"]["k"] = 1` | last call wins per key |
-| map of objects | `metadata "k" do ... end` | entry built through the value builder | last call wins per key |
+| map of objects | `metadata "k" do ... end`, or `metadata "k"` | entry built through the value builder; `{}` without a block | last call wins per key |
 | open shape (catch-all) | `extra "k", v` | `doc["k"] = v` | last call wins |
+
+A call without a block declares an empty object, for an object and
+for a map of objects:
+
+```ruby
+address               # "address": {}
+metadata "mentor"     # "metadata": { "mentor": {} }
+```
+
+The repeat rules are the same as for a call with an empty block. A bare
+`address` after `address do ... end` merges nothing and keeps the held
+Hash. The catch-all `extra` of an open shape with object values still
+needs its block.
+
+An array setter creates the array and appends one element for each
+argument and one for the block. A call without arguments and without a
+block appends nothing, so it declares the empty array. The rule is the
+same for the three array shapes:
+
+```ruby
+hobbies               # "hobbies": []
+friends               # "friends": []
+```
+
+An empty object as an element keeps the block form, `friends do end`.
 
 A property whose shape unions scalars with an object class takes both
 forms (`option "fast"` and `option do foo 1 end`); the block's
-presence decides. An array whose element does the same accepts variadic
-scalar elements and block elements on one method.
+presence decides. A bare `option` stores `nil`, not an empty object.
+An array whose element does the same accepts variadic scalar elements
+and block elements on one method.
 
 Arrays of maps and arrays of arrays have no dedicated form: each
 argument is one element, and a Hash or Array literal carries the inner
@@ -278,9 +304,11 @@ the ISO string the parser accepts; a `scalar_types:` remap keeps its
 own spelling. A block is declared with
 `T.proc.bind(Child).void`, the type of a block that `instance_exec`
 runs on the child builder, so the calls inside it typecheck against the
-child. Setters return `T.self_type`, so chains check.
+child. Where a call without a block is legal, the type is wrapped in
+`T.nilable`. Setters return `T.self_type`, so chains check.
 
-The RBS format declares the same setters, with a bare block, `{ -> void }`.
+The RBS format declares the same setters, with a bare block,
+`{ -> void }`, or `?{ -> void }` where the block is optional.
 RBS can bind a block's `self` to the child builder, but syntax_tree-rbs
 1.0, which formats the output, drops that binding, so a Steep user sees
 an untyped block.

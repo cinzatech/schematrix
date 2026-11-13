@@ -315,7 +315,10 @@ not the slot's nilability: an optional integer property takes
 `params(value: Integer)`, and an explicit `nil` rides the union only
 when the schema admits null. A block is bound to the child builder
 module in Sorbet, `T.proc.bind(Person).void`, which is how a block run
-with `instance_exec` is typed. RBS declares the block bare, `{ -> void }`:
+with `instance_exec` is typed. A setter declares that block nilable
+where a call without a block is legal: the empty object, the empty
+entry of a map of objects, and the empty array of objects. RBS declares
+the block bare, `{ -> void }`, with a `?` prefix where it is optional:
 the notation has a self binding, but the formatter the gem uses drops it. Builders type their document hash
 `T::Hash[String, T.untyped]` in Sorbet and `Hash[String, top]` in RBS:
 setters call `concat`, `<<`, and `merge` on their slot reads, and those

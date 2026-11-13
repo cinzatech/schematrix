@@ -20,12 +20,12 @@ module M
       end
 
       sig do
-        params(block: T.proc.bind(::M::Dsl::Schema::Props::Child).void).returns(
-          T.self_type
-        )
+        params(
+          block: T.nilable(T.proc.bind(::M::Dsl::Schema::Props::Child).void)
+        ).returns(T.self_type)
       end
       def child(&block)
-        child = M::Dsl::Schema::Props::Child.build(&block)
+        child = block ? M::Dsl::Schema::Props::Child.build(&block) : {}
         current = dsl_fields["child"]
         dsl_fields["child"] = current.is_a?(Hash) ? current.merge(child) : child
         self

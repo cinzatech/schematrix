@@ -21,12 +21,13 @@ module M
 
       sig do
         params(
-          block: T.proc.bind(::M::Dsl::Schema::Props::Entries::Items).void
+          block:
+            T.nilable(T.proc.bind(::M::Dsl::Schema::Props::Entries::Items).void)
         ).returns(T.self_type)
       end
       def entries(&block)
         target = (dsl_fields["entries"] ||= [])
-        target << M::Dsl::Schema::Props::Entries::Items.build(&block)
+        target << M::Dsl::Schema::Props::Entries::Items.build(&block) if block
         self
       end
 
