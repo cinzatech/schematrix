@@ -11,7 +11,7 @@ module M
 
       def vars(key, &block)
         target = (dsl_fields["vars"] ||= {})
-        target[key] = M::Dsl::Schema::Defs::Value.build(&block)
+        target[key] = block ? M::Dsl::Schema::Defs::Value.build(&block) : {}
         self
       end
 

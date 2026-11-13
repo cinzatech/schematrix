@@ -110,13 +110,13 @@ module Schematrix
             "params(value: #{setter_value_type(name, kind, schema)})."
           when :object
             "params(block: #{
-              block_type(absolute_builder(property_builder_term(name)))
+              nilable_block_type(absolute_builder(property_builder_term(name)))
             })."
           when :array_scalars
             "params(values: #{setter_value_type(name, kind, schema)})."
           when :array_objects
             "params(block: #{
-              block_type(absolute_builder(element_builder_term(name)))
+              nilable_block_type(absolute_builder(element_builder_term(name)))
             })."
           when :mixed_array
             "params(values: #{untyped}, block: #{
@@ -128,7 +128,7 @@ module Schematrix
             })."
           when :map_objects
             "params(key: String, block: #{
-              block_type(absolute_builder(map_builder_term(name)))
+              nilable_block_type(absolute_builder(map_builder_term(name)))
             })."
           when :mixed_value
             "params(value: #{untyped}, block: #{
@@ -145,8 +145,8 @@ module Schematrix
           "T.proc.bind(#{klass}).void"
         end
 
-        # Mixed setters branch on the block's presence, so their
-        # signature declares it nilable and the branch stays
+        # Object and mixed setters branch on the block's presence, so
+        # their signature declares it nilable and the branch stays
         # reachable.
         def nilable_block_type(klass)
           "T.nilable(T.proc.bind(#{klass}).void)"

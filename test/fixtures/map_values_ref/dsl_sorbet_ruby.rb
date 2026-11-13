@@ -21,12 +21,12 @@ module M
       sig do
         params(
           key: String,
-          block: T.proc.bind(::M::Dsl::Schema::Defs::Value).void
+          block: T.nilable(T.proc.bind(::M::Dsl::Schema::Defs::Value).void)
         ).returns(T.self_type)
       end
       def vars(key, &block)
         target = (dsl_fields["vars"] ||= {})
-        target[key] = M::Dsl::Schema::Defs::Value.build(&block)
+        target[key] = block ? M::Dsl::Schema::Defs::Value.build(&block) : {}
         self
       end
 

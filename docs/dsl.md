@@ -175,17 +175,33 @@ under the property's original key.
 | -------------- | ---- | --------------- | ----------- |
 | scalar, union, enum in `:unions` mode | `age 36` | `doc["age"] = 36` | last call wins |
 | enum in `:classes` mode | `status MyApp::Person::Props::Status::Active` | stores the member's serialized value | last call wins |
-| object | `address do ... end` | child document through `Address.build` | merges into a held Hash, replaces anything else |
+| object | `address do ... end`, or `address` | child document through `Address.build`; `{}` without a block | merges into a held Hash, replaces anything else |
 | array of scalars | `hobbies "a", "b"` | appends one element per argument | appends |
-| array of objects | `friends do ... end` | appends one built element per call | appends |
+| array of objects | `friends do ... end`, or `friends` | appends one built element per call; `{}` without a block | appends |
 | map | `labels "k", 1` | `doc["labels"]["k"] = 1` | last call wins per key |
-| map of objects | `metadata "k" do ... end` | entry built through the value builder | last call wins per key |
+| map of objects | `metadata "k" do ... end`, or `metadata "k"` | entry built through the value builder; `{}` without a block | last call wins per key |
 | open shape (catch-all) | `extra "k", v` | `doc["k"] = v` | last call wins |
+
+A call without a block declares an empty object, for the three shapes
+that take their value from a block:
+
+```ruby
+address               # "address": {}
+friends               # appends {}
+metadata "mentor"     # "metadata": { "mentor": {} }
+```
+
+The repeat rules are the same as for a call with an empty block. A bare
+`address` after `address do ... end` merges nothing and keeps the held
+Hash. The catch-all `extra` of an open shape with object values still
+needs its block.
 
 A property whose shape unions scalars with an object class takes both
 forms (`option "fast"` and `option do foo 1 end`); the block's
-presence decides. An array whose element does the same accepts variadic
-scalar elements and block elements on one method.
+presence decides. A bare `option` stores `nil`, not an empty object.
+An array whose element does the same accepts variadic scalar elements
+and block elements on one method. A bare call on that array declares
+the empty array and appends nothing.
 
 Arrays of maps and arrays of arrays have no dedicated form: each
 argument is one element, and a Hash or Array literal carries the inner
@@ -276,11 +292,13 @@ value types come from the schema: `String` for a string property,
 `date-time` slots type as `String`, so a typed definition file spells
 the ISO string the parser accepts; a `scalar_types:` remap keeps its
 own spelling. A block is declared with
-`T.proc.bind(Child).void`, the type of a block that `instance_exec`
-runs on the child builder, so the calls inside it typecheck against the
-child. Setters return `T.self_type`, so chains check.
+`T.nilable(T.proc.bind(Child).void)`. The proc type is the type of a
+block that `instance_exec` runs on the child builder, so the calls
+inside it typecheck against the child. The nilable wrap admits the call
+without a block. Setters return `T.self_type`, so chains check.
 
-The RBS format declares the same setters, with a bare block, `{ -> void }`.
+The RBS format declares the same setters, with a bare optional block,
+`?{ -> void }`.
 RBS can bind a block's `self` to the child builder, but syntax_tree-rbs
 1.0, which formats the output, drops that binding, so a Steep user sees
 an untyped block.
