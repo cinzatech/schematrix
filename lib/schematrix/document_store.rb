@@ -15,9 +15,10 @@ module Schematrix
   class InvalidSchemaError < StandardError
   end
 
-  # Raised when a document's `$schema` header names a dialect other
-  # than the one schematrix targets. The compiler reads 2020-12
-  # semantics only and refuses the document instead of guessing.
+  # Raised when a document's `$schema` header names a dialect that
+  # schematrix cannot read as 2020-12: neither the 2020-12 metaschema
+  # nor a local metaschema built on the 2020-12 vocabularies. The
+  # compiler refuses the document instead of guessing.
   class UnsupportedDialectError < StandardError
   end
 
@@ -39,13 +40,30 @@ module Schematrix
 
     # Dialects this tool targets: the 2020-12 core metaschema, http
     # and https spellings, with or without a trailing empty fragment.
-    # A document naming any other dialect raises
-    # UnsupportedDialectError at load time; a document without a
-    # header is read as 2020-12.
+    # A document without a header is read as 2020-12. A document
+    # naming any other dialect goes through the vocabulary check (see
+    # dialect_rejection).
     SUPPORTED_DIALECTS = %w[
       https://json-schema.org/draft/2020-12/schema
       http://json-schema.org/draft/2020-12/schema
     ].freeze
+
+    # Vocabularies a custom dialect may require: the seven of the
+    # 2020-12 metaschema. format-assertion is absent, because the
+    # compiler never enforces `format`.
+    SUPPORTED_VOCABULARIES = %w[
+      https://json-schema.org/draft/2020-12/vocab/core
+      https://json-schema.org/draft/2020-12/vocab/applicator
+      https://json-schema.org/draft/2020-12/vocab/unevaluated
+      https://json-schema.org/draft/2020-12/vocab/validation
+      https://json-schema.org/draft/2020-12/vocab/meta-data
+      https://json-schema.org/draft/2020-12/vocab/format-annotation
+      https://json-schema.org/draft/2020-12/vocab/content
+    ].freeze
+
+    UNMAPPABLE_DIALECT =
+      "the metaschema must be an http(s) URI without a fragment, " \
+        "mapped to a local file in the schema directories"
 
     # `schema_dirs` lists the directories remote URIs resolve through,
     # in search order. An empty list means remote references fail
@@ -56,6 +74,7 @@ module Schematrix
       @anchors = {}
       @dynamic_anchors = {}
       @ignored = {}
+      @dialect_rejections = {}
     end
 
     # Returns the schema node the given URI points at: the document is
@@ -216,7 +235,7 @@ module Schematrix
     # Load-time validation. A document that cannot be a schema
     # (anything but an object or a boolean) raises InvalidSchemaError
     # instead of crashing later on keyword reads, and a `$schema`
-    # header naming a dialect other than 2020-12 raises
+    # header naming a dialect that cannot be read as 2020-12 raises
     # UnsupportedDialectError instead of being read with the wrong
     # semantics. Documents without a header are read as 2020-12.
     def validate_document(document, uri)
@@ -232,9 +251,49 @@ module Schematrix
       normalized = dialect.to_s.chomp("#")
       return if SUPPORTED_DIALECTS.include?(normalized)
 
+      reason =
+        @dialect_rejections.fetch(normalized) do
+          @dialect_rejections[normalized] = dialect_rejection(normalized)
+        end
+      return if reason.nil?
+
       raise UnsupportedDialectError,
             "#{uri} declares dialect #{dialect}, schematrix supports " \
-              "#{SUPPORTED_DIALECTS.first}"
+              "#{SUPPORTED_DIALECTS.first} and dialects built on its " \
+              "vocabularies: #{reason}"
+    end
+
+    # Why a dialect other than the 2020-12 metaschema cannot be read
+    # as 2020-12, or nil when it can. The metaschema is read from the
+    # schema directories without validation: its own `$schema` has no
+    # effect, because `$vocabulary` is not inherited between
+    # metaschemas, and a metaschema that names itself must not loop.
+    # A vocabulary marked false is optional, so its keywords are
+    # unknown keywords.
+    def dialect_rejection(dialect)
+      meta_uri = URI(dialect)
+      unless %w[http https].include?(meta_uri.scheme) && meta_uri.fragment.nil?
+        return UNMAPPABLE_DIALECT
+      end
+
+      meta = YAML.safe_load_file(map_remote(meta_uri))
+      vocabulary = meta["$vocabulary"] if meta.is_a?(Hash)
+      unless vocabulary.is_a?(Hash)
+        return "the metaschema has no $vocabulary at its root"
+      end
+
+      required = vocabulary.select { |_, flag| flag == true }.keys
+      unsupported = required - SUPPORTED_VOCABULARIES
+      return nil if unsupported.empty?
+
+      "the metaschema requires unsupported vocabularies: " \
+        "#{unsupported.join(", ")}"
+    rescue URI::InvalidURIError
+      "the dialect is not a URI"
+    rescue UnresolvableLocatorError => e
+      "no local file for the metaschema (#{e.message})"
+    rescue Psych::Exception => e
+      "the metaschema file does not parse (#{e.message})"
     end
 
     # Maps a remote locator to the first existing local file among the
@@ -287,6 +346,11 @@ module Schematrix
         raise UnresolvableLocatorError,
               "Cannot map #{uri} to a local file: dot path segments " \
                 "cannot leave the schema directory"
+      end
+      if segments.any? { |segment| segment.include?("/") }
+        raise UnresolvableLocatorError,
+              "Cannot map #{uri} to a local file: an escaped slash " \
+                "cannot add path segments"
       end
 
       relative = File.join(*segments)

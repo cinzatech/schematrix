@@ -45,7 +45,9 @@ you want.
 - `Schematrix::InvalidSchemaError` when a document parses to something
   that is neither an object nor a boolean.
 - `Schematrix::UnsupportedDialectError` when a `$schema` header names a
-  dialect other than draft 2020-12.
+  dialect that is neither draft 2020-12 nor a custom dialect built on
+  its vocabularies (see
+  [Dialects](schema-features.md#dialects)).
 - `Schematrix::UnresolvableLocatorError` when a `$ref` or `$dynamicRef`
   target cannot be found, a remote URI has no local file, or a URI
   scheme is unsupported.

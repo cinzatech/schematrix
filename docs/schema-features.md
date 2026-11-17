@@ -9,11 +9,58 @@ feature has no exact Ruby rendering.
 ## Dialects
 
 The compiler targets draft 2020-12. At load time it checks the
-`$schema` header: a document naming another dialect fails with
-`UnsupportedDialectError` instead of being read with wrong semantics. A
-document without a header is read as 2020-12. Both the `https` and the
-`http` spelling of the meta URI are accepted, with or without a
-trailing `#`.
+`$schema` header. A document without a header is read as 2020-12. Both
+the `https` and the `http` spelling of the 2020-12 meta URI are
+accepted, with or without a trailing `#`.
+
+A document can also name a custom dialect that is built on the 2020-12
+vocabularies. The compiler reads such a document as 2020-12 when the
+metaschema that `$schema` names satisfies three conditions:
+
+- The metaschema is a local file in the [schema
+  directories](#remote-references). The `$schema` value is an `http` or
+  `https` URI without a fragment, and it maps to a file as a remote
+  `$ref` does. Nothing is fetched over the network.
+- The metaschema has `$vocabulary` at its root.
+- Each vocabulary that `$vocabulary` marks `true` is one of the seven
+  vocabularies of the 2020-12 metaschema: core, applicator,
+  unevaluated, validation, meta-data, format-annotation and content.
+
+A vocabulary that the compiler does not know must be marked `false`.
+Its keywords are unknown keywords, and the compiler ignores them. The
+compiler reads the document with all seven 2020-12 vocabularies. A
+2020-12 vocabulary that is marked `false`, or that is absent from
+`$vocabulary`, removes no keyword: `type` and `required` still shape
+the generated code.
+
+Only the metaschema that the document names is read. The `$schema` of
+that metaschema has no effect.
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/dialects/catalog",
+  "$vocabulary": {
+    "https://json-schema.org/draft/2020-12/vocab/core": true,
+    "https://json-schema.org/draft/2020-12/vocab/applicator": true,
+    "https://json-schema.org/draft/2020-12/vocab/validation": true,
+    "https://example.com/vocab/catalog": false
+  }
+}
+```
+
+With `vendor/schemas` as a schema directory, this metaschema lives at
+`vendor/schemas/example.com/dialects/catalog.json`, and a document
+names it with `"$schema": "https://example.com/dialects/catalog"`.
+
+Any other dialect fails with `UnsupportedDialectError` instead of being
+read with wrong semantics. The error names the document, the dialect
+and the reason: no local file for the metaschema, no `$vocabulary`, or
+a required vocabulary that the compiler does not support. The
+metaschemas of the older drafts fail one of these conditions, so they
+stay rejected. A metaschema that requires the format-assertion
+vocabulary is rejected too, because the compiler does not enforce
+`format`.
 
 A document must parse to an object or a boolean; anything else fails
 with `InvalidSchemaError`.
