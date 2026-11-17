@@ -26,9 +26,15 @@ metaschema that `$schema` names satisfies three conditions:
   vocabularies of the 2020-12 metaschema: core, applicator,
   unevaluated, validation, meta-data, format-annotation and content.
 
-The keywords of a vocabulary that is marked `false` are unknown
-keywords, and the compiler ignores them. Only the metaschema that the
-document names is read. The `$schema` of that metaschema has no effect.
+A vocabulary that the compiler does not know must be marked `false`.
+Its keywords are unknown keywords, and the compiler ignores them. The
+compiler reads the document with all seven 2020-12 vocabularies. A
+2020-12 vocabulary that is marked `false`, or that is absent from
+`$vocabulary`, removes no keyword: `type` and `required` still shape
+the generated code.
+
+Only the metaschema that the document names is read. The `$schema` of
+that metaschema has no effect.
 
 ```json
 {

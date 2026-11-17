@@ -254,6 +254,39 @@ class TestDocumentValidation < Minitest::Test
     end
   end
 
+  def test_custom_dialect_with_an_unparsable_metaschema_is_refused
+    file = write_document({ "$schema" => CATALOG_DIALECT })
+    dirs = schema_dirs_with({})
+    target = File.join(dirs.first, "example.com/dialects/catalog.json")
+    FileUtils.mkdir_p(File.dirname(target))
+    File.write(target, "[")
+
+    error = assert_unsupported_dialect(file, dirs)
+
+    assert_match(/metaschema file does not parse/, error.message)
+  end
+
+  def test_escaped_slashes_cannot_leave_the_schema_directory
+    root = Dir.mktmpdir
+    dir = File.join(root, "vendor")
+    FileUtils.mkdir_p(File.join(dir, "example.com"))
+    File.write(
+      File.join(root, "outside.json"),
+      JSON.generate({ "$vocabulary" => {} }),
+    )
+    dialect = "https://example.com/%2e%2e%2f%2e%2e%2foutside"
+    file = write_document({ "$schema" => dialect })
+
+    error = assert_unsupported_dialect(file, [dir])
+
+    assert_match(/escaped slash/, error.message)
+
+    store = Schematrix::DocumentStore.new(schema_dirs: [dir])
+    assert_raises(Schematrix::UnresolvableLocatorError) do
+      store.node_at(URI("#{dialect}#/"))
+    end
+  end
+
   def test_custom_dialect_generates_the_same_code_as_the_default_dialect
     dirs =
       schema_dirs_with(

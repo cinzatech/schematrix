@@ -292,6 +292,8 @@ module Schematrix
       "the dialect is not a URI"
     rescue UnresolvableLocatorError => e
       "no local file for the metaschema (#{e.message})"
+    rescue Psych::Exception => e
+      "the metaschema file does not parse (#{e.message})"
     end
 
     # Maps a remote locator to the first existing local file among the
@@ -344,6 +346,11 @@ module Schematrix
         raise UnresolvableLocatorError,
               "Cannot map #{uri} to a local file: dot path segments " \
                 "cannot leave the schema directory"
+      end
+      if segments.any? { |segment| segment.include?("/") }
+        raise UnresolvableLocatorError,
+              "Cannot map #{uri} to a local file: an escaped slash " \
+                "cannot add path segments"
       end
 
       relative = File.join(*segments)
