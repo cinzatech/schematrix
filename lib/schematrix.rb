@@ -65,7 +65,8 @@ module Schematrix
   #
   # Raises Schematrix::InvalidSchemaError when a document cannot be a
   # schema, Schematrix::UnsupportedDialectError when a `$schema` header
-  # names a dialect other than draft 2020-12,
+  # names a dialect that is neither draft 2020-12 nor a custom dialect
+  # built on its vocabularies,
   # Schematrix::UnresolvableLocatorError when a reference cannot be
   # resolved, Schematrix::OutputCollisionError when two outputs would
   # share one file, and Schematrix::CoercionHelperCollisionError when
