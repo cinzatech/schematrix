@@ -3,7 +3,7 @@ module M
     module Schema
       def self.build: { -> void } -> Hash[String, top]
 
-      def vars: (String key) { -> void } -> instance
+      def vars: (String key) ?{ -> void } -> instance
 
       def extra: (String key, top value) -> instance
 

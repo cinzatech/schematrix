@@ -132,6 +132,63 @@ class TestDslRuntime < Minitest::Test
     end
   end
 
+  def test_object_setters_without_a_block_declare_an_empty_object
+    with_dsl_builders(SCHEMA, "EmptyObjects") do |mod|
+      document =
+        mod::Dsl::Schema.build do
+          address
+          metadata "mentor"
+        end
+
+      assert_equal({}, document["address"])
+      assert_equal({ "mentor" => {} }, document["metadata"])
+      assert_equal %w[address metadata], document.keys
+    end
+  end
+
+  def test_blockless_object_setters_follow_the_repeat_rules
+    with_dsl_builders(SCHEMA, "EmptyRepeats") do |mod|
+      document =
+        mod::Dsl::Schema.build do
+          address { street "1 Main St" }
+          address
+
+          metadata("mentor") { name "Charles Babbage" }
+          metadata "mentor"
+        end
+
+      assert_equal({ "street" => "1 Main St" }, document["address"])
+      assert_equal({ "mentor" => {} }, document["metadata"])
+    end
+  end
+
+  def test_blockless_array_setters_declare_an_empty_array
+    with_dsl_builders(SCHEMA, "EmptyArrays") do |mod|
+      document =
+        mod::Dsl::Schema.build do
+          hobbies
+          friends
+          mixed
+        end
+
+      expected = { "hobbies" => [], "friends" => [], "mixed" => [] }
+      assert_equal expected, document
+    end
+  end
+
+  def test_blockless_array_of_objects_setter_appends_nothing
+    with_dsl_builders(SCHEMA, "EmptyAppends") do |mod|
+      document =
+        mod::Dsl::Schema.build do
+          friends
+          friends { name "Grace Hopper" }
+          friends
+        end
+
+      assert_equal [{ "name" => "Grace Hopper" }], document["friends"]
+    end
+  end
+
   def test_setters_chain_outside_blocks
     with_dsl_builders(SCHEMA, "P") do |mod|
       builder = mod::Dsl::Schema::Builder.new
