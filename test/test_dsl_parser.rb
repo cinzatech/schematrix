@@ -331,15 +331,12 @@ class TestDslParser < Minitest::Test
       RUBY
       expected = eval(source) # rubocop:disable Security/Eval
       assert_equal expected, parser.parse(source)
-      assert_equal(
-        {
-          "person" => {},
-          "people" => [],
-          "team" => [{ "name" => "Ada" }],
-          "contacts" => { "mentor" => {}, "peer" => { "name" => "Grace" } },
-        },
-        expected,
-      )
+      assert_equal %w[person people team contacts], expected.keys
+      assert_equal({}, expected["person"])
+      assert_equal [], expected["people"]
+      assert_equal [{ "name" => "Ada" }], expected["team"]
+      assert_equal({}, expected["contacts"]["mentor"])
+      assert_equal({ "name" => "Grace" }, expected["contacts"]["peer"])
     end
   end
 
