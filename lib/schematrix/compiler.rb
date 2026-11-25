@@ -32,7 +32,11 @@ module Schematrix
     # (`file:///path/schema.json#/properties/address`); the Schema
     # records are the internal representation the generators render.
     def compile(input_files)
-      input_files.each { |file| discover(root_locator(file)) }
+      input_files.each do |file|
+        root = root_locator(file)
+        @store.register_root(root)
+        discover(root)
+      end
 
       visit(@queue.shift) until @queue.empty?
 

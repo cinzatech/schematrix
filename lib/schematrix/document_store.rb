@@ -75,6 +75,15 @@ module Schematrix
       @dynamic_anchors = {}
       @ignored = {}
       @dialect_rejections = {}
+      @roots = {}
+      @mapped_files = {}
+    end
+
+    # Records the root locator of an input file. A remote locator that
+    # maps to the same file on disk canonicalizes to this locator, so
+    # the schema compiles once whatever route reaches it.
+    def register_root(locator)
+      @roots[file_identity(unescape_path(locator.path))] = locator
     end
 
     # Returns the schema node the given URI points at: the document is
@@ -109,12 +118,15 @@ module Schematrix
       key.to_s
     end
 
-    # Rewrites plain-name fragments (no leading slash) to the JSON
-    # pointer of the schema carrying that `$anchor`, so every consumer
-    # of the locator (class names, edges, cycle guards) sees the
-    # pointer form. Pointer fragments pass through unchanged. Raises
+    # Rewrites a remote locator whose file is an input file to that
+    # input's root locator (see register_root). Then rewrites
+    # plain-name fragments (no leading slash) to the JSON pointer of
+    # the schema carrying that `$anchor`, so every consumer of the
+    # locator (class names, edges, cycle guards) sees the pointer form.
+    # Pointer fragments pass through unchanged. Raises
     # UnresolvableLocatorError when the document names no such anchor.
     def canonicalize(uri)
+      uri = root_alias(uri)
       return uri unless anchor_name?(uri)
 
       pointer = anchor_pointers(document(uri), uri)[uri.fragment]
@@ -151,6 +163,28 @@ module Schematrix
     end
 
     private
+
+    # The registered root locator for the file a remote locator maps
+    # to, with the remote fragment. Other locators come back unchanged.
+    def root_alias(uri)
+      return uri if @roots.empty?
+      return uri unless %w[http https].include?(uri.scheme)
+
+      root = @roots[file_identity(mapped_file(uri))]
+      return uri if root.nil?
+
+      aliased = root.dup
+      aliased.fragment = uri.fragment
+      aliased
+    end
+
+    # The path that identifies a file on disk: symbolic links are
+    # resolved when the file exists.
+    def file_identity(path)
+      File.realpath(path)
+    rescue SystemCallError
+      File.expand_path(path)
+    end
 
     # Whether the fragment names an $anchor: a plain name with no
     # leading slash and not empty.
@@ -223,7 +257,7 @@ module Schematrix
         when "file"
           YAML.safe_load_file(unescape_path(uri.path))
         when "http", "https"
-          YAML.safe_load_file(map_remote(uri))
+          YAML.safe_load_file(mapped_file(uri))
         else
           raise UnresolvableLocatorError, "Unsupported scheme in #{uri}"
         end
@@ -294,6 +328,12 @@ module Schematrix
       "no local file for the metaschema (#{e.message})"
     rescue Psych::Exception => e
       "the metaschema file does not parse (#{e.message})"
+    end
+
+    # The local file of a remote locator, mapped once per document.
+    def mapped_file(uri)
+      key = document_key(uri)
+      @mapped_files.fetch(key) { @mapped_files[key] = map_remote(uri) }
     end
 
     # Maps a remote locator to the first existing local file among the
