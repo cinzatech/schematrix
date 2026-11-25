@@ -62,14 +62,16 @@ module Schematrix
       visitor.edges.each { |edge| discover(edge) }
     end
 
-    # Queues a locator for visiting. The seen set drops repeats, so
-    # each locator compiles exactly once even under diamond-shaped
-    # reference graphs.
+    # Queues a locator for visiting. The seen set drops repeats by
+    # compilation key, so each schema compiles exactly once even under
+    # diamond-shaped reference graphs, and a remote locator into an
+    # input file adds nothing (see DocumentStore#compilation_key).
     def discover(uri)
-      return if @seen.include?(uri.to_s)
+      key = @store.compilation_key(uri).to_s
+      return if @seen.include?(key)
 
       @budget.consume!
-      @seen.add(uri.to_s)
+      @seen.add(key)
       @queue << uri
     end
 

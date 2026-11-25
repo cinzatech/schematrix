@@ -80,10 +80,29 @@ module Schematrix
     end
 
     # Records the root locator of an input file. A remote locator that
-    # maps to the same file on disk canonicalizes to this locator, so
-    # the schema compiles once whatever route reaches it.
+    # maps to the same file on disk gets this locator as its
+    # compilation key (see compilation_key), so the schema compiles
+    # once whatever route reaches it.
     def register_root(locator)
       @roots[file_identity(unescape_path(locator.path))] = locator
+    end
+
+    # The locator that identifies a schema in the compiled output:
+    # for a remote locator whose file is an input file, that input's
+    # root locator with the remote fragment; else the locator itself.
+    # The key never replaces the locator as a base: relative
+    # references in a remote document resolve against its remote URI,
+    # which maps through the schema directories.
+    def compilation_key(uri)
+      return uri if @roots.empty?
+      return uri unless %w[http https].include?(uri.scheme)
+
+      root = @roots[file_identity(mapped_file(uri))]
+      return uri if root.nil?
+
+      key = root.dup
+      key.fragment = uri.fragment
+      key
     end
 
     # Returns the schema node the given URI points at: the document is
@@ -118,15 +137,12 @@ module Schematrix
       key.to_s
     end
 
-    # Rewrites a remote locator whose file is an input file to that
-    # input's root locator (see register_root). Then rewrites
-    # plain-name fragments (no leading slash) to the JSON pointer of
-    # the schema carrying that `$anchor`, so every consumer of the
-    # locator (class names, edges, cycle guards) sees the pointer form.
-    # Pointer fragments pass through unchanged. Raises
+    # Rewrites plain-name fragments (no leading slash) to the JSON
+    # pointer of the schema carrying that `$anchor`, so every consumer
+    # of the locator (class names, edges, cycle guards) sees the
+    # pointer form. Pointer fragments pass through unchanged. Raises
     # UnresolvableLocatorError when the document names no such anchor.
     def canonicalize(uri)
-      uri = root_alias(uri)
       return uri unless anchor_name?(uri)
 
       pointer = anchor_pointers(document(uri), uri)[uri.fragment]
@@ -163,20 +179,6 @@ module Schematrix
     end
 
     private
-
-    # The registered root locator for the file a remote locator maps
-    # to, with the remote fragment. Other locators come back unchanged.
-    def root_alias(uri)
-      return uri if @roots.empty?
-      return uri unless %w[http https].include?(uri.scheme)
-
-      root = @roots[file_identity(mapped_file(uri))]
-      return uri if root.nil?
-
-      aliased = root.dup
-      aliased.fragment = uri.fragment
-      aliased
-    end
 
     # The path that identifies a file on disk: symbolic links are
     # resolved when the file exists.

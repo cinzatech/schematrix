@@ -101,6 +101,55 @@ class TestRemoteRefs < Minitest::Test
     end
   end
 
+  def test_relative_ref_in_a_remote_target_resolves_against_its_uri
+    with_shop_schemas do |dir, _, _, price|
+      schemas = File.dirname(price)
+      write_json(
+        price,
+        "type" => "object",
+        "$defs" => {
+          "currency" => {
+            "type" => "object",
+            "properties" => {
+              "code" => {
+                "$ref" => "code",
+              },
+            },
+          },
+        },
+      )
+      write_json(
+        File.join(schemas, "code.json"),
+        "type" => "object",
+        "properties" => {
+          "iso" => {
+            "type" => "string",
+          },
+        },
+      )
+      cart =
+        write_json(
+          File.join(dir, "cart.json"),
+          "type" => "object",
+          "properties" => {
+            "currency" => {
+              "$ref" => "https://example.com/schemas/price#/$defs/currency",
+            },
+          },
+        )
+      currency = "#{root_locator(price).chomp("/")}/$defs/currency"
+
+      [[cart, price], [price, cart]].each do |inputs|
+        objects = compile_inputs(dir, inputs)
+
+        assert_includes objects.keys, currency
+        assert_includes objects.keys, "https://example.com/schemas/code#/"
+        assert_equal "https://example.com/schemas/code#/",
+                     objects[currency].properties["code"].ref.to_s
+      end
+    end
+  end
+
   def test_input_file_that_is_a_ref_target_generates_one_class
     with_shop_schemas do |dir, order, money, _|
       output = File.join(dir, "out")
