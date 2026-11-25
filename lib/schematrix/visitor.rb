@@ -502,8 +502,9 @@ module Schematrix
     # to its final target node (targets come back raw from the store;
     # the rewrite algebra merges raw hashes and from_h loads the
     # result back into the model):
-    # - object target: keep the node as-is and return the target's locator
-    #   as ref, recording the edge so its class is generated; shape-
+    # - object target: keep the node as-is and return the target's
+    #   compilation key as ref, recording the target's locator as an
+    #   edge so its class is generated; shape-
     #   applying siblings rewrite the node into the allOf-equivalent
     #   instead (2020-12 semantics, see resolve_reference).
     # - scalar target: return the target node itself so its type
@@ -552,7 +553,7 @@ module Schematrix
         end
 
         @edges << locator
-        return schema_model(merged), locator, nil
+        return schema_model(merged), @store.compilation_key(locator), nil
       end
 
       if !enum_target && Array(target["type"]).include?(TYPE_OBJECT)
@@ -597,7 +598,7 @@ module Schematrix
         end
 
         @edges << locator
-        [with_ref_types(node, target), locator, nil]
+        [with_ref_types(node, target), @store.compilation_key(locator), nil]
       else
         # Inline the target's keywords, local siblings win over
         # them. Returns the target's document as the base for the
@@ -777,9 +778,10 @@ module Schematrix
       locator
     end
 
-    # The string form of a path's locator: the object registry key.
+    # The object registry key of a path: its locator's compilation
+    # key (see DocumentStore#compilation_key), as a string.
     def current_locator(path)
-      locator_for(path).to_s
+      @store.compilation_key(locator_for(path)).to_s
     end
 
     # Visit subtrees (other than properties), like items or
