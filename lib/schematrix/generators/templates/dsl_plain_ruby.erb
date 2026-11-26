@@ -1,6 +1,6 @@
 <% unless dsl_builtin_requires.empty? %><%= dsl_builtin_requires %>
 
-<% end %>module <%= @module_name %>
+<% end %>module <%= @document_module %>
 <%= declaration_open %>
     <% unless @property_keys.empty? %>
     <%= original_keys_constant %>

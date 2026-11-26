@@ -127,13 +127,13 @@ module Schematrix
         # This builder's module, from the root: the one name no
         # nested constant can shadow.
         def absolute_own_name
-          "::#{@module_name}::#{@class_name}"
+          "::#{@document_module}::#{@class_name}"
         end
 
         # A builder module a signature refers to, from the root, for
         # the same reason.
         def absolute_builder(term)
-          "::#{qualified_builder(term)}"
+          term.absolute("Dsl")
         end
 
         # Every property setter in declaration order, each under the
@@ -233,7 +233,7 @@ module Schematrix
         # output module root through the Dsl namespace so nested
         # declarations can never shadow it.
         def qualified_builder(term)
-          "#{@module_name}::Dsl::#{term}"
+          term.scoped("Dsl")
         end
 
         def property_builder_term(name)

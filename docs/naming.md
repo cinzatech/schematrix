@@ -9,7 +9,9 @@ before you run the tool.
 A class name is the schema's locator folded to PascalCase:
 
 1. Take the input file's basename up to the first period:
-   `payment-methods.schema.json` gives `payment-methods`.
+   `payment-methods.schema.json` gives `payment-methods`. A `names:`
+   object can give another class name for the document (see
+   [Module and class names of a document](#module-and-class-names-of-a-document)).
 2. Append the schema's path inside the document: the fragment
    segments (`properties`, `address`, `$defs`, `billing`, `anyOf_0`)
    joined with the file part. Each segment decodes first, so a
@@ -101,6 +103,79 @@ schematrix -g plain_ruby -m "Acme::Contracts" -o app/models order.schema.json
 writes `app/models/order.rb` starting with `module Acme; module
 Contracts`.
 
+## Module and class names of a document
+
+By default, each document is in the `-m` module, and its class name
+comes from the file name. A library run can change both with the
+`names:` option of a generator. The option takes an object that
+answers two methods:
+
+- `module_name(locator)` returns the module of the document. It takes
+  the place of the `-m` module for that document.
+- `class_name(locator)` returns the class name of the document. It
+  takes the place of the name from the file.
+
+`Schematrix::DefaultNames` has the default rule. It takes the `-m`
+module. A project can inherit from it and change one method or both:
+
+```ruby
+class Names < Schematrix::DefaultNames
+  def module_name(locator)
+    URI(locator).path.split("/")[-2].capitalize
+  end
+
+  def class_name(locator)
+    super.sub(/\AApi/, "API")
+  end
+end
+
+Schematrix::Generators::PlainRuby.new(
+  "generated",
+  "Contracts",
+  names: Names.new("Contracts"),
+)
+```
+
+Each generator builds a name from the module, its own level, the class
+name and the path inside the document. For `billing/invoice.json` in a
+run with `-m Contracts`:
+
+| Generators | Without `names:` | With `names:` |
+| --- | --- | --- |
+| data | `Contracts::Invoice` | `Billing::Invoice` |
+| enums | `Contracts::Invoice::Props::Status` | `Billing::Invoice::Props::Status` |
+| DSL | `Contracts::Dsl::Invoice` | `Billing::Dsl::Invoice` |
+| parser | `Contracts::Parser::Invoice` | `Billing::Parser::Invoice` |
+| partial | `Contracts::Partial::Invoice` | `Billing::Partial::Invoice` |
+
+With the same object, `billing/api-key.json` gives `Billing::APIKey`.
+
+These rules apply:
+
+- Each method receives the root locator of the document. An input
+  file has a `file://` locator (`file:///app/billing/invoice.json#/`).
+  The target of a `$ref` to a remote URI has that URI. When a remote
+  URI points at an input file, the methods receive the `file://`
+  locator of the input file.
+- `module_name` must return a constant path, and `class_name` must
+  return one constant name. Another value stops the run with
+  `ArgumentError` before the first write. The error names the
+  locator and the value.
+- A module other than the `-m` module is part of the file path:
+  `generated/billing/invoice.rb` and `generated/billing/dsl/invoice.rb`.
+  The `-m` module is not part of the path.
+- The code that belongs to no document stays in the `-m` module: the
+  coercion helper, the generated `Maybe` module and the parser
+  runtime. These files stay in the output directory.
+- A reference to a class in another module starts from the root
+  (`::Shipping::Invoice`).
+- One run has one naming object. It applies to each generator of the
+  run, also to a generator that did not receive it. Two different
+  objects in one run raise `ArgumentError`. A generator that receives
+  an object that does not answer both methods raises `ArgumentError`.
+- The collision check uses the resulting names. Two documents with
+  one name stop the run with `OutputCollisionError`.
+
 ## Positional names
 
 Some schema sites have no name of their own:
@@ -117,7 +192,9 @@ Before any file is written, the run checks that every generator and
 every class lands on its own path. These fail with
 `Schematrix::OutputCollisionError`, naming both claimants:
 
-- Two input files with the same basename (`a.json` and `a.yaml`).
+- Two input files with the same basename (`a.json` and `a.yaml`), or
+  two documents that the `names:` object gives the same module and
+  class name.
 - Two generators that write the same schema site with the same file
   extension into one directory (for example, `plain_ruby` and
   `sorbet_ruby`). A data generator and an enum generator may share an

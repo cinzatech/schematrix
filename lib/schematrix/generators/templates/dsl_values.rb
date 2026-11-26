@@ -113,7 +113,7 @@ module Schematrix
           when :scalar
             dsl_scalar_serialize(spec[2], value)
           when :enum
-            klass = "::#{@module_name}::#{spec[1]}"
+            klass = spec[1].absolute
             enum_serialization_expression(klass, value)
           when :map
             item = "entry#{depth}"
@@ -251,7 +251,7 @@ module Schematrix
                       "::#{coercer.name}.coerce(" \
                         "::#{coercer.name}.coerce(#{value}))"
                   end
-                  constant = "#{@module_name}::#{spec[1]}::#{member}"
+                  constant = "#{spec[1].qualified}::#{member}"
                   "#{constant.inspect} => -> { #{value} }"
                 end
             "[:value, #{reader}, nil, {#{members.join(", ")}}]"

@@ -127,6 +127,11 @@ generator.write(locator, node) # renders, formats, writes, returns the path
   the generator writes its own `Maybe` module once per output
   directory. The DSL builders and parser refuse the option. See
   [Maybe optionals](generated-code.md).
+- Pass `names:` with an object that answers `module_name(locator)`
+  and `class_name(locator)` to give each document its own module and
+  class name. `Schematrix::DefaultNames` has the default rule. The
+  object applies to each generator of the run. See
+  [Module and class names of a document](naming.md#module-and-class-names-of-a-document).
 
 Run-once generators write auxiliary files once per run instead of one
 file per locator. `Schematrix::Generators::AuxiliaryFiles` is the one

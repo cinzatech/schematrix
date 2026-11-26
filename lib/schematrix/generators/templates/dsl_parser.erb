@@ -1,7 +1,7 @@
 <%= parser_requires %>
 <% unless dsl_builtin_requires.empty? %><%= dsl_builtin_requires %>
 <% end %>
-module <%= @module_name %>
+module <%= @document_module %>
 <%= declaration_open %>
     CONTRACT = <%= parser_contract %>
 

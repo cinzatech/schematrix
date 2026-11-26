@@ -2,7 +2,7 @@
 
 <% unless dsl_builtin_requires.empty? %><%= dsl_builtin_requires %>
 
-<% end %>module <%= @module_name %>
+<% end %>module <%= @document_module %>
 <%= declaration_open %>
     extend T::Sig
     <% unless @property_keys.empty? %>

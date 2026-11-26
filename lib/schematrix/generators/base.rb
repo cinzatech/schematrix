@@ -3,6 +3,7 @@ require "fileutils"
 require "syntax_tree"
 require "syntax_tree/rbs"
 
+require_relative "naming"
 require_relative "resolver"
 require_relative "templates/plain_ruby"
 require_relative "templates/rbs"
@@ -114,6 +115,10 @@ module Schematrix
       # the generated Maybe written into the output directory, which
       # the pipeline does once per directory through the run-once
       # machinery the auxiliary files generator established.
+      # `names` gives the module and the class name of each document
+      # (see Schematrix::DefaultNames). It must answer `module_name`
+      # and `class_name`. Without it the generator uses
+      # `DefaultNames.new(module_name)`.
       def initialize(
         output_dir,
         module_name,
@@ -123,9 +128,11 @@ module Schematrix
         immutable: false,
         optionals: :nilable,
         maybe: nil,
-        enums: nil
+        enums: nil,
+        names: nil
       )
         assert_namespace_valid(module_name)
+        assert_names_valid(names)
         assert_immutable_supported if immutable
         @output_dir = output_dir
         @module_name = module_name.delete_prefix("::")
@@ -136,6 +143,9 @@ module Schematrix
         @optionals = self.class.partial? ? :maybe : optionals
         @maybe = maybe
         @enums = enums
+        @names = names
+        @naming =
+          Naming.new(names || DefaultNames.new(@module_name), @module_name)
         assert_enums_valid
         assert_optionals_valid
         assert_maybe_valid
@@ -143,7 +153,15 @@ module Schematrix
         assert_readers_valid(@scalar_types)
       end
 
-      attr_reader :output_dir, :module_name, :format, :command, :enums
+      attr_reader :output_dir, :module_name, :format, :command, :enums, :names
+
+      # Gives this generator the names object of the run, which may come
+      # from another generator.
+      def use_names(names)
+        @naming = Naming.new(names, @module_name)
+      end
+
+      def document_class_name(uri) = @naming.class_name(uri)
 
       def self.enum_generator? = false
 
@@ -177,8 +195,12 @@ module Schematrix
       # The file this locator's class writes to, without writing it:
       # callers that batch many schemas check every target up front.
       def target_path(locator)
-        class_name = class_name_from_path(URI(locator))
-        File.join(@output_dir, target_filename(class_name))
+        uri = URI(locator)
+        File.join(
+          @output_dir,
+          *@naming.directory(uri),
+          target_filename(class_name_from_path(uri)),
+        )
       end
 
       def validate_enum_members(locator, object)
@@ -200,7 +222,7 @@ module Schematrix
             banner_kind,
           )
 
-        file_path = File.join(@output_dir, target_filename(class_name))
+        file_path = target_path(locator)
         FileUtils.mkdir_p(File.dirname(file_path))
 
         File.write(file_path, code)
@@ -274,21 +296,17 @@ module Schematrix
       private
 
       def assert_namespace_valid(name)
-        unless name.is_a?(String)
-          raise ArgumentError, "module_name must be a Ruby constant path"
-        end
+        return if Naming.constant_path?(name)
 
-        namespace = name.delete_prefix("::")
-        if namespace.empty?
-          raise ArgumentError, "module_name must be a Ruby constant path"
-        end
-
-        validator = Module.new
-        namespace
-          .split("::", -1)
-          .each { |segment| validator.const_defined?(segment, false) }
-      rescue NameError
         raise ArgumentError, "module_name must be a Ruby constant path"
+      end
+
+      def assert_names_valid(names)
+        return if names.nil?
+        return if %i[module_name class_name].all? { names.respond_to?(it) }
+
+        raise ArgumentError,
+              "names must answer module_name and class_name: #{names.inspect}"
       end
 
       # The immutable option only reshapes data classes: a builder
@@ -444,6 +462,7 @@ module Schematrix
           enum_template =
             self.class.enum_template_class.new(
               module_name: @module_name,
+              naming: @naming,
               path:,
               class_name:,
               members: Templates::EnumBase.fold_members(object.enum),
@@ -461,6 +480,7 @@ module Schematrix
         warn_mangled_collisions(class_name, path, property_keys)
         self.class.template_class.new(
           module_name: @module_name,
+          naming: @naming,
           path:,
           class_name: class_name,
           properties:

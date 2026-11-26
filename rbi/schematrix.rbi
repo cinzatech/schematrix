@@ -142,6 +142,24 @@ module Schematrix
     end
   end
 
+  # The names that a run gives to each document when no generator
+  # receives a `names:` object: the module that it takes, and the class
+  # name from the file name. A project can inherit from it and change
+  # one method or both.
+  class DefaultNames
+    sig { params(module_name: String).void }
+    def initialize(module_name)
+    end
+
+    sig { params(_locator: String).returns(String) }
+    def module_name(_locator)
+    end
+
+    sig { params(locator: String).returns(String) }
+    def class_name(locator)
+    end
+  end
+
   module Generators
     # Base class of every output generator. A generator renders one
     # file per compiled class into its output directory, under its
@@ -159,6 +177,7 @@ module Schematrix
           optionals: Symbol,
           maybe: T.nilable(T::Module[T.anything]),
           enums: T.nilable(Symbol),
+          names: T.untyped,
         ).void
       end
       def initialize(
@@ -170,7 +189,8 @@ module Schematrix
         immutable: false,
         optionals: :nilable,
         maybe: nil,
-        enums: nil
+        enums: nil,
+        names: nil
       )
       end
 
@@ -192,6 +212,10 @@ module Schematrix
 
       sig { returns(T.nilable(Symbol)) }
       def enums
+      end
+
+      sig { returns(T.untyped) }
+      def names
       end
 
       sig { returns(T::Boolean) }
