@@ -84,8 +84,7 @@ module Schematrix
           if schema.enum_class?
             type = schema.enum.first.is_a?(String) ? TYPE_STRING : TYPE_INTEGER
             if @enums == :classes
-              target =
-                "::#{@module_name}::#{enum_class_name(path, name, schema)}"
+              target = enum_class_name(path, name, schema).absolute
               return :coerce, target, CLAIM_CLASSES.fetch(type)
             end
 
@@ -369,14 +368,11 @@ module Schematrix
         end
 
         # The require of the shared coercion helper module, emitted
-        # by class files that reference it. The relative path climbs
-        # one level per namespace segment of the class.
+        # by class files that reference it.
         def coercion_helper_require
           return "" unless uses_coercion_helper?
 
-          prefix = [".."] * (@class_name.split("::").size - 1)
-          path = (prefix + ["coercion_helper"]).join("/")
-          "require_relative #{path.inspect}"
+          "require_relative #{require_path("coercion_helper").inspect}"
         end
 
         # The delegation of one property: scalar leaves call the
@@ -427,7 +423,7 @@ module Schematrix
             when :coerce
               coercion_target(spec[1])
             when :class
-              "#{@module_name}::#{spec[1]}"
+              spec[1].scoped
             when :array, :map, :try
               spec_literal(spec[1])
             when :tuple

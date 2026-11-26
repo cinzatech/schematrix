@@ -54,6 +54,9 @@ module Schematrix
   # - `schema_dirs`: directories that remote `http(s)` schema URIs
   #   resolve through, in search order. Nothing is ever fetched over
   #   the network.
+  # - The `names:` object that one or more generators receive applies
+  #   to each generator of the run. Two different objects raise
+  #   ArgumentError.
   # - `max_compilation_work`: positive cumulative work limit across all
   #   roots and references. Exceeding it raises CompilationLimitError
   #   before any output is written. See docs/limits.md for scope.
@@ -87,6 +90,8 @@ module Schematrix
           [generator.class, generator.output_dir, generator.module_name]
         end
     generators += support
+    names = run_names(generators)
+    generators.each { |generator| generator.use_names(names) } if names
     mode = enum_mode(generators)
     enum_writers =
       generators.any? { |generator| generator.class.enum_generator? }
@@ -126,6 +131,17 @@ module Schematrix
     end
 
     objects
+  end
+
+  # The names object of the run: the one that the generators received.
+  # It applies to each generator, also to one that did not receive it.
+  def self.run_names(generators)
+    given = generators.filter_map(&:names).uniq(&:__id__)
+    if given.size > 1
+      raise ArgumentError, "conflicting names objects: #{given.inspect}"
+    end
+
+    given.first
   end
 
   def self.enum_mode(generators)

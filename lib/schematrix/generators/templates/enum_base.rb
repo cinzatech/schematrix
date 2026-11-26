@@ -66,7 +66,7 @@ module Schematrix
           <<~RUBY
             case value
             when ::#{document_type} then deserialize(#{format_conversion("value")})
-            when ::#{@module_name}::#{@class_name} then #{format_conversion("value.serialize")}
+            when ::#{@document_module}::#{@class_name} then #{format_conversion("value.serialize")}
             else value
             end
           RUBY

@@ -7,10 +7,12 @@ module Schematrix
     # Common functions for Ruby class name and file handling: how a
     # schema locator becomes a class name, and how names nest.
     module Resolver
-      # Returns the qualified class name for a locator and, optionally,
-      # one nested schema name (a property, an items branch, a variant
-      # segment). Example: order.json#/properties/baz + "qux" resolves
-      # the name to Order::Props::Baz::Qux.
+      # Returns the class name for a locator and, optionally, one
+      # nested schema name (a property, an items branch, a variant
+      # segment), without the module. Example: order.json#/properties/baz
+      # + "qux" resolves to Order::Props::Baz::Qux. The first part is
+      # the class name of the document (see #document_class_name), and
+      # the parts after it fold from the path inside the document.
       # Empty parts are removed. Container provenance is always encoded:
       # every 'properties' segment becomes a Props module level and
       # every '$defs' segment a Defs module level, so a property chain
@@ -19,24 +21,36 @@ module Schematrix
       # A segment that names a property folds exactly like the mangled
       # accessor the parent derives its references from, so a locator
       # and the property name it was built from fold to one name;
-      # file names and definition keys have no mangled counterpart and
-      # keep their own fold. "$" prefixes (core vocabulary keywords
-      # like "$id") and mangling suffixes ("if_") are stripped so
-      # segments form valid constant names, characters constant names
-      # cannot carry fold to separators ("web.hook" -> "WebHook"),
-      # names with no representable character fold to their UTF-8 hex
-      # ("@" -> "N40"), and a part that would start with a digit
-      # takes an "N" prefix ("2fa" -> "N2fa"), the constant-safe
-      # spelling.
+      # definition keys have no mangled counterpart and keep their own
+      # fold. "$" prefixes (core vocabulary keywords like "$id") and
+      # mangling suffixes ("if_") are stripped so segments form valid
+      # constant names, characters constant names cannot carry fold to
+      # separators ("web.hook" -> "WebHook"), names with no
+      # representable character fold to their UTF-8 hex ("@" -> "N40"),
+      # and a part that would start with a digit takes an "N" prefix
+      # ("2fa" -> "N2fa"), the constant-safe spelling.
       def class_name_from_path(uri, name = nil)
-        file =
-          File.basename(URI::RFC2396_PARSER.unescape(uri.path)).split(".").first
         segments = [
-          file,
           *uri.fragment.split("/").map { |part| Pointer.unescape(part) },
           *name.to_s.split("/"),
-        ].compact.reject(&:empty?)
+        ].reject(&:empty?)
 
+        parts = [document_class_name(uri), fold_segments(segments)]
+        parts.reject(&:empty?).join("::")
+      end
+
+      # The class name of the document that holds the locator: its file
+      # name up to the first period, folded. `order.schema.json` gives
+      # `Order`. Generators and templates take it from their naming
+      # object instead.
+      def document_class_name(uri)
+        file = File.basename(URI::RFC2396_PARSER.unescape(uri.path))
+        fold_segments([file.split(".").first.to_s].reject(&:empty?))
+      end
+
+      private
+
+      def fold_segments(segments)
         follows_properties = false
         meaningful =
           segments.filter_map do |segment|
@@ -77,8 +91,6 @@ module Schematrix
           .map { |part| part.sub(/\A(\d)/, "N\\1") }
           .join("::")
       end
-
-      private
 
       # Snake-cases a name the way the property mangling spells it:
       # case boundaries become separators and everything lowercases,

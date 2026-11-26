@@ -1,6 +1,32 @@
+require "pathname"
+
 module Schematrix
   module Generators
     module Templates
+      # A class name as the current file spells it: relative when the
+      # class is in the module of the file, from the root otherwise.
+      # `home` is the module of the class, and `relative` is the name
+      # inside that module. The methods put an optional generator level
+      # (Dsl, Parser) between the two.
+      class ClassRef < String
+        attr_reader :home, :relative
+
+        def initialize(home, relative, local:)
+          super(local ? relative : "::#{home}::#{relative}")
+          @home = home
+          @relative = relative
+          @local = local
+        end
+
+        def qualified(level = nil) = [home, level, relative].compact.join("::")
+
+        def absolute(level = nil) = "::#{qualified(level)}"
+
+        # From the module of the file when the class is in it, from the
+        # root otherwise.
+        def scoped(level = nil) = @local ? qualified(level) : absolute(level)
+      end
+
       # Abstract base class for templates
       class Base
         include Resolver
@@ -16,6 +42,7 @@ module Schematrix
         # catch-all schema, and the description comment.
         def initialize(
           module_name:,
+          naming:,
           path:,
           class_name:,
           properties:,
@@ -31,6 +58,8 @@ module Schematrix
           namespace_prefix: nil
         )
           @module_name = module_name
+          @naming = naming
+          @document_module = naming.module_name(path)
           @path = path
           @class_name = class_name
           @properties = properties
@@ -100,17 +129,25 @@ module Schematrix
         # so every nested reference in the file points at the same
         # family as the file's own class.
         def class_name_from_path(uri, name = nil)
-          return super if @namespace_prefix.nil?
-
-          "#{@namespace_prefix}::#{super}"
+          class_ref(uri, [@namespace_prefix, super].compact.join("::"))
         end
 
         def unprefixed_class_name_from_path(uri, name = nil)
-          Resolver.instance_method(:class_name_from_path).bind_call(
-            self,
+          class_ref(
             uri,
-            name,
+            Resolver.instance_method(:class_name_from_path).bind_call(
+              self,
+              uri,
+              name,
+            ),
           )
+        end
+
+        def document_class_name(uri) = @naming.class_name(uri)
+
+        def class_ref(uri, relative)
+          home = @naming.module_name(uri)
+          ClassRef.new(home, relative, local: home == @document_module)
         end
 
         def enum_type_reference(class_name)
@@ -118,7 +155,31 @@ module Schematrix
             return class_name
           end
 
-          "::#{@module_name}::#{class_name}"
+          class_name.absolute
+        end
+
+        # The path that a require_relative in this file gives for a file
+        # of the output directory, without the extension.
+        def require_path(target)
+          Pathname.new(target).relative_path_from(File.dirname(own_file)).to_s
+        end
+
+        # This file's path inside the output directory, without the
+        # extension.
+        def own_file
+          File.join(
+            *@naming.directory_for(@document_module),
+            underscore(@class_name),
+          )
+        end
+
+        # The helpers that belong to no document (Maybe, the coercion
+        # helper, the parser runtime) are in the root module. A file in
+        # another module spells them from the root.
+        def root_reference(name)
+          return "#{@module_name}::#{name}" if @document_module == @module_name
+
+          "::#{@module_name}::#{name}"
         end
 
         def enum_class_name(path, name, schema)
@@ -132,14 +193,19 @@ module Schematrix
         # The Maybe constant the generated type positions spell:
         # lexically resolved for the generated module, absolute for a
         # supplied one, whose home nothing here can assume.
-        def maybe_type_name = @maybe ? "::#{@maybe.name}" : "Maybe"
+        def maybe_type_name
+          return "::#{@maybe.name}" if @maybe
+          return "Maybe" if @document_module == @module_name
+
+          root_reference("Maybe")
+        end
 
         # The Maybe constant the generated code dispatches through:
         # the case in to_h and the Present/Absent tests. The
         # module-level path is fully qualified, so the case reads the
         # same in a nested Props class as at the document root.
         def maybe_reference
-          @maybe ? "::#{@maybe.name}" : "#{@module_name}::Maybe"
+          @maybe ? "::#{@maybe.name}" : root_reference("Maybe")
         end
 
         # Whether maybe slots dump through the exhaustive sealed case

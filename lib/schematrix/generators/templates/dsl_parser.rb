@@ -1,5 +1,4 @@
 require_relative "dsl_base"
-require "pathname"
 
 module Schematrix
   module Generators
@@ -51,7 +50,7 @@ module Schematrix
               "#{name.inspect} => #{descriptor}"
             end
           builder =
-            "#{@module_name}::Dsl::#{@class_name.delete_prefix("Parser::")}"
+            "#{@document_module}::Dsl::#{@class_name.delete_prefix("Parser::")}"
           "{builder: #{builder.inspect}, " \
             "setters: {#{pairs.join(",\n")}}}.freeze"
         end
@@ -60,7 +59,7 @@ module Schematrix
           child =
             (
               if child
-                "-> { ::#{@module_name}::Parser::#{child}::CONTRACT }"
+                "-> { #{child.absolute("Parser")}::CONTRACT }"
               else
                 "nil"
               end
@@ -72,7 +71,7 @@ module Schematrix
         def parser_requires
           %w[Parser::Runtime Parser::ParseError]
             .map do |target|
-              "require_relative #{parser_relative_path(target).inspect}"
+              "require_relative #{require_path(underscore(target)).inspect}"
             end
             .join("\n")
         end
@@ -94,17 +93,16 @@ module Schematrix
             .compact
             .uniq
             .filter_map do |child|
-              target = "Parser::#{child}"
-              next if target == @class_name
+              target =
+                File.join(
+                  *@naming.directory_for(child.home),
+                  underscore("Parser::#{child.relative}"),
+                )
+              next if target == own_file
 
-              "require_relative #{parser_relative_path(target).inspect}"
+              "require_relative #{require_path(target).inspect}"
             end
             .join("\n")
-        end
-
-        def parser_relative_path(target)
-          directory = Pathname.new(File.dirname(underscore(@class_name)))
-          Pathname.new(underscore(target)).relative_path_from(directory).to_s
         end
       end
     end
